@@ -35,22 +35,59 @@ print(idna.toUnicode(domainName: "xn--xkrr14bows.xn--fiqs8s"))
 /// prints "新华网.中国"
 ```
 
-Domain names are inherently case-insensitive, and they will be lowercased if they need to go through any conversions.
+Domain names are inherently case-insensitive, and they will always be lowercased.
 
-If they are short-circuted, they won't necesssarily be lowercased.
+## Short Circuits
 
-If you need consistent lowercased domain names, either use Swift's `String.lowercased()` after a function call, or implement your own Unicode or [ASCII-specific lowercasing function](https://github.com/search?q=repo:MahdiBM/swift-dns+ASCIIToLowercase&type=code).
+`swift-idna` provides public functions to check if a sequence of characters will change at all after going through the IDNA conversion:
+
+- `IDNA.performCharacterCheck(string:)`
+- `IDNA.performCharacterCheck(unicodeScalars:)`
+- `IDNA.performCharacterCheck(bytes:)`
+- `IDNA.performCharacterCheck(dnsWireFormatBytes:)`
+
+`swift-idna` also provides public functions to turn an uppercased ASCII byte or `Unicode.Scalar` into lowercased, as well as a few more useful functions.
+
+- `Unicode.Scalar/BinaryInteger.toLowercasedASCIILetter()`
+- `Unicode.Scalar/BinaryInteger.uncheckedToLowercasedASCIILetter()`
+- `Unicode.Scalar/BinaryInteger.isUppercasedASCIILetter`
+- `Unicode.Scalar/BinaryInteger.isIDNALabelSeparator`
+
+You can use these function to implement short-circuits for any reason.
+
+For example if you only have a sequence of bytes and don't want to decode them into a `String` to provide to this library, considering this library only accepts Swift `String`s as domain names.
+
+Example usage:
+
+```swift
+import SwiftIDNA
+
+switch IDNA.performCharacterCheck(bytes: myBytes) {
+case .containsOnlyIDNANoOpCharacters:
+    /// `myBytes` is good
+case .onlyNeedsLowercasingOfUppercasedASCIILetters:
+    myBytes = myBytes.map {
+        $0.toLowercasedASCIILetter()
+    }
+    /// `myBytes` is good now
+case .mightChangeAfterIDNAConversion:
+    /// Need to go through IDNA conversion functions if needed
+}
+```
 
 ## Implementation
+
 This package uses Unicode 17's [IDNA test v2 suite](https://www.unicode.org/Public/idna/16.0.0/IdnaTestV2.txt) with ~6400 test cases to ensure full compatibility.
 
 Runs each test case extensively so each test case might even result in 2-3-4-5 test runs.
 
 The C code is all automatically generated using the 2 scripts in `utils/`:
-* `IDNAMappingTableGenerator.swift` generates the [IDNA mapping lookup table](https://www.unicode.org/Public/idna/17.0.0/IdnaMappingTable.txt).
-* `IDNATestV2Generator.swift` generates the [IDNA test v2 suite](https://www.unicode.org/Public/idna/17.0.0/IdnaTestV2.txt) cases to use in tests to ensure full compatibility.
+
+- `IDNAMappingTableGenerator.swift` generates the [IDNA mapping lookup table](https://www.unicode.org/Public/idna/17.0.0/IdnaMappingTable.txt).
+- `IDNATestV2Generator.swift` generates the [IDNA test v2 suite](https://www.unicode.org/Public/idna/17.0.0/IdnaTestV2.txt) cases to use in tests to ensure full compatibility.
 
 #### Current supported [IDNA flags](https://www.unicode.org/reports/tr46/#Processing):
+
 - [x] checkHyphens
 - [ ] checkBidi
 - [ ] checkJoiners
@@ -59,7 +96,7 @@ The C code is all automatically generated using the 2 scripts in `utils/`:
 - [x] verifyDnsLength
 - [x] ignoreInvalidPunycode
 - [ ] replaceBadCharacters
-  * This last one is not a strict part of IDNA, and is only "recommended" to implement.
+  - This last one is not a strict part of IDNA, and is only "recommended" to implement.
 
 ## How To Add swift-idna To Your Project
 

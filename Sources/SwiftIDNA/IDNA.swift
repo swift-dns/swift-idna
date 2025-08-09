@@ -134,13 +134,13 @@ public struct IDNA: Sendable {
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToASCII
     public func toASCII(domainName: inout String) throws(MappingErrors) {
-        switch performASCIICheck(domainName: domainName) {
-        case .containsOnlyIDNANoOpASCII:
+        switch IDNA.performCharacterCheck(string: domainName) {
+        case .containsOnlyIDNANoOpCharacters:
             return
-        case .isIDNASafeASCIIButContainsUppercasedLetters:
+        case .onlyNeedsLowercasingOfUppercasedASCIILetters:
             convertToLowercasedASCII(domainName: &domainName)
             return
-        case .containsUnicodeThatIsNotGuaranteedToBeIDNANoOp:
+        case .mightChangeAfterIDNAConversion:
             break
         }
 
@@ -229,13 +229,17 @@ public struct IDNA: Sendable {
     /// `ToUnicode` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToUnicode
     public func toUnicode(domainName: inout String) throws(MappingErrors) {
-        switch performASCIICheck(domainName: domainName) {
-        case .containsOnlyIDNANoOpASCII:
-            return
-        case .isIDNASafeASCIIButContainsUppercasedLetters:
-            convertToLowercasedASCII(domainName: &domainName)
-            return
-        case .containsUnicodeThatIsNotGuaranteedToBeIDNANoOp:
+        switch IDNA.performCharacterCheck(string: domainName) {
+        case .containsOnlyIDNANoOpCharacters:
+            if !domainName.unicodeScalars.containsIDNADomainNameMarkerLabelPrefix {
+                return
+            }
+        case .onlyNeedsLowercasingOfUppercasedASCIILetters:
+            if !domainName.unicodeScalars.containsIDNADomainNameMarkerLabelPrefix {
+                convertToLowercasedASCII(domainName: &domainName)
+                return
+            }
+        case .mightChangeAfterIDNAConversion:
             break
         }
 
@@ -296,12 +300,7 @@ public struct IDNA: Sendable {
         var newLabel = Substring(label)
 
         /// Checks if the label starts with “xn--”
-        if label.count > 3,
-            label[label.startIndex] == Unicode.Scalar.asciiLowercasedX,
-            label[label.index(label.startIndex, offsetBy: 1)] == Unicode.Scalar.asciiLowercasedN,
-            label[label.index(label.startIndex, offsetBy: 2)] == Unicode.Scalar.asciiHyphenMinus,
-            label[label.index(label.startIndex, offsetBy: 3)] == Unicode.Scalar.asciiHyphenMinus
-        {
+        if label.hasIDNADomainNameMarkerPrefix {
             /// 4.1:
             if !configuration.ignoreInvalidPunycode,
                 label.contains(where: { !$0.isASCII })
@@ -384,13 +383,7 @@ public struct IDNA: Sendable {
             }
         case false:
             if !configuration.ignoreInvalidPunycode,
-                label.count > 3,
-                label[label.startIndex] == Unicode.Scalar.asciiLowercasedX,
-                label[label.index(label.startIndex, offsetBy: 1)]
-                    == Unicode.Scalar.asciiLowercasedN,
-                label[label.index(label.startIndex, offsetBy: 2)]
-                    == Unicode.Scalar.asciiHyphenMinus,
-                label[label.index(label.startIndex, offsetBy: 3)] == Unicode.Scalar.asciiHyphenMinus
+                label.hasIDNADomainNameMarkerPrefix
             {
                 errors.append(
                     .falseCheckHyphensArgumentRequiresLabelToNotStartWithXNHyphenMinusHyphenMinus(
@@ -440,35 +433,13 @@ public struct IDNA: Sendable {
         // }
     }
 
-    enum ASCIICheckResult {
-        case containsOnlyIDNANoOpASCII
-        case isIDNASafeASCIIButContainsUppercasedLetters
-        case containsUnicodeThatIsNotGuaranteedToBeIDNANoOp
-    }
-
-    func performASCIICheck(domainName: String) -> ASCIICheckResult {
-        var containsUppercased = false
-
-        for unicodeScalar in domainName.unicodeScalars {
-            if unicodeScalar.isNumberOrLowercasedLetterOrDotASCII {
-                continue
-            } else if unicodeScalar.isUppercasedASCII {
-                containsUppercased = true
-            } else {
-                return .containsUnicodeThatIsNotGuaranteedToBeIDNANoOp
-            }
-        }
-
-        return containsUppercased
-            ? .isIDNASafeASCIIButContainsUppercasedLetters : .containsOnlyIDNANoOpASCII
-    }
-
+    /// FIXME: Check this, just lowercasing everything?
     @usableFromInline
     func convertToLowercasedASCII(domainName: inout String) {
         domainName = String(
             String.UnicodeScalarView(
                 domainName.unicodeScalars.map {
-                    Unicode.Scalar($0.value.uncheckedASCIIToLowercase())!
+                    $0.toLowercasedASCIILetter()
                 }
             )
         )

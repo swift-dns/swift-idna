@@ -1,6 +1,8 @@
-import CSwiftIDNA
+public import CSwiftIDNA
 
+@usableFromInline
 package enum IDNAMapping: Equatable {
+    @usableFromInline
     package enum IDNA2008Status {
         case NV8
         case XV8
@@ -8,11 +10,7 @@ package enum IDNAMapping: Equatable {
     }
 
     case valid(IDNA2008Status)
-    /// TODO: This can be just a InlineArray<4, Unicode.Scalar?>
-    /// Investigate if that helps with the IDNA performance
     case mapped([Unicode.Scalar])
-    /// TODO: This can be just a InlineArray<4, Unicode.Scalar?>
-    /// Investigate if that helps with the IDNA performance
     case deviation([Unicode.Scalar])
     case disallowed
     case ignored
