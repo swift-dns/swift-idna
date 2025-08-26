@@ -53,7 +53,7 @@ struct IDNATestV2Case {
     /// A set of status codes for toAsciiN operation
     let toAsciiNStatus: [Status]
 
-    init(from cCase: IDNATestV2CCase) {
+    init(from cCase: CSwiftIDNATestV2CCase) {
         self.source = String(cString: cCase.source)
         self.toUnicode = cCase.toUnicode.map(String.init(cString:))
         self.toAsciiN = cCase.toAsciiN.map(String.init(cString:))
@@ -81,7 +81,7 @@ struct IDNATestV2Case {
 
     static func allCases() -> [IDNATestV2Case] {
         var count: Int = 0
-        guard let ptr = idna_test_v2_all_cases(&count) else {
+        guard let ptr = cswift_idna_test_v2_all_cases(&count) else {
             fatalError("Failed to get IDNA Test V2 cases")
         }
         return (0..<count).map { i in IDNATestV2Case(from: ptr[i]) }

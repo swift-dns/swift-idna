@@ -1,9 +1,7 @@
 public import CSwiftIDNA
 
-@usableFromInline
-package enum IDNAMapping: Equatable {
-    @usableFromInline
-    package enum IDNA2008Status {
+public enum IDNAMapping: Equatable {
+    public enum IDNA2008Status {
         case NV8
         case XV8
         case none
@@ -17,14 +15,14 @@ package enum IDNAMapping: Equatable {
 }
 
 extension IDNAMapping {
-    /// Look up IDNA mapping for a given Unicode scalar using the C implementation
+    /// Look up IDNA mapping for a given Unicode scalar
     /// - Parameter scalar: The Unicode scalar to look up
     /// - Returns: The corresponding `IDNAMapping` value
     @inlinable
-    package static func `for`(scalar: Unicode.Scalar) -> IDNAMapping {
+    public static func `for`(scalar: Unicode.Scalar) -> IDNAMapping {
         /// `unsafelyUnwrapped` because the C function is guaranteed to return a non-nil pointer.
         /// There are also extensive tests in IDNATests for this function.
-        let result = idna_mapping_lookup(scalar.value).unsafelyUnwrapped.pointee
+        let result = cswift_idna_mapping_lookup(scalar.value).unsafelyUnwrapped.pointee
         switch result.type {
         case 0:
             let status: IDNAMapping.IDNA2008Status =
@@ -34,7 +32,7 @@ extension IDNAMapping {
                 case 2: .none
                 default:
                     fatalError(
-                        "Unexpected IDNAMapping.IDNA2008Status: \(result.status) for type \(result.type)"
+                        "Unexpected IDNAMapping.CSwiftIDNA2008Status: \(result.status) for type \(result.type)"
                     )
                 }
             return .valid(status)
@@ -67,7 +65,7 @@ extension IDNAMapping {
         case 4:
             return .ignored
         default:
-            fatalError("Unexpected IDNAMappingResultType: \(result.type)")
+            fatalError("Unexpected CSwiftIDNAMappingResultType: \(result.type)")
         }
     }
 }

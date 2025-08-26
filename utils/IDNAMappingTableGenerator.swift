@@ -7,7 +7,7 @@ import FoundationNetworking
 #endif
 
 let mappingTableURL = "https://www.unicode.org/Public/idna/17.0.0/IdnaMappingTable.txt"
-let outputPath = "Sources/CSwiftIDNA/src/idna_mapping_table.c"
+let outputPath = "Sources/CSwiftIDNA/src/cswift_idna_mapping_table.c"
 
 func codePointsRangeText(_ codePoint1: UInt32, _ codePoint2: UInt32?) -> String {
     if let codePoint2 = codePoint2 {
@@ -122,17 +122,17 @@ func generate() -> String {
         #include <stdint.h>
         #include <stddef.h>
 
-        #define UNICODE_MAX_CODE_POINT 0x10FFFFU
+        #define CSWIFT_UNICODE_MAX_CODE_POINT 0x10FFFFU
 
-        static const IDNAMappingResult idna_mapping_table[];
-        static const uint32_t idna_lookup_table[UNICODE_MAX_CODE_POINT + 1];
+        static const CSwiftIDNAMappingResult cswift_idna_mapping_table[];
+        static const uint32_t cswift_idna_lookup_table[CSWIFT_UNICODE_MAX_CODE_POINT + 1];
 
-        const IDNAMappingResult* idna_mapping_lookup(uint32_t code_point) {
-            uint32_t index = idna_lookup_table[code_point];
-            return &idna_mapping_table[index];
+        const CSwiftIDNAMappingResult* cswift_idna_mapping_lookup(uint32_t code_point) {
+            uint32_t index = cswift_idna_lookup_table[code_point];
+            return &cswift_idna_mapping_table[index];
         }
 
-        static const IDNAMappingResult idna_mapping_table[] = {
+        static const CSwiftIDNAMappingResult cswift_idna_mapping_table[] = {
 
         """
 
@@ -223,8 +223,8 @@ func generate() -> String {
     generatedCode += """
         };
 
-        // Maps code point to index in idna_mapping_table for O(1) lookups.
-        static const uint32_t idna_lookup_table[UNICODE_MAX_CODE_POINT + 1] = {
+        // Maps code point to index in cswift_idna_mapping_table for O(1) lookups.
+        static const uint32_t cswift_idna_lookup_table[CSWIFT_UNICODE_MAX_CODE_POINT + 1] = {
 
         """
 

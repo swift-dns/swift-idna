@@ -7,9 +7,9 @@ import FoundationNetworking
 #endif
 
 let testV2URL = "https://www.unicode.org/Public/idna/17.0.0/IdnaTestV2.txt"
-let outputPath = "Sources/CSwiftIDNATesting/src/idna_test_v2_cases.c"
+let outputPath = "Sources/CSwiftIDNATesting/src/cswift_idna_test_v2_cases.c"
 
-struct IDNATestV2CCase {
+struct CSwiftIDNATestV2CCase {
     let source: String
     let toUnicode: String?
     let toUnicodeStatus: [String]
@@ -58,7 +58,7 @@ func generate() -> String {
 
     let utf8String = String(decoding: file, as: UTF8.self)
 
-    var testCases: [IDNATestV2CCase] = []
+    var testCases: [CSwiftIDNATestV2CCase] = []
     for var line in utf8String.split(separator: "\n", omittingEmptySubsequences: false) {
         line = Substring(line.trimmingWhitespaces())
         if line.hasPrefix("#") { continue }
@@ -80,7 +80,7 @@ func generate() -> String {
         let toUnicodeStatus = parseStatusString(parts[2])
         let toAsciiN = parts[3].emptyIfIsOnlyQuotesAndNilIfEmpty()
         let toAsciiNStatus = parseStatusString(parts[4])
-        let testCase = IDNATestV2CCase(
+        let testCase = CSwiftIDNATestV2CCase(
             source: source,
             toUnicode: toUnicode,
             toUnicodeStatus: toUnicodeStatus,
@@ -102,16 +102,16 @@ func generate() -> String {
         #include "../include/CSwiftIDNATesting.h"
         #include <stddef.h>
 
-        #define IDNA_TEST_V2_CASES_COUNT \(filteredTestCases.count)
+        #define CSwift_IDNA_TEST_V2_CASES_COUNT \(filteredTestCases.count)
 
-        extern const IDNATestV2CCase idna_test_v2_cases[];
+        extern const CSwiftIDNATestV2CCase cswift_idna_test_v2_cases[];
 
-        const IDNATestV2CCase* idna_test_v2_all_cases(size_t* count) {
-            *count = IDNA_TEST_V2_CASES_COUNT;
-            return idna_test_v2_cases;
+        const CSwiftIDNATestV2CCase* cswift_idna_test_v2_all_cases(size_t* count) {
+            *count = CSwift_IDNA_TEST_V2_CASES_COUNT;
+            return cswift_idna_test_v2_cases;
         }
 
-        const IDNATestV2CCase idna_test_v2_cases[] = {
+        const CSwiftIDNATestV2CCase cswift_idna_test_v2_cases[] = {
 
         """
 

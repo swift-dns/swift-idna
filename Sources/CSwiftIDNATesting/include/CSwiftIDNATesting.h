@@ -11,8 +11,8 @@ typedef struct {
     const char* toAsciiN;
     const char** toAsciiNStatus;
     size_t toAsciiNStatusCount;
-} IDNATestV2CCase;
+} CSwiftIDNATestV2CCase;
 
-const IDNATestV2CCase* idna_test_v2_all_cases(size_t* count);
+const CSwiftIDNATestV2CCase* cswift_idna_test_v2_all_cases(size_t* count);
 
 #endif // CSWIFT_DNS_IDNA_TESTING_H

@@ -77,7 +77,7 @@ case .mightChangeAfterIDNAConversion:
 
 ## Implementation
 
-This package uses Unicode 17's [IDNA test v2 suite](https://www.unicode.org/Public/idna/16.0.0/IdnaTestV2.txt) with ~6400 test cases to ensure full compatibility.
+This package uses Unicode 17's [IDNA test v2 suite](https://www.unicode.org/Public/idna/17.0.0/IdnaTestV2.txt) with ~6400 test cases to ensure full compatibility.
 
 Runs each test case extensively so each test case might even result in 2-3-4-5 test runs.
 

@@ -9,7 +9,7 @@ typedef enum {
     IDNA_STATUS_NV8 = 0,
     IDNA_STATUS_XV8 = 1,
     IDNA_STATUS_NONE = 2
-} IDNA2008Status;
+} CSwiftIDNA2008Status;
 
 // IDNA mapping result types (matching IDNAMapping cases)
 typedef enum {
@@ -18,18 +18,18 @@ typedef enum {
     IDNA_RESULT_DEVIATION = 2,
     IDNA_RESULT_DISALLOWED = 3,
     IDNA_RESULT_IGNORED = 4
-} IDNAMappingResultType;
+} CSwiftIDNAMappingResultType;
 
 // Structure to hold mapping result data
 typedef struct {
     uint8_t type;
-    uint8_t status;  // Only used for valid results
+    uint8_t status; // Only used for valid results
     const uint32_t* mapped_unicode_scalars; // Array of mapped Unicode scalars (for mapped/deviation)
-    uint8_t mapped_count;    // Number of mapped Unicode scalars
-} IDNAMappingResult;
+    uint8_t mapped_count; // Number of mapped Unicode scalars
+} CSwiftIDNAMappingResult;
 
 // Look up IDNA mapping for a given Unicode code point
-// Returns a pointer to a static IDNAMappingResult
-const IDNAMappingResult *idna_mapping_lookup(uint32_t code_point);
+// Returns a pointer to a static CSwiftIDNAMappingResult
+const CSwiftIDNAMappingResult *cswift_idna_mapping_lookup(uint32_t code_point);
 
 #endif // CSWIFT_DNS_IDNA_H
