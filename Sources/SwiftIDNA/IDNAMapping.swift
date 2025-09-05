@@ -8,8 +8,8 @@ public enum IDNAMapping: Equatable {
     }
 
     case valid(IDNA2008Status)
-    case mapped([Unicode.Scalar])
-    case deviation([Unicode.Scalar])
+    case mapped(IDNAUnicodeScalarsView<[UInt32]>)
+    case deviation(IDNAUnicodeScalarsView<[UInt32]>)
     case disallowed
     case ignored
 }
@@ -37,29 +37,29 @@ extension IDNAMapping {
                 }
             return .valid(status)
         case 1:
-            let mappedCodePoints = Array(
+            let codePoints = Array(
                 UnsafeBufferPointer(
                     start: result.mapped_unicode_scalars,
                     count: Int(result.mapped_count)
                 )
-            ).map {
-                /// `unsafelyUnwrapped` because the C function is guaranteed to return a Unicode.Scalar.
-                /// There are also extensive tests in IDNATests for this function.
-                Unicode.Scalar($0).unsafelyUnwrapped
-            }
-            return .mapped(mappedCodePoints)
+            )
+            /// These are guaranteed to be valid Unicode scalars.
+            /// We wrap these in a view-like type (IDNAUnicodeScalarsView) to ensure we don't need
+            /// allocations while having a way to guarantee they are valid Unicode scalars to users.
+            let scalars = IDNAUnicodeScalarsView(__uncheckedElements: codePoints)
+            return .mapped(scalars)
         case 2:
-            let mappedCodePoints = Array(
+            let codePoints = Array(
                 UnsafeBufferPointer(
                     start: result.mapped_unicode_scalars,
                     count: Int(result.mapped_count)
                 )
-            ).map {
-                /// `unsafelyUnwrapped` because the C function is guaranteed to return a Unicode.Scalar.
-                /// There are also extensive tests in IDNATests for this function.
-                Unicode.Scalar($0).unsafelyUnwrapped
-            }
-            return .deviation(mappedCodePoints)
+            )
+            /// These are guaranteed to be valid Unicode scalars.
+            /// We wrap these in a view-like type (IDNAUnicodeScalarsView) to ensure we don't need
+            /// allocations while having a way to guarantee they are valid Unicode scalars to users.
+            let scalars = IDNAUnicodeScalarsView(__uncheckedElements: codePoints)
+            return .deviation(scalars)
         case 3:
             return .disallowed
         case 4:
