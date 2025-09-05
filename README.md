@@ -104,7 +104,7 @@ To use the `swift-idna` library in a SwiftPM project,
 add the following line to the dependencies in your `Package.swift` file:
 
 ```swift
-.package(url: "https://github.com/mahdibm/swift-idna.git", branch: "main"),
+.package(url: "https://github.com/mahdibm/swift-idna.git", from: "1.0.0-beta.5"),
 ```
 
 Include `SwiftIDNA` as a dependency for your targets:
