@@ -8,8 +8,8 @@ public enum IDNAMapping: Equatable {
     }
 
     case valid(IDNA2008Status)
-    case mapped(IDNAUnicodeScalarsView)
-    case deviation(IDNAUnicodeScalarsView)
+    case mapped(IDNAUnicodeScalarView)
+    case deviation(IDNAUnicodeScalarView)
     case disallowed
     case ignored
 }
@@ -38,9 +38,9 @@ extension IDNAMapping {
             return .valid(status)
         case 1:
             /// These are guaranteed to be valid Unicode scalars.
-            /// We wrap these in a view-like type (IDNAUnicodeScalarsView) to ensure we don't need
+            /// We wrap these in a view-like type (IDNAUnicodeScalarView) to ensure we don't need
             /// allocations while having a way to guarantee they are valid Unicode scalars to users.
-            let scalars = IDNAUnicodeScalarsView(
+            let scalars = IDNAUnicodeScalarView(
                 staticPointer: UnsafeBufferPointer(
                     start: result.mapped_unicode_scalars,
                     count: Int(result.mapped_count)
@@ -49,9 +49,9 @@ extension IDNAMapping {
             return .mapped(scalars)
         case 2:
             /// These are guaranteed to be valid Unicode scalars.
-            /// We wrap these in a view-like type (IDNAUnicodeScalarsView) to ensure we don't need
+            /// We wrap these in a view-like type (IDNAUnicodeScalarView) to ensure we don't need
             /// allocations while having a way to guarantee they are valid Unicode scalars to users.
-            let scalars = IDNAUnicodeScalarsView(
+            let scalars = IDNAUnicodeScalarView(
                 staticPointer: UnsafeBufferPointer(
                     start: result.mapped_unicode_scalars,
                     count: Int(result.mapped_count)

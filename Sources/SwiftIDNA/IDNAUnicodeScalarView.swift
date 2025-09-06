@@ -11,14 +11,14 @@ import Darwin
 #elseif canImport(WASILibc)
 @preconcurrency import WASILibc
 #else
-#error("The SwiftIDNA.IDNAUnicodeScalarsView module was unable to identify your C library.")
+#error("The SwiftIDNA.IDNAUnicodeScalarView module was unable to identify your C library.")
 #endif
 
 /// A type that wraps some `UInt32`s that this library can guarantee to be valid Unicode scalars.
 ///
 /// Unchecked `Sendable` because the pointer is guaranteed to be valid for the duration of the program execution.
 /// That's also why we don't try to deallocate.
-public struct IDNAUnicodeScalarsView: _SwiftIDNASendableMetatype, @unchecked Sendable {
+public struct IDNAUnicodeScalarView: _SwiftIDNASendableMetatype, @unchecked Sendable {
     @usableFromInline
     let pointer: UnsafeBufferPointer<UInt32>
 
@@ -29,8 +29,8 @@ public struct IDNAUnicodeScalarsView: _SwiftIDNASendableMetatype, @unchecked Sen
 }
 
 /// MARK: +Equatable
-extension IDNAUnicodeScalarsView: Equatable {
-    public static func == (lhs: IDNAUnicodeScalarsView, rhs: IDNAUnicodeScalarsView) -> Bool {
+extension IDNAUnicodeScalarView: Equatable {
+    public static func == (lhs: IDNAUnicodeScalarView, rhs: IDNAUnicodeScalarView) -> Bool {
         lhs.count == rhs.count
             && lhs.count != 0
             && memcmp(lhs.pointer.baseAddress!, rhs.pointer.baseAddress!, lhs.count * 4) == 0
@@ -38,7 +38,7 @@ extension IDNAUnicodeScalarsView: Equatable {
 }
 
 /// MARK: +Sequence
-extension IDNAUnicodeScalarsView: Sequence {
+extension IDNAUnicodeScalarView: Sequence {
     public typealias Element = Unicode.Scalar
 
     @inlinable
@@ -53,12 +53,12 @@ extension IDNAUnicodeScalarsView: Sequence {
 
     public struct Iterator: _SwiftIDNASendableMetatype, IteratorProtocol {
         @usableFromInline
-        var base: IDNAUnicodeScalarsView
+        var base: IDNAUnicodeScalarView
         @usableFromInline
         var index: UInt8
 
         @inlinable
-        init(base: IDNAUnicodeScalarsView) {
+        init(base: IDNAUnicodeScalarView) {
             self.base = base
             self.index = 0
         }
@@ -75,7 +75,7 @@ extension IDNAUnicodeScalarsView: Sequence {
 }
 
 /// MARK: +Collection
-extension IDNAUnicodeScalarsView: Collection {
+extension IDNAUnicodeScalarView: Collection {
     public typealias Index = Int
     public typealias Indices = Range<Int>
 
@@ -149,10 +149,10 @@ extension IDNAUnicodeScalarsView: Collection {
 }
 
 /// MARK: +CustomStringConvertible
-extension IDNAUnicodeScalarsView: CustomStringConvertible {
+extension IDNAUnicodeScalarView: CustomStringConvertible {
     @inlinable
     public var description: String {
-        var result = "IDNAUnicodeScalarsView(["
+        var result = "IDNAUnicodeScalarView(["
         for idx in self.indices {
             let value = self.pointer.baseAddress.unsafelyUnwrapped.advanced(by: idx).pointee
             result.append("0x\(String(value, radix: 16, uppercase: true)), ")
@@ -163,11 +163,11 @@ extension IDNAUnicodeScalarsView: CustomStringConvertible {
 }
 
 /// MARK: +CustomDebugStringConvertible
-extension IDNAUnicodeScalarsView: CustomDebugStringConvertible {
+extension IDNAUnicodeScalarView: CustomDebugStringConvertible {
     @inlinable
     public var debugDescription: String {
         var result =
-            "IDNAUnicodeScalarsView(pointer: \(self.pointer.debugDescription), count: \(self.count), elements: ["
+            "IDNAUnicodeScalarView(pointer: \(self.pointer.debugDescription), count: \(self.count), elements: ["
         for idx in self.indices {
             let value = self.pointer.baseAddress.unsafelyUnwrapped.advanced(by: idx).pointee
             result.append("0x\(String(value, radix: 16, uppercase: true)), ")
