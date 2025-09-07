@@ -33,7 +33,12 @@ extension IDNAUnicodeScalarView: Equatable {
     public static func == (lhs: IDNAUnicodeScalarView, rhs: IDNAUnicodeScalarView) -> Bool {
         lhs.count == rhs.count
             && lhs.count != 0
-            && memcmp(lhs.pointer.baseAddress!, rhs.pointer.baseAddress!, lhs.count * 4) == 0
+            && memcmp(
+                /// If the count is non-zero then the `UnsafeBufferPointer` guarantees there is a non-nil pointer.
+                lhs.pointer.baseAddress.unsafelyUnwrapped,
+                rhs.pointer.baseAddress.unsafelyUnwrapped,
+                lhs.count * 4
+            ) == 0
     }
 }
 
@@ -55,7 +60,7 @@ extension IDNAUnicodeScalarView: Sequence {
         @usableFromInline
         var base: IDNAUnicodeScalarView
         @usableFromInline
-        var index: UInt8
+        var index: Int
 
         @inlinable
         init(base: IDNAUnicodeScalarView) {
@@ -68,7 +73,9 @@ extension IDNAUnicodeScalarView: Sequence {
             guard self.index < self.base.count else { return nil }
             defer { self.index += 1 }
             let value = self.base.pointer.baseAddress.unsafelyUnwrapped
-                .advanced(by: Int(self.index)).pointee
+                .advanced(by: self.index).pointee
+            /// `unsafelyUnwrapped` because the value is guaranteed to be a valid Unicode scalar.
+            /// That's the whole point of the `IDNAUnicodeScalarView` type.
             return Unicode.Scalar(value).unsafelyUnwrapped
         }
     }
@@ -95,7 +102,10 @@ extension IDNAUnicodeScalarView: Collection {
             return nil
         }
         return Unicode.Scalar(
+            /// If the count is non-zero then the `UnsafeBufferPointer` guarantees there is a non-nil pointer.
             self.pointer.baseAddress.unsafelyUnwrapped.pointee
+                /// `unsafelyUnwrapped` down there because the value is guaranteed to be a valid Unicode scalar.
+                /// That's the whole point of the `IDNAUnicodeScalarView` type.
         ).unsafelyUnwrapped
     }
 
@@ -117,21 +127,30 @@ extension IDNAUnicodeScalarView: Collection {
     @inlinable
     public func index(after i: Int) -> Int {
         let next = i + 1
-        precondition(next < self.count, "Index out of bounds")
+        precondition(
+            next >= 0 && next < self.count,
+            "Index out of bounds: '\(next)', count: '\(self.count)'"
+        )
         return next
     }
 
     @inlinable
     public func index(before i: Int) -> Int {
         let previous = i - 1
-        precondition(previous >= 0, "Index out of bounds")
+        precondition(
+            previous >= 0 && previous < self.count,
+            "Index out of bounds: '\(previous)', count: '\(self.count)'"
+        )
         return previous
     }
 
     @inlinable
     public subscript(position: Int) -> Unicode.Scalar {
         _read {
-            precondition(position >= 0 && position < self.count, "Index out of bounds")
+            precondition(
+                position >= 0 && position < self.count,
+                "Index out of bounds: '\(position)', count: '\(self.count)'"
+            )
             yield Unicode.Scalar(
                 self.pointer.baseAddress.unsafelyUnwrapped.advanced(by: position).pointee
             ).unsafelyUnwrapped
@@ -153,9 +172,16 @@ extension IDNAUnicodeScalarView: CustomStringConvertible {
     @inlinable
     public var description: String {
         var result = "IDNAUnicodeScalarView(["
+        let elementsCount = self.count
+        result.reserveCapacity(result.count + elementsCount * 6 + 2)
+        let lastIdx = elementsCount - 1
         for idx in self.indices {
+            /// If the count is non-zero then the `UnsafeBufferPointer` guarantees there is a non-nil pointer.
             let value = self.pointer.baseAddress.unsafelyUnwrapped.advanced(by: idx).pointee
-            result.append("0x\(String(value, radix: 16, uppercase: true)), ")
+            result.append("0x\(String(value, radix: 16, uppercase: true))")
+            if idx != lastIdx {
+                result.append(", ")
+            }
         }
         result.append("])")
         return result
@@ -168,9 +194,16 @@ extension IDNAUnicodeScalarView: CustomDebugStringConvertible {
     public var debugDescription: String {
         var result =
             "IDNAUnicodeScalarView(pointer: \(self.pointer.debugDescription), count: \(self.count), elements: ["
+        let elementsCount = self.count
+        result.reserveCapacity(result.count + elementsCount * 6 + 2)
+        let lastIdx = elementsCount - 1
         for idx in self.indices {
+            /// If the count is non-zero then the `UnsafeBufferPointer` guarantees there is a non-nil pointer.
             let value = self.pointer.baseAddress.unsafelyUnwrapped.advanced(by: idx).pointee
-            result.append("0x\(String(value, radix: 16, uppercase: true)), ")
+            result.append("0x\(String(value, radix: 16, uppercase: true))")
+            if idx != lastIdx {
+                result.append(", ")
+            }
         }
         result.append("])")
         return result

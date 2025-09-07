@@ -1,3 +1,5 @@
+/// TODO: Use `UTF8Span.checkForNFC(quickCheck: false)` instead of this.
+/// That would require macos 26 unfortunately.
 extension String {
     var nfcCodePoints: [UInt8] {
         var codePoints = [UInt8]()
