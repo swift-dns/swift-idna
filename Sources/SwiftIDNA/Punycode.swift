@@ -201,12 +201,12 @@ enum Punycode {
                 }.min().unsafelyUnwrapped.value
             )
 
-            delta = delta &+ ((m &- n) &* (h &+ 1))
+            delta &+= ((m &- n) &* (h &+ 1))
 
             n = m
             for codePoint in input.unicodeScalars {
                 if codePoint.value < n || codePoint.isASCII {
-                    delta += 1
+                    delta &+= 1
                 }
 
                 if codePoint.value == n {
@@ -239,11 +239,11 @@ enum Punycode {
 
                     bias = adapt(delta: delta, codePointCount: h &+ 1, isFirstTime: h == b)
                     delta = 0
-                    h += 1
+                    h &+= 1
                 }
             }
-            delta += 1
-            n += 1
+            delta &+= 1
+            n &+= 1
         }
 
         input = Substring(Substring.UnicodeScalarView(output))
@@ -315,7 +315,7 @@ enum Punycode {
                     return false
                 }
 
-                i = i &+ (digit &* w)
+                i &+= (digit &* w)
 
                 let t =
                     if k <= (bias &+ Constants.tMin) {
@@ -347,7 +347,7 @@ enum Punycode {
 
             output.insert(Unicode.Scalar(n).unsafelyUnwrapped, at: i)
 
-            i += 1
+            i &+= 1
         }
 
         input = Substring(Substring.UnicodeScalarView(output))
