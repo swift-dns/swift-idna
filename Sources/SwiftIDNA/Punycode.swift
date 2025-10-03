@@ -268,10 +268,10 @@ enum Punycode {
     static func uncheckedMapDigitToUnicodeScalar(_ digit: Int) -> Unicode.Scalar {
         assert(digit >= 0 && digit <= 35, "Invalid digit: \(digit)")
         if digit <= 25 {
-            return Unicode.Scalar(0x61 + digit).unsafelyUnwrapped
+            return Unicode.Scalar(0x61 &+ digit).unsafelyUnwrapped
         }
         if digit <= 35 {
-            return Unicode.Scalar(0x30 + digit - 26).unsafelyUnwrapped
+            return Unicode.Scalar(0x30 &+ digit &- 26).unsafelyUnwrapped
         }
         preconditionFailure("Invalid digit: \(digit)")
     }
@@ -283,15 +283,15 @@ enum Punycode {
         let value = unicodeScalar.value
 
         if value >= 0x61, value <= 0x7a {
-            return Int(value - 0x61)
+            return Int(value &- 0x61)
         }
 
         if value >= 0x41, value <= 0x5a {
-            return Int(value - 0x41)
+            return Int(value &- 0x41)
         }
 
         if value <= 0x39, value >= 0x30 {
-            return Int(value - 0x30 + 26)
+            return Int(value &- 0x30 &+ 26)
         }
 
         return nil
