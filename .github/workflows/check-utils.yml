@@ -1,4 +1,4 @@
-name: utils-check
+name: check-utils
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -16,7 +16,7 @@ jobs:
   check-utils:
     runs-on: ubuntu-latest
 
-    container: swift:6.0-noble
+    container: swift:6.2-noble
 
     timeout-minutes: 5
 

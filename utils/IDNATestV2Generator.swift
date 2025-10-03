@@ -6,7 +6,7 @@ import Foundation
 import FoundationNetworking
 #endif
 
-let testV2URL = "https://www.unicode.org/Public/idna/17.0.0/IdnaTestV2.txt"
+let testV2URL = "https://www.unicode.org/Public/idna/latest/IdnaTestV2.txt"
 let outputPath = "Sources/CSwiftIDNATesting/src/cswift_idna_test_v2_cases.c"
 
 struct CSwiftIDNATestV2CCase {

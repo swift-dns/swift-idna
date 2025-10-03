@@ -6,7 +6,7 @@ import Foundation
 import FoundationNetworking
 #endif
 
-let mappingTableURL = "https://www.unicode.org/Public/idna/17.0.0/IdnaMappingTable.txt"
+let mappingTableURL = "https://www.unicode.org/Public/idna/latest/IdnaMappingTable.txt"
 let outputPath = "Sources/CSwiftIDNA/src/cswift_idna_mapping_table.c"
 
 func codePointsRangeText(_ codePoint1: UInt32, _ codePoint2: UInt32?) -> String {
