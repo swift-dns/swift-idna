@@ -36,116 +36,6 @@ enum Punycode {
         static var initialN: Int {
             128
         }
-
-        /// [Punycode: A Bootstring encoding of Unicode for IDNA: Parameter values for Punycode](https://datatracker.ietf.org/doc/html/rfc3492#section-5)
-        /// 0-25 -> a-z; 26-35 -> 0-9
-        @usableFromInline
-        static let digitToUnicodeScalarLookupTable: [Int: Unicode.Scalar] = [
-            0: Unicode.Scalar(0x61),
-            1: Unicode.Scalar(0x62),
-            2: Unicode.Scalar(0x63),
-            3: Unicode.Scalar(0x64),
-            4: Unicode.Scalar(0x65),
-            5: Unicode.Scalar(0x66),
-            6: Unicode.Scalar(0x67),
-            7: Unicode.Scalar(0x68),
-            8: Unicode.Scalar(0x69),
-            9: Unicode.Scalar(0x6a),
-            10: Unicode.Scalar(0x6b),
-            11: Unicode.Scalar(0x6c),
-            12: Unicode.Scalar(0x6d),
-            13: Unicode.Scalar(0x6e),
-            14: Unicode.Scalar(0x6f),
-            15: Unicode.Scalar(0x70),
-            16: Unicode.Scalar(0x71),
-            17: Unicode.Scalar(0x72),
-            18: Unicode.Scalar(0x73),
-            19: Unicode.Scalar(0x74),
-            20: Unicode.Scalar(0x75),
-            21: Unicode.Scalar(0x76),
-            22: Unicode.Scalar(0x77),
-            23: Unicode.Scalar(0x78),
-            24: Unicode.Scalar(0x79),
-            25: Unicode.Scalar(0x7a),
-            26: Unicode.Scalar(0x30),
-            27: Unicode.Scalar(0x31),
-            28: Unicode.Scalar(0x32),
-            29: Unicode.Scalar(0x33),
-            30: Unicode.Scalar(0x34),
-            31: Unicode.Scalar(0x35),
-            32: Unicode.Scalar(0x36),
-            33: Unicode.Scalar(0x37),
-            34: Unicode.Scalar(0x38),
-            35: Unicode.Scalar(0x39),
-        ]
-
-        /// [Punycode: A Bootstring encoding of Unicode for IDNA: Parameter values for Punycode](https://datatracker.ietf.org/doc/html/rfc3492#section-5)
-        /// A-Z -> 0-25; a-z -> 0-25; 0-9 -> 26-35
-        @usableFromInline
-        static let unicodeScalarToDigitLookupTable: [Unicode.Scalar: Int] = [
-            Unicode.Scalar(0x41): 0,
-            Unicode.Scalar(0x42): 1,
-            Unicode.Scalar(0x43): 2,
-            Unicode.Scalar(0x44): 3,
-            Unicode.Scalar(0x45): 4,
-            Unicode.Scalar(0x46): 5,
-            Unicode.Scalar(0x47): 6,
-            Unicode.Scalar(0x48): 7,
-            Unicode.Scalar(0x49): 8,
-            Unicode.Scalar(0x4a): 9,
-            Unicode.Scalar(0x4b): 10,
-            Unicode.Scalar(0x4c): 11,
-            Unicode.Scalar(0x4d): 12,
-            Unicode.Scalar(0x4e): 13,
-            Unicode.Scalar(0x4f): 14,
-            Unicode.Scalar(0x50): 15,
-            Unicode.Scalar(0x51): 16,
-            Unicode.Scalar(0x52): 17,
-            Unicode.Scalar(0x53): 18,
-            Unicode.Scalar(0x54): 19,
-            Unicode.Scalar(0x55): 20,
-            Unicode.Scalar(0x56): 21,
-            Unicode.Scalar(0x57): 22,
-            Unicode.Scalar(0x58): 23,
-            Unicode.Scalar(0x59): 24,
-            Unicode.Scalar(0x5a): 25,
-            Unicode.Scalar(0x61): 0,
-            Unicode.Scalar(0x62): 1,
-            Unicode.Scalar(0x63): 2,
-            Unicode.Scalar(0x64): 3,
-            Unicode.Scalar(0x65): 4,
-            Unicode.Scalar(0x66): 5,
-            Unicode.Scalar(0x67): 6,
-            Unicode.Scalar(0x68): 7,
-            Unicode.Scalar(0x69): 8,
-            Unicode.Scalar(0x6a): 9,
-            Unicode.Scalar(0x6b): 10,
-            Unicode.Scalar(0x6c): 11,
-            Unicode.Scalar(0x6d): 12,
-            Unicode.Scalar(0x6e): 13,
-            Unicode.Scalar(0x6f): 14,
-            Unicode.Scalar(0x70): 15,
-            Unicode.Scalar(0x71): 16,
-            Unicode.Scalar(0x72): 17,
-            Unicode.Scalar(0x73): 18,
-            Unicode.Scalar(0x74): 19,
-            Unicode.Scalar(0x75): 20,
-            Unicode.Scalar(0x76): 21,
-            Unicode.Scalar(0x77): 22,
-            Unicode.Scalar(0x78): 23,
-            Unicode.Scalar(0x79): 24,
-            Unicode.Scalar(0x7a): 25,
-            Unicode.Scalar(0x30): 26,
-            Unicode.Scalar(0x31): 27,
-            Unicode.Scalar(0x32): 28,
-            Unicode.Scalar(0x33): 29,
-            Unicode.Scalar(0x34): 30,
-            Unicode.Scalar(0x35): 31,
-            Unicode.Scalar(0x36): 32,
-            Unicode.Scalar(0x37): 33,
-            Unicode.Scalar(0x38): 34,
-            Unicode.Scalar(0x39): 35,
-        ]
     }
 
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Encoding procedure](https://datatracker.ietf.org/doc/html/rfc3492#section-6.3)
@@ -175,7 +65,7 @@ enum Punycode {
     /// is necessary because the inputs are not necessarily valid IDNA
     /// labels.
     /// ```
-    @usableFromInline
+    @inlinable
     static func encode(_ input: inout Substring) -> Bool {
         var n = Constants.initialN
         var delta = 0
@@ -228,14 +118,12 @@ enum Punycode {
                         let digit = t &+ ((q &- t) % (Constants.base &- t))
                         /// Logically this is safe because we know that digit is in the range 0...35
                         /// There are also extensive tests for this in the IDNATests.swift.
-                        output.append(
-                            Constants.digitToUnicodeScalarLookupTable[digit].unsafelyUnwrapped
-                        )
+                        output.append(Punycode.uncheckedMapDigitToUnicodeScalar(digit))
                         q = (q &- t) / (Constants.base &- t)
                     }
                     /// Logically this is safe because we know that digit is in the range 0...35
                     /// There are also extensive tests for this in the IDNATests.swift.
-                    output.append(Constants.digitToUnicodeScalarLookupTable[q].unsafelyUnwrapped)
+                    output.append(Punycode.uncheckedMapDigitToUnicodeScalar(q))
 
                     bias = adapt(delta: delta, codePointCount: h &+ 1, isFirstTime: h == b)
                     delta = 0
@@ -278,7 +166,7 @@ enum Punycode {
     /// is necessary because the inputs are not necessarily valid IDNA
     /// labels.
     /// ```
-    @usableFromInline
+    @inlinable
     static func decode(_ input: inout Substring) -> Bool {
         var n = Constants.initialN
         var i = 0
@@ -311,7 +199,7 @@ enum Punycode {
                     return false
                 }
                 input = Substring(input.unicodeScalars.dropFirst())
-                guard let digit = Constants.unicodeScalarToDigitLookupTable[codePoint] else {
+                guard let digit = Punycode.mapUnicodeScalarToDigit(codePoint) else {
                     return false
                 }
 
@@ -356,7 +244,7 @@ enum Punycode {
     }
 
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Bias adaptation function](https://datatracker.ietf.org/doc/html/rfc3492#section-6.1)
-    @usableFromInline
+    @inlinable
     static func adapt(delta: Int, codePointCount: Int, isFirstTime: Bool) -> Int {
         var delta =
             if isFirstTime {
@@ -371,5 +259,41 @@ enum Punycode {
             k = k &+ Constants.base
         }
         return k &+ (((Constants.base &- Constants.tMin &+ 1) &* delta) / (delta &+ Constants.skew))
+    }
+
+    /// [Punycode: A Bootstring encoding of Unicode for IDNA: Parameter values for Punycode](https://datatracker.ietf.org/doc/html/rfc3492#section-5)
+    /// 0-25 -> a-z; 26-35 -> 0-9
+    /// This function assumes the digit is valid and is in range 0...35.
+    @inlinable
+    static func uncheckedMapDigitToUnicodeScalar(_ digit: Int) -> Unicode.Scalar {
+        assert(digit >= 0 && digit <= 35, "Invalid digit: \(digit)")
+        if digit <= 25 {
+            return Unicode.Scalar(0x61 + digit).unsafelyUnwrapped
+        }
+        if digit <= 35 {
+            return Unicode.Scalar(0x30 + digit - 26).unsafelyUnwrapped
+        }
+        preconditionFailure("Invalid digit: \(digit)")
+    }
+
+    /// [Punycode: A Bootstring encoding of Unicode for IDNA: Parameter values for Punycode](https://datatracker.ietf.org/doc/html/rfc3492#section-5)
+    /// A-Z -> 0-25; a-z -> 0-25; 0-9 -> 26-35
+    @inlinable
+    static func mapUnicodeScalarToDigit(_ unicodeScalar: Unicode.Scalar) -> Int? {
+        let value = unicodeScalar.value
+
+        if value >= 0x61, value <= 0x7a {
+            return Int(value - 0x61)
+        }
+
+        if value >= 0x41, value <= 0x5a {
+            return Int(value - 0x41)
+        }
+
+        if value <= 0x39, value >= 0x30 {
+            return Int(value - 0x30 + 26)
+        }
+
+        return nil
     }
 }
