@@ -1,4 +1,4 @@
-@available(swiftIDNAApplePlatforms 26, *)
+@available(swiftIDNAApplePlatforms 13, *)
 extension Punycode {
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Encoding procedure](https://datatracker.ietf.org/doc/html/rfc3492#section-6.3)
     /// Returns true if successful and false if conversion failed.
@@ -47,8 +47,7 @@ extension Punycode {
         let b = output.count
         var h = b
 
-        let utf8Span = UTF8Span(unchecked: inputBytesSpan)
-        var unicodeScalarsIterator = utf8Span.makeUnicodeScalarIterator()
+        var unicodeScalarsIterator = inputBytesSpan.makeCompatibleUnicodeScalarIterator()
         /// Mark h-amount of Unicode Scalars, as already-read.
         for _ in 0..<h {
             _ = unicodeScalarsIterator.skipForward()
@@ -60,9 +59,9 @@ extension Punycode {
 
         /// FIXME: check to see if Int is enough in 32-bit platforms too
 
-        while unicodeScalarsIterator.currentCodeUnitOffset != utf8Span.count {
+        while unicodeScalarsIterator.currentCodeUnitOffset != inputBytesSpan.count {
             var m: Int = .max
-            var unicodeScalarsIteratorForM = utf8Span.makeUnicodeScalarIterator()
+            var unicodeScalarsIteratorForM = inputBytesSpan.makeCompatibleUnicodeScalarIterator()
             while let codePoint = unicodeScalarsIteratorForM.next() {
                 if !codePoint.isASCII, codePoint.value >= n {
                     m = min(m, Int(codePoint.value))
@@ -72,7 +71,7 @@ extension Punycode {
             delta &+= ((m &- n) &* (h &+ 1))
 
             n = m
-            var originalUnicodeScalarsIterator = utf8Span.makeUnicodeScalarIterator()
+            var originalUnicodeScalarsIterator = inputBytesSpan.makeCompatibleUnicodeScalarIterator()
             while let codePoint = originalUnicodeScalarsIterator.next() {
                 if codePoint.value < n || codePoint.isASCII {
                     delta &+= 1
@@ -173,13 +172,12 @@ extension Punycode {
             inputBytesSpan = inputBytesSpan.extracting(unchecked: inputBytesRange)
         }
 
-        let utf8Span = UTF8Span(unchecked: inputBytesSpan)
+        var unicodeScalarsIterator = inputBytesSpan.makeCompatibleUnicodeScalarIterator()
 
-        var unicodeScalarsIterator = utf8Span.makeUnicodeScalarIterator()
         /// unicodeScalarsIndexToUtf8Index[unicodeScalarsIndex] = utf8Index
         /// TODO: check if this "lookup table" is actually needed or not.
         var unicodeScalarsIndexToUTF8Index = (0..<output.count).map { $0 }
-        while unicodeScalarsIterator.currentCodeUnitOffset != utf8Span.count {
+        while unicodeScalarsIterator.currentCodeUnitOffset != inputBytesSpan.count {
             let oldi = i
             var w = 1
             for k in stride(from: Constants.base, to: .max, by: Constants.base) {

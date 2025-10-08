@@ -18,7 +18,7 @@ import Darwin
 ///
 /// Unchecked `Sendable` because the pointer is guaranteed to be valid for the duration of the program execution.
 /// That's also why we don't try to deallocate.
-public struct IDNAUnicodeScalarView: _SwiftIDNASendableMetatype, @unchecked Sendable {
+public struct IDNAUnicodeScalarView: SendableMetatype, @unchecked Sendable {
     @usableFromInline
     let pointer: UnsafeBufferPointer<UInt32>
 
@@ -56,7 +56,7 @@ extension IDNAUnicodeScalarView: Sequence {
         Iterator(base: self)
     }
 
-    public struct Iterator: _SwiftIDNASendableMetatype, IteratorProtocol {
+    public struct Iterator: SendableMetatype, IteratorProtocol {
         @usableFromInline
         var base: IDNAUnicodeScalarView
         @usableFromInline

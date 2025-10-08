@@ -14,19 +14,17 @@ extension String {
             var idx = 0
             self._withNFCCodeUnits {
                 stringBuffer[idx] = $0
-                idx += 1
+                idx &+= 1
             }
             return idx
         }
     }
 
     var isInNFC: Bool {
-        #if swift(>=6.2)
         if #available(swiftIDNAApplePlatforms 26, *) {
             var utf8Span = self.utf8Span
             return utf8Span.checkForNFC(quickCheck: false)
         }
-        #endif
         return self.unicodeScalars.allSatisfy(\.isASCII)
             || self.utf8.elementsEqual(self.nfcCodePoints)
     }
