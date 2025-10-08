@@ -6,7 +6,7 @@ extension IDNA {
         case .containsOnlyIDNANoOpCharacters:
             return
         case .onlyNeedsLowercasingOfUppercasedASCIILetters:
-            convertToLowercasedASCII(domainName: &domainName)
+            inPlaceConvertToLowercasedASCII(domainName: &domainName)
             return
         case .mightChangeAfterIDNAConversion:
             break
@@ -96,7 +96,7 @@ extension IDNA {
             }
         case .onlyNeedsLowercasingOfUppercasedASCIILetters:
             if !domainName.unicodeScalars.containsIDNADomainNameMarkerLabelPrefix {
-                convertToLowercasedASCII(domainName: &domainName)
+                inPlaceConvertToLowercasedASCII(domainName: &domainName)
                 return
             }
         case .mightChangeAfterIDNAConversion:
@@ -295,22 +295,11 @@ extension IDNA {
 
     /// FIXME: Check this, just lowercasing everything?
     @usableFromInline
-    func convertToLowercasedASCII(domainName: inout String) {
-        if domainName.utf8.count < 16 {
-            /// _SmallString path
-            domainName = String(
-                String.UnicodeScalarView(
-                    domainName.unicodeScalars.map {
-                        $0.toLowercasedASCIILetter()
-                    }
-                )
-            )
-        } else {
-            domainName.withUTF8 { stringBuffer in
-                let mutableStringBuffer = UnsafeMutableBufferPointer(mutating: stringBuffer)
-                for idx in mutableStringBuffer.indices {
-                    mutableStringBuffer[idx] = mutableStringBuffer[idx].toLowercasedASCIILetter()
-                }
+    func inPlaceConvertToLowercasedASCII(domainName: inout String) {
+        domainName.withUTF8 { stringBuffer in
+            let mutableStringBuffer = UnsafeMutableBufferPointer(mutating: stringBuffer)
+            for idx in mutableStringBuffer.indices {
+                mutableStringBuffer[idx] = mutableStringBuffer[idx].toLowercasedASCIILetter()
             }
         }
     }

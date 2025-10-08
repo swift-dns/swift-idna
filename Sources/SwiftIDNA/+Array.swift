@@ -9,13 +9,5 @@ extension [UInt8] {
         for idx in span.indices {
             self.append(span[unchecked: idx])
         }
-        // self.withUnsafeMutableBytes { buffer in
-        //     span.withUnsafeBytes { spanPtr in
-        //         buffer.baseAddress.unsafelyUnwrapped.copyMemory(
-        //             from: spanPtr.baseAddress.unsafelyUnwrapped,
-        //             byteCount: span.count
-        //         )
-        //     }
-        // }
     }
 }

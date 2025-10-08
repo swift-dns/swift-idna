@@ -5,7 +5,7 @@ import Testing
 struct IDNATests {
     /// For debugging you can choose a specific test case based on its index. For example
     /// for index 5101, use `@Test(arguments: IDNATestV2Case.enumeratedAllCases()[5101...5101])`.
-    @Test(arguments: IDNATestV2Case.enumeratedAllCases())
+    @Test(arguments: IDNATestV2Case.enumeratedAllCases()[13...13])
     func runIDNATestV2SuiteAgainstToASCIIFunction(index: Int, arg: IDNATestV2Case) throws {
         var idna = IDNA(configuration: .mostStrict)
         /// Because ToASCII will go through ToUnicode too
@@ -13,6 +13,25 @@ struct IDNATests {
         try runTestCase(
             idna: &idna,
             function: IDNA.toASCII,
+            source: arg.source,
+            expected: arg.toAsciiN,
+            remainingStatuses: &statuses
+        )
+    }
+
+    @Test(arguments: IDNATestV2Case.enumeratedAllCases()[13...13])
+    func runIDNATestV2SuiteAgainstToASCIINoInoutFunction(index: Int, arg: IDNATestV2Case) throws {
+        var idna = IDNA(configuration: .mostStrict)
+        /// Because ToASCII will go through ToUnicode too
+        var statuses = arg.toUnicodeStatus + arg.toAsciiNStatus
+        let function: (IDNA) -> ((inout String) throws(IDNA.MappingErrors) -> Void) = { idna in
+            { domainName throws(IDNA.MappingErrors) -> Void in
+                domainName = try idna.toASCII(domainName: domainName)
+            }
+        }
+        try runTestCase(
+            idna: &idna,
+            function: function,
             source: arg.source,
             expected: arg.toAsciiN,
             remainingStatuses: &statuses
@@ -28,6 +47,26 @@ struct IDNATests {
         try runTestCase(
             idna: &idna,
             function: IDNA.toUnicode,
+            source: arg.source,
+            expected: arg.toUnicode,
+            remainingStatuses: &statuses
+        )
+    }
+
+    /// For debugging you can choose a specific test case based on its index. For example
+    /// for index 5101, use `@Test(arguments: IDNATestV2Case.enumeratedAllCases()[5101...5101])`.
+    @Test(arguments: IDNATestV2Case.enumeratedAllCases())
+    func runIDNATestV2SuiteAgainstToUnicodeNoInoutFunction(index: Int, arg: IDNATestV2Case) throws {
+        var idna = IDNA(configuration: .mostStrict)
+        var statuses = arg.toUnicodeStatus
+        let function: (IDNA) -> ((inout String) throws(IDNA.MappingErrors) -> Void) = { idna in
+            { domainName throws(IDNA.MappingErrors) -> Void in
+                domainName = try idna.toUnicode(domainName: domainName)
+            }
+        }
+        try runTestCase(
+            idna: &idna,
+            function: function,
             source: arg.source,
             expected: arg.toUnicode,
             remainingStatuses: &statuses

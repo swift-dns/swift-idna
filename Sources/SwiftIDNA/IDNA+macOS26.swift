@@ -516,16 +516,7 @@ extension IDNA {
     ) -> ConvertToLowercasedASCIIResult {
         let span = utf8Span.span
         let bytesCount = span.count
-        if !canModifyUTF8SpanBytes || bytesCount < 16 {
-            /// _SmallString path
-            let string = String(unsafeUninitializedCapacity: bytesCount) { stringBuffer in
-                for idx in span.indices {
-                    stringBuffer[idx] = span[unchecked: idx].toLowercasedASCIILetter()
-                }
-                return bytesCount
-            }
-            return .string(string)
-        } else {
+        if !canModifyUTF8SpanBytes {
             span.withUnsafeBufferPointer {
                 let mutableStringBuffer = UnsafeMutableBufferPointer(mutating: $0)
                 for idx in mutableStringBuffer.indices {
@@ -533,6 +524,14 @@ extension IDNA {
                 }
             }
             return .modifiedInPlace
+        } else {
+            let string = String(unsafeUninitializedCapacity: bytesCount) { stringBuffer in
+                for idx in span.indices {
+                    stringBuffer[idx] = span[unchecked: idx].toLowercasedASCIILetter()
+                }
+                return bytesCount
+            }
+            return .string(string)
         }
     }
 }
