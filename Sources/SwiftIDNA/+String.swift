@@ -21,4 +21,17 @@ extension String {
         self.unicodeScalars.allSatisfy(\.isASCII)
             || self.utf8.elementsEqual(self.nfcCodePoints)
     }
+
+    @available(swiftIDNAApplePlatforms 13, *)
+    @_lifetime(borrow span)
+    init(uncheckedUTF8Span span: Span<UInt8>) {
+        let count = span.count
+        self.init(unsafeUninitializedCapacity: count) { stringBuffer in
+            let rawStringBuffer = UnsafeMutableRawBufferPointer(stringBuffer)
+            span.withUnsafeBytes { spanPtr in
+                rawStringBuffer.copyMemory(from: spanPtr)
+            }
+            return count
+        }
+    }
 }

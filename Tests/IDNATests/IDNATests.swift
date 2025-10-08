@@ -34,6 +34,19 @@ struct IDNATests {
         )
     }
 
+    @Test
+    func test() throws {
+        let idna = IDNA(configuration: .mostLax)
+        let result = try idna.toASCII(
+            domainName: "À.א0٠א"
+        )
+        print("--------------------------------")
+        print("--------------------------------")
+        print(result.debugDescription)
+        print("--------------------------------")
+        print("--------------------------------")
+    }
+
     /// Runs the certain IDNA function using the source string and the makes sure it produces the
     /// expected result according the the IDNA test V2 suite.
     ///
@@ -81,8 +94,12 @@ struct IDNATests {
         do {
             var convertedSource = source
             try function(idna)(&convertedSource)
-            #expect(convertedSource == expected, "tries: \(tryNumber)")
+            #expect(
+                convertedSource.debugDescription == expected.debugDescription,
+                "tries: \(tryNumber)"
+            )
         } catch let idnaError {
+            print("idnaError: \(idnaError)")
             /// If there are multiple errors, we need to disable one of them and try again.
             /// We try to do `ignoresInvalidPunycode = true` last, because it single-handedly
             /// disables a lot of errors.
