@@ -20,16 +20,12 @@ extension String {
         }
     }
 
-    var isInNFC: Bool {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            var utf8Span = self.utf8Span
-            return utf8Span.checkForNFC(quickCheck: false)
-        }
-        return self.unicodeScalars.allSatisfy(\.isASCII)
+    /// Faster way is to use `utf8Span.checkForNFC(quickCheck: false)`
+    var isInNFC_slow: Bool {
+        self.unicodeScalars.allSatisfy(\.isASCII)
             || self.utf8.elementsEqual(self.nfcCodePoints)
     }
 
-    @available(swiftIDNAApplePlatforms 13, *)
     @_lifetime(borrow span)
     init(uncheckedUTF8Span span: Span<UInt8>) {
         let count = span.count
@@ -39,6 +35,21 @@ extension String {
                 rawStringBuffer.copyMemory(from: spanPtr)
             }
             return count
+        }
+    }
+
+    mutating func withSpan_Compatibility_macOSUnder26<T, E: Error>(
+        _ body: (Span<UInt8>) throws(E) -> T
+    ) throws(E) -> T {
+        do {
+            self.makeContiguousUTF8()
+            return try self.withUTF8 { buffer in
+                try body(buffer.span)
+            }
+        } catch let error as E {
+            throw error
+        } catch {
+            fatalError("Unexpected error: \(String(reflecting: error))")
         }
     }
 }

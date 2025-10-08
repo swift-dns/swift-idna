@@ -1,8 +1,17 @@
 @available(swiftIDNAApplePlatforms 13, *)
 extension Span<UInt8> {
+    var isInNFC: Bool {
+        if #available(swiftIDNAApplePlatforms 26, *) {
+            var utf8Span = UTF8Span(unchecked: self)
+            return utf8Span.checkForNFC(quickCheck: false)
+        }
+        return String(uncheckedUTF8Span: self).isInNFC_slow
+    }
+
     @inline(__always)
     @_lifetime(copy self)
-    func makeCompatibleUnicodeScalarIterator() -> any (UnicodeScalarsIteratorProtocol & ~Escapable) {
+    func makeUnicodeScalarIteratorCompatibility() -> (any UnicodeScalarsIteratorProtocol & ~Escapable)
+    {
         if #available(swiftIDNAApplePlatforms 26, *) {
             let utf8Span = UTF8Span(unchecked: self)
             let iterator = _overrideLifetime(

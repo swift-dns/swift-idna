@@ -128,43 +128,39 @@ public struct IDNA: Sendable {
     /// https://www.unicode.org/reports/tr46/#ToASCII
     public func toASCII(domainName: String) throws(MappingErrors) -> String {
         if #available(swiftIDNAApplePlatforms 26, *) {
-            let result = try self.toASCII(
+            return try self.toASCII(
                 uncheckedUTF8Span: domainName.utf8Span.span,
-                canModifyUTF8SpanBytes: false
-            )
-            switch result {
-            case .noChanges, .modifiedInPlace:
-                return domainName
-            case .bytes(let bytes):
-                return String(uncheckedUTF8Span: bytes.span)
-            case .string(let string):
-                return string
-            }
-        } else {
-            var domainName = domainName
-            try self.toASCII_macOS15(domainName: &domainName)
-            return domainName
+                canInPlaceModifySpanBytes: false
+            ).collect(original: domainName)
+        }
+        var copy = domainName
+        return try copy.withSpan_Compatibility_macOSUnder26 {
+            span throws(MappingErrors) -> String in
+            try self.toASCII(
+                uncheckedUTF8Span: span,
+                canInPlaceModifySpanBytes: false
+            ).collect(original: domainName)
         }
     }
 
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToASCII
+    /// This function can modify the string in-place.
+    /// If you don't need the original domain name string, use this function to avoid copies.
     public func toASCII(domainName: inout String) throws(MappingErrors) {
         if #available(swiftIDNAApplePlatforms 26, *) {
-            let result = try self.toASCII(
+            try self.toASCII(
                 uncheckedUTF8Span: domainName.utf8Span.span,
-                canModifyUTF8SpanBytes: true
-            )
-            switch result {
-            case .noChanges, .modifiedInPlace:
-                return
-            case .bytes(let bytes):
-                domainName = String(uncheckedUTF8Span: bytes.span)
-            case .string(let string):
-                domainName = string
-            }
-        } else {
-            try self.toASCII_macOS15(domainName: &domainName)
+                canInPlaceModifySpanBytes: true
+            ).collect(into: &domainName)
+            return
+        }
+        var copy = domainName
+        try copy.withSpan_Compatibility_macOSUnder26 { span throws(MappingErrors) -> Void in
+            try self.toASCII(
+                uncheckedUTF8Span: span,
+                canInPlaceModifySpanBytes: false
+            ).collect(into: &domainName)
         }
     }
 
@@ -172,43 +168,39 @@ public struct IDNA: Sendable {
     /// https://www.unicode.org/reports/tr46/#ToUnicode
     public func toUnicode(domainName: String) throws(MappingErrors) -> String {
         if #available(swiftIDNAApplePlatforms 26, *) {
-            let result = try self.toUnicode(
+            return try self.toUnicode(
                 uncheckedUTF8Span: domainName.utf8Span.span,
-                canModifyUTF8SpanBytes: false
-            )
-            switch result {
-            case .noChanges, .modifiedInPlace:
-                return domainName
-            case .bytes(let bytes):
-                return String(uncheckedUTF8Span: bytes.span)
-            case .string(let string):
-                return string
-            }
-        } else {
-            var domainName = domainName
-            try self.toUnicode_macOS15(domainName: &domainName)
-            return domainName
+                canInPlaceModifySpanBytes: false
+            ).collect(original: domainName)
+        }
+        var copy = domainName
+        return try copy.withSpan_Compatibility_macOSUnder26 {
+            span throws(MappingErrors) -> String in
+            try self.toUnicode(
+                uncheckedUTF8Span: span,
+                canInPlaceModifySpanBytes: false
+            ).collect(original: domainName)
         }
     }
 
     /// `ToUnicode` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToUnicode
+    /// This function can modify the string in-place.
+    /// If you don't need the original domain name string, use this function to avoid copies.
     public func toUnicode(domainName: inout String) throws(MappingErrors) {
         if #available(swiftIDNAApplePlatforms 26, *) {
-            let result = try self.toUnicode(
+            try self.toUnicode(
                 uncheckedUTF8Span: domainName.utf8Span.span,
-                canModifyUTF8SpanBytes: true
-            )
-            switch result {
-            case .noChanges, .modifiedInPlace:
-                return
-            case .bytes(let bytes):
-                domainName = String(uncheckedUTF8Span: bytes.span)
-            case .string(let string):
-                domainName = string
-            }
-        } else {
-            try self.toUnicode_macOS15(domainName: &domainName)
+                canInPlaceModifySpanBytes: true
+            ).collect(into: &domainName)
+            return
+        }
+        var copy = domainName
+        try copy.withSpan_Compatibility_macOSUnder26 { span throws(MappingErrors) -> Void in
+            try self.toUnicode(
+                uncheckedUTF8Span: span,
+                canInPlaceModifySpanBytes: false
+            ).collect(into: &domainName)
         }
     }
 }
