@@ -130,7 +130,7 @@ extension IDNA {
                     errors.append(
                         .trueVerifyDNSLengthArgumentRequiresDomainNameToBe254BytesOrLess(
                             length: convertedBytes.count,
-                            labels: [Substring(String(uncheckedUTF8Span: span))]
+                            labels: convertedBytes
                         )
                     )
                 }
@@ -139,7 +139,7 @@ extension IDNA {
                 convertedBytes.withSpan_Compatibility { span in
                     errors.append(
                         .trueVerifyDNSLengthArgumentDisallowsEmptyDomainName(
-                            labels: [Substring(String(uncheckedUTF8Span: span))]
+                            labels: convertedBytes
                         )
                     )
                 }
@@ -174,6 +174,7 @@ extension IDNA {
                 convertedBytes.append(.asciiDot)
             }
         } else {
+            /// TODO: can we pass convertedBytes to Punycode.encode instead of it returning a new array?
             let newBytes = Punycode.encode(uncheckedUTF8Span: labelSpan)
             convertedBytes.reserveCapacity(4 + newBytes.count + 1)
             convertedBytes.append(contentsOf: "xn--".utf8)
@@ -191,7 +192,7 @@ extension IDNA {
                 errors.append(
                     .trueVerifyDNSLengthArgumentRequiresLabelToBe63BytesOrLess(
                         length: labelByteLength,
-                        label: Substring(String(uncheckedUTF8Span: labelSpan))
+                        labels: convertedBytes
                     )
                 )
             }
@@ -199,7 +200,7 @@ extension IDNA {
             if labelByteLength == 0 {
                 errors.append(
                     .trueVerifyDNSLengthArgumentDisallowsEmptyLabel(
-                        label: Substring(String(uncheckedUTF8Span: labelSpan))
+                        labels: convertedBytes
                     )
                 )
             }
@@ -299,6 +300,7 @@ extension IDNA {
 
                 let range = Range<Int>(uncheckedBounds: (startIndex, idx))
                 let chunk = newBytesSpan.extracting(unchecked: range)
+                /// TODO: can we pass newerBytes to convertAndValidateLabel instead of it returning a new buffer?
                 switchStatement: switch convertAndValidateLabel(chunk, errors: &errors) {
                 case .span(let labelSpan):
                     newerBytes.append(span: labelSpan)
@@ -354,7 +356,7 @@ extension IDNA {
         {
             errors.append(
                 .labelStartsWithXNHyphenMinusHyphenMinusButContainsNonASCII(
-                    label: .init(String(uncheckedUTF8Span: span).unicodeScalars)
+                    label: String(uncheckedUTF8Span: span)
                 )
             )
             /// continue to next label
@@ -392,7 +394,7 @@ extension IDNA {
             case false:
                 errors.append(
                     .labelPunycodeDecodeFailed(
-                        label: .init(String(uncheckedUTF8Span: span).unicodeScalars)
+                        label: String(uncheckedUTF8Span: span)
                     )
                 )
                 /// continue to next label
@@ -409,7 +411,7 @@ extension IDNA {
         if span.isEmpty {
             errors.append(
                 .labelIsEmptyAfterPunycodeConversion(
-                    label: Substring(String(uncheckedUTF8Span: span))
+                    label: String(uncheckedUTF8Span: span)
                 )
             )
         }
@@ -417,7 +419,7 @@ extension IDNA {
         if span.allSatisfy(\.isASCII) {
             errors.append(
                 .labelContainsOnlyASCIIAfterPunycodeDecode(
-                    label: Substring(String(uncheckedUTF8Span: span))
+                    label: String(uncheckedUTF8Span: span)
                 )
             )
         }
@@ -426,14 +428,20 @@ extension IDNA {
     /// https://www.unicode.org/reports/tr46/#Validity_Criteria
     @usableFromInline
     func verifyValidLabel(uncheckedUTF8Span span: Span<UInt8>, errors: inout MappingErrors) {
+
+        var spanString: String?
+        func getSpanString() -> String {
+            if let spanString = spanString {
+                return spanString
+            }
+            spanString = String(uncheckedUTF8Span: span)
+            return spanString!
+        }
+
         if !configuration.ignoreInvalidPunycode,
             !span.isInNFC
         {
-            errors.append(
-                .labelIsNotInNormalizationFormC(
-                    label: .init(String(uncheckedUTF8Span: span).unicodeScalars)
-                )
-            )
+            errors.append(.labelIsNotInNormalizationFormC(label: getSpanString()))
         }
 
         switch configuration.checkHyphens {
@@ -445,7 +453,7 @@ extension IDNA {
             {
                 errors.append(
                     .trueCheckHyphensArgumentRequiresLabelToNotContainHyphenMinusAtPostion3and4(
-                        label: .init(String(uncheckedUTF8Span: span).unicodeScalars)
+                        label: getSpanString()
                     )
                 )
             }
@@ -455,7 +463,7 @@ extension IDNA {
             {
                 errors.append(
                     .trueCheckHyphensArgumentRequiresLabelToNotStartOrEndWithHyphenMinus(
-                        label: .init(String(uncheckedUTF8Span: span).unicodeScalars)
+                        label: getSpanString()
                     )
                 )
             }
@@ -465,7 +473,7 @@ extension IDNA {
             {
                 errors.append(
                     .falseCheckHyphensArgumentRequiresLabelToNotStartWithXNHyphenMinusHyphenMinus(
-                        label: .init(String(uncheckedUTF8Span: span).unicodeScalars)
+                        label: getSpanString()
                     )
                 )
             }
@@ -478,7 +486,7 @@ extension IDNA {
         {
             errors.append(
                 .labelStartsWithCombiningMark(
-                    label: .init(String(uncheckedUTF8Span: span).unicodeScalars)
+                    label: getSpanString()
                 )
             )
         }
@@ -493,10 +501,7 @@ extension IDNA {
                         break
                     case .mapped, .disallowed, .ignored:
                         errors.append(
-                            .labelContainsInvalidUnicode(
-                                codePoint,
-                                label: .init(String(uncheckedUTF8Span: span).unicodeScalars)
-                            )
+                            .labelContainsInvalidUnicode(codePoint, label: getSpanString())
                         )
                     }
                 }
@@ -507,7 +512,7 @@ extension IDNA {
                     {
                         errors.append(
                             .trueUseSTD3ASCIIRulesArgumentRequiresLabelToOnlyContainCertainASCIICharacters(
-                                label: .init(String(uncheckedUTF8Span: span).unicodeScalars)
+                                label: getSpanString()
                             )
                         )
                     }

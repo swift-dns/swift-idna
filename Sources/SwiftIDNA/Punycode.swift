@@ -96,6 +96,9 @@ enum Punycode {
 
         /// FIXME: check to see if Int is enough in 32-bit platforms too
 
+        /// FIXME: it's probably more efficient to collect all unicode scalars, considering the
+        /// calculations needed for `m`
+
         while unicodeScalarsIterator.currentCodeUnitOffset != inputBytesSpan.count {
             var m: Int = .max
             var unicodeScalarsIteratorForM = inputBytesSpan.makeUnicodeScalarIteratorCompatibility()

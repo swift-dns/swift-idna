@@ -28,13 +28,12 @@ extension String {
 
     @_lifetime(borrow span)
     init(uncheckedUTF8Span span: Span<UInt8>) {
-        let count = span.count
-        self.init(unsafeUninitializedCapacity: count) { stringBuffer in
+        self.init(unsafeUninitializedCapacity: span.count) { stringBuffer in
             let rawStringBuffer = UnsafeMutableRawBufferPointer(stringBuffer)
             span.withUnsafeBytes { spanPtr in
                 rawStringBuffer.copyMemory(from: spanPtr)
             }
-            return count
+            return span.count
         }
     }
 
@@ -42,7 +41,6 @@ extension String {
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
         do {
-            self.makeContiguousUTF8()
             return try self.withUTF8 { buffer in
                 try body(buffer.span)
             }

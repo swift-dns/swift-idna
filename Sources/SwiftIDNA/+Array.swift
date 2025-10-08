@@ -11,6 +11,7 @@ extension [UInt8] {
         }
     }
 
+    @inlinable
     borrowing func withSpan_Compatibility<T>(
         _ body: (Span<UInt8>) -> T
     ) -> T {

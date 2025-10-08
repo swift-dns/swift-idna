@@ -10,8 +10,9 @@ extension Span<UInt8> {
 
     @inline(__always)
     @_lifetime(copy self)
-    func makeUnicodeScalarIteratorCompatibility() -> (any UnicodeScalarsIteratorProtocol & ~Escapable)
-    {
+    func makeUnicodeScalarIteratorCompatibility() -> (
+        any UnicodeScalarsIteratorProtocol & ~Escapable
+    ) {
         if #available(swiftIDNAApplePlatforms 26, *) {
             let utf8Span = UTF8Span(unchecked: self)
             let iterator = _overrideLifetime(

@@ -8,7 +8,7 @@
     <a href="https://swift.org">
         <img
             src="https://design.vapor.codes/images/swift60up.svg"
-            alt="Swift 6.0+"
+            alt="Swift 6.2+"
         >
     </a>
 </p>

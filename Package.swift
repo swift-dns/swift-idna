@@ -47,7 +47,7 @@ var settings: [SwiftSetting] {
         ),
         .enableExperimentalFeature(
             "AvailabilityMacro=swiftIDNAApplePlatforms 13:macOS 13, iOS 16, tvOS 16, watchOS 9"
-        )
+        ),
     ]
 }
 
