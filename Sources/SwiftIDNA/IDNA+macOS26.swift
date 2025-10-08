@@ -143,15 +143,7 @@ extension IDNA {
                 convertedBytes.append(.asciiDot)
             }
         } else {
-            print(
-                "to_ASCII label before Punycode:",
-                String(uncheckedUTF8Span: labelSpan).debugDescription
-            )
             let newBytes = Punycode.encode(uncheckedUTF8Span: labelSpan)
-            print(
-                "to_ASCII label after Punycode:",
-                String(uncheckedUTF8Span: newBytes.span).debugDescription
-            )
             convertedBytes.reserveCapacity(4 + newBytes.count + 1)
             convertedBytes.append(contentsOf: "xn--".utf8)
             convertedBytes.append(span: newBytes.span)
@@ -290,12 +282,6 @@ extension IDNA {
                 case .bytes(let bytes):
                     newerBytes.append(contentsOf: bytes)
                     newerBytes.append(.asciiDot)
-
-                    print(
-                        "after bytes in mainProcessing",
-                        String(uncheckedUTF8Span: bytes.span).debugDescription,
-                        String(uncheckedUTF8Span: newBytes.span).debugDescription
-                    )
                 case .failure:
                     break switchStatement
                 }
@@ -310,12 +296,6 @@ extension IDNA {
                 newerBytes.append(span: labelSpan)
             case .bytes(let bytes):
                 newerBytes.append(contentsOf: bytes)
-
-                print(
-                    "after bytes in mainProcessing",
-                    String(uncheckedUTF8Span: bytes.span).debugDescription,
-                    String(uncheckedUTF8Span: newBytes.span).debugDescription
-                )
             case .failure:
                 break switchStatement
             }
@@ -368,17 +348,7 @@ extension IDNA {
             /// 4.3:
             checkInvalidPunycode(span: conversionResult.span, errors: &errors)
 
-            print(
-                "after conversion in convertAndValidateLabel",
-                String(uncheckedUTF8Span: conversionResult.span).debugDescription
-            )
-
             verifyValidLabel(uncheckedUTF8Span: conversionResult.span, errors: &errors)
-
-            print(
-                "after verifyValidLabel in convertAndValidateLabel",
-                String(uncheckedUTF8Span: conversionResult.span).debugDescription
-            )
 
             return .bytes(conversionResult)
         } else {

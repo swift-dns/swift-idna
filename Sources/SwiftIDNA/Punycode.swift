@@ -80,28 +80,15 @@ enum Punycode {
             output.append(Unicode.Scalar.asciiHyphenMinus)
         }
 
-        if #available(swiftIDNAApplePlatforms 15, *) {
-            print(
-                "Punycode.encode initial output:",
-                output.reduce(into: [UInt8]()) { $0.append(contentsOf: $1.utf8) }
-            )
-        }
-
         if input.unicodeScalars.contains(where: { !$0.isASCII && $0.value < n }) {
             return false
         }
 
         while h < input.unicodeScalars.count {
-            print("Punycode.encode while loop")
             let m = Int(
                 input.unicodeScalars.lazy.filter {
                     !$0.isASCII && $0.value >= n
                 }.min().unsafelyUnwrapped.value
-            )
-
-            print(
-                "Punycode.encode m:",
-                m
             )
 
             delta &+= ((m &- n) &* (h &+ 1))
@@ -132,23 +119,11 @@ enum Punycode {
                         /// Logically this is safe because we know that digit is in the range 0...35
                         /// There are also extensive tests for this in the IDNATests.swift.
                         output.append(Punycode.uncheckedMapDigitToUnicodeScalar(digit))
-                        if #available(swiftIDNAApplePlatforms 15, *) {
-                            print(
-                                "Punycode.encode inner output:",
-                                output.reduce(into: [UInt8]()) { $0.append(contentsOf: $1.utf8) }
-                            )
-                        }
                         q = (q &- t) / (Constants.base &- t)
                     }
                     /// Logically this is safe because we know that digit is in the range 0...35
                     /// There are also extensive tests for this in the IDNATests.swift.
                     output.append(Punycode.uncheckedMapDigitToUnicodeScalar(q))
-                    if #available(swiftIDNAApplePlatforms 15, *) {
-                        print(
-                            "Punycode.encode outer output:",
-                            output.reduce(into: [UInt8]()) { $0.append(contentsOf: $1.utf8) }
-                        )
-                    }
 
                     bias = adapt(delta: delta, codePointCount: h &+ 1, isFirstTime: h == b)
                     delta = 0
@@ -213,14 +188,7 @@ enum Punycode {
         } else {
             output = []
         }
-        if #available(swiftIDNAApplePlatforms 15, *) {
-            print(
-                "Punycode.decode initial output",
-                output.reduce(into: [UInt8]()) { $0.append(contentsOf: $1.utf8) }
-            )
-        }
         while !input.unicodeScalars.isEmpty {
-            print("Punycode.decode while loop", i)
             let oldi = i
             var w = 1
             for k in stride(from: Constants.base, to: .max, by: Constants.base) {
@@ -264,18 +232,7 @@ enum Punycode {
                 return false
             }
 
-            if #available(swiftIDNAApplePlatforms 15, *) {
-                print("insert index", output[..<i].map(\.utf8.count).reduce(into: 0, +=) + 1)
-            }
-
             output.insert(Unicode.Scalar(n).unsafelyUnwrapped, at: i)
-
-            if #available(swiftIDNAApplePlatforms 15, *) {
-                print(
-                    "Punycode.decode output",
-                    output.reduce(into: [UInt8]()) { $0.append(contentsOf: $1.utf8) }
-                )
-            }
 
             i &+= 1
         }

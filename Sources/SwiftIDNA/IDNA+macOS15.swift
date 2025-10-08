@@ -26,11 +26,9 @@ extension IDNA {
                 return Substring(label)
             }
             var newLabel = Substring(label)
-            print("to_ASCII label before Punycode:", newLabel.debugDescription)
             if !Punycode.encode(&newLabel) {
                 errors.append(.labelPunycodeEncodeFailed(label: label))
             }
-            print("to_ASCII label after Punycode:", newLabel.debugDescription)
             return "xn--" + Substring(newLabel)
         }
 

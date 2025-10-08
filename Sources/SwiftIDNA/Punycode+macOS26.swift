@@ -60,11 +60,6 @@ extension Punycode {
 
         /// FIXME: check to see if Int is enough in 32-bit platforms too
 
-        print(
-            "Punycode.encode initial output:",
-            output
-        )
-
         while unicodeScalarsIterator.currentCodeUnitOffset != utf8Span.count {
             var m: Int = .max
             var unicodeScalarsIteratorForM = utf8Span.makeUnicodeScalarIterator()
@@ -74,18 +69,6 @@ extension Punycode {
                 }
             }
 
-            print(
-                "Punycode.encode m:",
-                m
-            )
-
-            print(
-                "Punycode.encode offsets:",
-                unicodeScalarsIterator.currentCodeUnitOffset,
-                utf8Span.count
-            )
-
-            print("Punycode.encode while loop")
             delta &+= ((m &- n) &* (h &+ 1))
 
             n = m
@@ -115,32 +98,17 @@ extension Punycode {
                         /// Logically this is safe because we know that digit is in the range 0...35
                         /// There are also extensive tests for this in the IDNATests.swift.
                         output.append(Punycode.uncheckedMapDigitToUTF8Byte(digit))
-                        print(
-                            "Punycode.encode inner output:",
-                            output
-                        )
+
                         q = (q &- t) / (Constants.base &- t)
                     }
                     /// Logically this is safe because we know that digit is in the range 0...35
                     /// There are also extensive tests for this in the IDNATests.swift.
                     output.append(Punycode.uncheckedMapDigitToUTF8Byte(q))
-                    print(
-                        "Punycode.encode outer output:",
-                        output
-                    )
 
                     bias = adapt(delta: delta, codePointCount: h &+ 1, isFirstTime: h == b)
                     delta = 0
                     h &+= 1
-                    print(
-                        "Punycode.encode iterator offset before:",
-                        unicodeScalarsIterator.currentCodeUnitOffset
-                    )
                     _ = unicodeScalarsIterator.skipForward()
-                    print(
-                        "Punycode.encode iterator offset:",
-                        unicodeScalarsIterator.currentCodeUnitOffset
-                    )
                 }
             }
             delta &+= 1
@@ -211,9 +179,7 @@ extension Punycode {
         /// unicodeScalarsIndexToUtf8Index[unicodeScalarsIndex] = utf8Index
         /// TODO: check if this "lookup table" is actually needed or not.
         var unicodeScalarsIndexToUTF8Index = (0..<output.count).map { $0 }
-        print("Punycode.decode initial output", output)
         while unicodeScalarsIterator.currentCodeUnitOffset != utf8Span.count {
-            print("Punycode.decode while loop", i)
             let oldi = i
             var w = 1
             for k in stride(from: Constants.base, to: .max, by: Constants.base) {
@@ -258,10 +224,8 @@ extension Punycode {
             }
 
             let scalar = Unicode.Scalar(n).unsafelyUnwrapped
-            print("Punycode.decode", [UInt8](scalar.utf8))
 
             if i == unicodeScalarsIndexToUTF8Index.count {
-                print("insert index", output.count)
                 output.append(contentsOf: scalar.utf8)
                 unicodeScalarsIndexToUTF8Index.append(output.count &- 1)
             } else {
@@ -273,7 +237,6 @@ extension Punycode {
                     i == 0
                     ? 0
                     : previousIdxOfScalarInBytes &+ 1
-                print("insert index", insertIndex)
                 output.insert(contentsOf: scalar.utf8, at: insertIndex)
                 let utf8Count = scalar.utf8.count
                 let firstElementFactor = i == 0 ? -1 : 0
@@ -282,17 +245,10 @@ extension Punycode {
                     at: i
                 )
                 let currentCount = unicodeScalarsIndexToUTF8Index.count
-                print("Punycode.decode table", unicodeScalarsIndexToUTF8Index)
-                unicodeScalarsIndexToUTF8Index.withUnsafeMutableBufferPointer { ptr in
-                    print("Punycode.decode incrementing", (i &+ 1)..<currentCount)
-                    for idx in (i &+ 1)..<currentCount {
-                        ptr[idx] &+= utf8Count
-                    }
+                for idx in (i &+ 1)..<currentCount {
+                    unicodeScalarsIndexToUTF8Index[idx] &+= utf8Count
                 }
             }
-
-            print("Punycode.decode output", output)
-            print("Punycode.decode table", unicodeScalarsIndexToUTF8Index)
 
             i &+= 1
         }
