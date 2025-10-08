@@ -285,7 +285,7 @@ extension IDNA {
         /// 2. Normalize
 
         /// Make `newBytes` NFC, if not already NFC
-        newBytes = newBytes.makeNFCIfNeeded_assumingSelfIsUTF8()
+        newBytes.uncheckedUTF8Bytes_ensureNFC()
 
         var newerBytes: [UInt8] = []
 
@@ -294,13 +294,14 @@ extension IDNA {
 
             var startIndex = 0
             for idx in newBytesSpan.indices {
+                /// Unchecked because idx comes right from `newBytesSpan.indices`
                 guard newBytesSpan[unchecked: idx] == .asciiDot else {
                     continue
                 }
 
                 let range = Range<Int>(uncheckedBounds: (startIndex, idx))
                 let chunk = newBytesSpan.extracting(unchecked: range)
-                /// TODO: can we pass newerBytes to convertAndValidateLabel instead of it returning a new buffer?
+                /// TODO: can we pass newerBytes to convertAndValidateLabel instead of it returning a new buffer?!
                 switchStatement: switch convertAndValidateLabel(chunk, errors: &errors) {
                 case .span(let labelSpan):
                     newerBytes.append(span: labelSpan)
