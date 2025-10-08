@@ -1,5 +1,4 @@
-/// TODO: Use `UTF8Span.checkForNFC(quickCheck: false)` instead of this.
-/// That would require macos 26 unfortunately.
+@available(swiftIDNAApplePlatforms 13, *)
 extension String {
     var nfcCodePoints: [UInt8] {
         var codePoints = [UInt8]()
@@ -11,14 +10,24 @@ extension String {
     }
 
     var asNFC: String {
-        String(
-            decoding: self.nfcCodePoints,
-            as: UTF8.self
-        )
+        String(unsafeUninitializedCapacity: self.utf8.count) { stringBuffer in
+            var idx = 0
+            self._withNFCCodeUnits {
+                stringBuffer[idx] = $0
+                idx += 1
+            }
+            return idx
+        }
     }
 
     var isInNFC: Bool {
-        self.unicodeScalars.allSatisfy(\.isASCII)
+        #if swift(>=6.2)
+        if #available(swiftIDNAApplePlatforms 26, *) {
+            var utf8Span = self.utf8Span
+            return utf8Span.checkForNFC(quickCheck: false)
+        }
+        #endif
+        return self.unicodeScalars.allSatisfy(\.isASCII)
             || self.utf8.elementsEqual(self.nfcCodePoints)
     }
 

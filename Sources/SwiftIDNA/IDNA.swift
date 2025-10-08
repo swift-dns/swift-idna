@@ -1,5 +1,6 @@
 /// Provides compatibility with IDNA: Internationalized Domain Names in Applications.
 /// [Unicode IDNA Compatibility Processing](https://www.unicode.org/reports/tr46/)
+@available(swiftIDNAApplePlatforms 13, *)
 public struct IDNA: Sendable {
     /// [Unicode IDNA Compatibility Processing: Processing](https://www.unicode.org/reports/tr46/#Processing)
     /// All parameters are used in both `toASCII` and `toUnicode`, except for
@@ -126,24 +127,24 @@ public struct IDNA: Sendable {
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToASCII
     public func toASCII(domainName: String) throws(MappingErrors) -> String {
-        // if #available(swiftIDNAApplePlatforms 26, *) {
-        //     let result = try self.toASCII(
-        //         utf8Span: domainName.utf8Span,
-        //         canModifyUTF8SpanBytes: false
-        //     )
-        //     switch result {
-        //     case .noChanges, .modifiedInPlace:
-        //         return domainName
-        //     case .bytes(let bytes):
-        //         return String(uncheckedUTF8Span: bytes.span)
-        //     case .string(let string):
-        //         return string
-        //     }
-        // } else {
+        if #available(swiftIDNAApplePlatforms 26, *) {
+            let result = try self.toASCII(
+                uncheckedUTF8Span: domainName.utf8Span.span,
+                canModifyUTF8SpanBytes: false
+            )
+            switch result {
+            case .noChanges, .modifiedInPlace:
+                return domainName
+            case .bytes(let bytes):
+                return String(uncheckedUTF8Span: bytes.span)
+            case .string(let string):
+                return string
+            }
+        } else {
             var domainName = domainName
             try self.toASCII_macOS15(domainName: &domainName)
             return domainName
-        // }
+        }
     }
 
     /// `ToASCII` IDNA implementation.
@@ -151,7 +152,7 @@ public struct IDNA: Sendable {
     public func toASCII(domainName: inout String) throws(MappingErrors) {
         if #available(swiftIDNAApplePlatforms 26, *) {
             let result = try self.toASCII(
-                utf8Span: domainName.utf8Span,
+                uncheckedUTF8Span: domainName.utf8Span.span,
                 canModifyUTF8SpanBytes: true
             )
             switch result {
@@ -172,7 +173,7 @@ public struct IDNA: Sendable {
     public func toUnicode(domainName: String) throws(MappingErrors) -> String {
         if #available(swiftIDNAApplePlatforms 26, *) {
             let result = try self.toUnicode(
-                utf8Span: domainName.utf8Span,
+                uncheckedUTF8Span: domainName.utf8Span.span,
                 canModifyUTF8SpanBytes: false
             )
             switch result {
@@ -195,7 +196,7 @@ public struct IDNA: Sendable {
     public func toUnicode(domainName: inout String) throws(MappingErrors) {
         if #available(swiftIDNAApplePlatforms 26, *) {
             let result = try self.toUnicode(
-                utf8Span: domainName.utf8Span,
+                uncheckedUTF8Span: domainName.utf8Span.span,
                 canModifyUTF8SpanBytes: true
             )
             switch result {
@@ -212,6 +213,7 @@ public struct IDNA: Sendable {
     }
 }
 
+@available(swiftIDNAApplePlatforms 13, *)
 extension IDNA {
     public struct MappingErrors: Error {
         public enum Element: Sendable, CustomStringConvertible {

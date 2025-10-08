@@ -1,3 +1,4 @@
+@available(swiftIDNAApplePlatforms 13, *)
 extension IDNA {
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToASCII

@@ -10,20 +10,20 @@ extension IDNA {
 
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToASCII
-    @_lifetime(borrow utf8Span)
+    @_lifetime(borrow span)
     func toASCII(
-        utf8Span: UTF8Span,
+        uncheckedUTF8Span span: Span<UInt8>,
         canModifyUTF8SpanBytes: Bool
     ) throws(MappingErrors) -> ConversionResult {
-        switch IDNA.performCharacterCheck(span: utf8Span.span) {
+        switch IDNA.performCharacterCheck(span: span) {
         case .containsOnlyIDNANoOpCharacters:
-            if !utf8Span.span.containsIDNADomainNameMarkerLabelPrefix {
+            if !span.containsIDNADomainNameMarkerLabelPrefix {
                 return .noChanges
             }
         case .onlyNeedsLowercasingOfUppercasedASCIILetters:
-            if !utf8Span.span.containsIDNADomainNameMarkerLabelPrefix {
+            if !span.containsIDNADomainNameMarkerLabelPrefix {
                 switch convertToLowercasedASCII(
-                    utf8Span: utf8Span,
+                    uncheckedUTF8Span: span,
                     canModifyUTF8SpanBytes: canModifyUTF8SpanBytes
                 ) {
                 case .modifiedInPlace:
@@ -37,11 +37,11 @@ extension IDNA {
         }
 
         var errors = MappingErrors(
-            domainName: String(uncheckedUTF8Span: utf8Span.span)
+            domainName: String(uncheckedUTF8Span: span)
         )
 
         // 1.
-        let utf8Span = self.mainProcessing(utf8Span: utf8Span, errors: &errors)
+        let utf8Span = self.mainProcessing(uncheckedUTF8Span: span, errors: &errors)
 
         // 2., 3.
 
@@ -175,20 +175,20 @@ extension IDNA {
 
     /// `ToUnicode` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToUnicode
-    @_lifetime(borrow utf8Span)
+    @_lifetime(borrow span)
     func toUnicode(
-        utf8Span: UTF8Span,
+        uncheckedUTF8Span span: Span<UInt8>,
         canModifyUTF8SpanBytes: Bool
     ) throws(MappingErrors) -> ConversionResult {
-        switch IDNA.performCharacterCheck(span: utf8Span.span) {
+        switch IDNA.performCharacterCheck(span: span) {
         case .containsOnlyIDNANoOpCharacters:
-            if !utf8Span.span.containsIDNADomainNameMarkerLabelPrefix {
+            if !span.containsIDNADomainNameMarkerLabelPrefix {
                 return .noChanges
             }
         case .onlyNeedsLowercasingOfUppercasedASCIILetters:
-            if !utf8Span.span.containsIDNADomainNameMarkerLabelPrefix {
+            if !span.containsIDNADomainNameMarkerLabelPrefix {
                 switch convertToLowercasedASCII(
-                    utf8Span: utf8Span,
+                    uncheckedUTF8Span: span,
                     canModifyUTF8SpanBytes: canModifyUTF8SpanBytes
                 ) {
                 case .modifiedInPlace:
@@ -202,11 +202,11 @@ extension IDNA {
         }
 
         var errors = MappingErrors(
-            domainName: String(uncheckedUTF8Span: utf8Span.span)
+            domainName: String(uncheckedUTF8Span: span)
         )
 
         // 1.
-        let newBytes = self.mainProcessing(utf8Span: utf8Span, errors: &errors)
+        let newBytes = self.mainProcessing(uncheckedUTF8Span: span, errors: &errors)
 
         // 2.
         if !errors.isEmpty {
@@ -218,13 +218,15 @@ extension IDNA {
 
     /// Main `Processing` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#Processing
-    @_lifetime(borrow utf8Span)
+    @_lifetime(borrow span)
     @usableFromInline
-    func mainProcessing(utf8Span: UTF8Span, errors: inout MappingErrors) -> [UInt8] {
+    func mainProcessing(uncheckedUTF8Span span: Span<UInt8>, errors: inout MappingErrors) -> [UInt8]
+    {
         var newBytes: [UInt8] = []
         /// TODO: optimize reserve capacity
-        newBytes.reserveCapacity(utf8Span.count * 14 / 10)
+        newBytes.reserveCapacity(span.count * 14 / 10)
 
+        let utf8Span = UTF8Span(unchecked: span)
         var unicodeScalarsIterator = utf8Span.makeUnicodeScalarIterator()
 
         /// 1. Map
@@ -511,12 +513,11 @@ extension IDNA {
 
     @usableFromInline
     func convertToLowercasedASCII(
-        utf8Span: UTF8Span,
+        uncheckedUTF8Span span: Span<UInt8>,
         canModifyUTF8SpanBytes: Bool
     ) -> ConvertToLowercasedASCIIResult {
-        let span = utf8Span.span
         let bytesCount = span.count
-        if !canModifyUTF8SpanBytes {
+        if canModifyUTF8SpanBytes {
             span.withUnsafeBufferPointer {
                 let mutableStringBuffer = UnsafeMutableBufferPointer(mutating: $0)
                 for idx in mutableStringBuffer.indices {
