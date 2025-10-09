@@ -1,8 +1,14 @@
 <p>
-    <a href="https://github.com/MahdiBM/swift-idna/actions/workflows/tests.yml">
+    <a href="https://github.com/swift-dns/swift-idna/actions/workflows/unit-tests.yml">
         <img
-            src="https://img.shields.io/github/actions/workflow/status/MahdiBM/swift-idna/tests.yml?event=push&style=plastic&logo=github&label=tests&logoColor=%23ccc"
+            src="https://img.shields.io/github/actions/workflow/status/swift-dns/swift-idna/unit-tests.yml?event=push&style=plastic&logo=github&label=unit-tests&logoColor=%23ccc"
             alt="Unit Tests CI"
+        >
+    </a>
+    <a href="https://github.com/swift-dns/swift-idna/actions/workflows/benchmarks.yml">
+        <img
+            src="https://img.shields.io/github/actions/workflow/status/swift-dns/swift-idna/benchmarks.yml?event=push&style=plastic&logo=github&label=benchmarks&logoColor=%23ccc"
+            alt="Benchamrks CI"
         >
     </a>
     <a href="https://swift.org">
