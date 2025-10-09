@@ -1,16 +1,11 @@
 @available(swiftIDNAApplePlatforms 13, *)
 extension Span<UInt8> {
     var isInNFC: Bool {
-        #if canImport(Darwin)
         if #available(swiftIDNAApplePlatforms 26, *) {
             var utf8Span = UTF8Span(unchecked: self)
             return utf8Span.checkForNFC(quickCheck: false)
         }
         return String(uncheckedUTF8Span: self).isInNFC_slow
-        #else
-        var utf8Span = UTF8Span(unchecked: self)
-        return utf8Span.checkForNFC(quickCheck: false)
-        #endif
     }
 
     @inline(__always)
@@ -18,7 +13,6 @@ extension Span<UInt8> {
     func makeUnicodeScalarIteratorCompatibility() -> (
         any UnicodeScalarsIteratorProtocol & ~Escapable
     ) {
-        #if canImport(Darwin)
         if #available(swiftIDNAApplePlatforms 26, *) {
             let utf8Span = UTF8Span(unchecked: self)
             let iterator = _overrideLifetime(
@@ -32,14 +26,6 @@ extension Span<UInt8> {
             underlyingIterator: iterator,
             currentCodeUnitOffset: 0
         )
-        #else
-        let utf8Span = UTF8Span(unchecked: self)
-        let iterator = _overrideLifetime(
-            utf8Span.makeUnicodeScalarIterator(),
-            copying: self
-        )
-        return iterator
-        #endif
     }
 
     /// Checks if contains any labels that start with “xn--”
