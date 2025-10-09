@@ -43,43 +43,16 @@ print(idna.toUnicode(domainName: "xn--xkrr14bows.xn--fiqs8s"))
 
 Domain names are inherently case-insensitive, and they will always be lowercased.
 
-## Short Circuits
+## Utilities
 
-`swift-idna` provides public functions to check if a sequence of characters will change at all after going through the IDNA conversion:
+`swift-idna` also provides public functions to turn an uppercased ASCII byte into lowercased, as well as a few more useful functions.
 
-- `IDNA.performCharacterCheck(string:)`
-- `IDNA.performCharacterCheck(unicodeScalars:)`
-- `IDNA.performCharacterCheck(bytes:)`
-- `IDNA.performCharacterCheck(dnsWireFormatBytes:)`
+- `BinaryInteger.toLowercasedASCIILetter()`
+- `BinaryInteger.uncheckedToLowercasedASCIILetter()`
+- `BinaryInteger.isUppercasedASCIILetter`
+- `BinaryInteger.isIDNALabelSeparator`
 
-`swift-idna` also provides public functions to turn an uppercased ASCII byte or `Unicode.Scalar` into lowercased, as well as a few more useful functions.
-
-- `Unicode.Scalar/BinaryInteger.toLowercasedASCIILetter()`
-- `Unicode.Scalar/BinaryInteger.uncheckedToLowercasedASCIILetter()`
-- `Unicode.Scalar/BinaryInteger.isUppercasedASCIILetter`
-- `Unicode.Scalar/BinaryInteger.isIDNALabelSeparator`
-
-You can use these function to implement short-circuits for any reason.
-
-For example if you only have a sequence of bytes and don't want to decode them into a `String` to provide to this library, considering this library only accepts Swift `String`s as domain names.
-
-Example usage:
-
-```swift
-import SwiftIDNA
-
-switch IDNA.performCharacterCheck(bytes: myBytes) {
-case .containsOnlyIDNANoOpCharacters:
-    /// `myBytes` is good
-case .onlyNeedsLowercasingOfUppercasedASCIILetters:
-    myBytes = myBytes.map {
-        $0.toLowercasedASCIILetter()
-    }
-    /// `myBytes` is good now
-case .mightChangeAfterIDNAConversion:
-    /// Need to go through IDNA conversion functions if needed
-}
-```
+To use this on a `Unicode.Scalar`, simply use them on `Unicode.Scalar`'s `value` property.
 
 ## Implementation
 

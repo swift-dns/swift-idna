@@ -22,16 +22,16 @@ extension [UInt8] {
         }
     }
 
-    mutating func uncheckedUTF8Bytes_ensureNFC() {
+    mutating func _uncheckedAssumingValidUTF8_ensureNFC() {
         self.withSpan_Compatibility { span in
             if #available(swiftIDNAApplePlatforms 26, *) {
                 var utf8Span = UTF8Span(unchecked: span)
                 if !utf8Span.checkForNFC(quickCheck: false) {
-                    self = String(uncheckedUTF8Span: span).nfcCodePoints
+                    self = String(_uncheckedAssumingValidUTF8: span).nfcCodePoints
                 }
                 return
             }
-            let string = String(uncheckedUTF8Span: span)
+            let string = String(_uncheckedAssumingValidUTF8: span)
             if !string.isInNFC_slow {
                 self = string.nfcCodePoints
             }

@@ -7,14 +7,14 @@ extension IDNA {
     public func toASCII(domainName: String) throws(MappingErrors) -> String {
         if #available(swiftIDNAApplePlatforms 26, *) {
             return try self._toASCII(
-                uncheckedUTF8Span: domainName.utf8Span.span
+                _uncheckedAssumingValidUTF8: domainName.utf8Span.span
             ).collect(original: domainName)
         }
         var copy = domainName
         return try copy.withSpan_Compatibility_macOSUnder26 {
             span throws(MappingErrors) -> String in
             try self._toASCII(
-                uncheckedUTF8Span: span
+                _uncheckedAssumingValidUTF8: span
             ).collect(original: domainName)
         }
     }
@@ -24,14 +24,14 @@ extension IDNA {
     public func toUnicode(domainName: String) throws(MappingErrors) -> String {
         if #available(swiftIDNAApplePlatforms 26, *) {
             return try self._toUnicode(
-                uncheckedUTF8Span: domainName.utf8Span.span
+                _uncheckedAssumingValidUTF8: domainName.utf8Span.span
             ).collect(original: domainName)
         }
         var copy = domainName
         return try copy.withSpan_Compatibility_macOSUnder26 {
             span throws(MappingErrors) -> String in
             try self._toUnicode(
-                uncheckedUTF8Span: span
+                _uncheckedAssumingValidUTF8: span
             ).collect(original: domainName)
         }
     }
@@ -50,7 +50,7 @@ extension IDNA {
     public func toASCII(
         uncheckedDomainNameBytesSpan span: Span<UInt8>
     ) throws(MappingErrors) -> ConversionResult {
-        try self._toUnicode(uncheckedUTF8Span: span)
+        try self._toUnicode(_uncheckedAssumingValidUTF8: span)
     }
 
     /// `ToUnicode` IDNA implementation.
@@ -62,7 +62,7 @@ extension IDNA {
     public func toUnicode(
         uncheckedDomainNameBytesSpan span: Span<UInt8>
     ) throws(MappingErrors) -> ConversionResult {
-        try self._toUnicode(uncheckedUTF8Span: span)
+        try self._toUnicode(_uncheckedAssumingValidUTF8: span)
     }
 }
 
@@ -75,7 +75,7 @@ extension IDNA {
     public func toASCII(
         domainNameUTF8Span utf8Span: UTF8Span
     ) throws(MappingErrors) -> ConversionResult {
-        try self._toUnicode(uncheckedUTF8Span: utf8Span.span)
+        try self._toUnicode(_uncheckedAssumingValidUTF8: utf8Span.span)
     }
 
     /// `ToUnicode` IDNA implementation.
@@ -83,6 +83,6 @@ extension IDNA {
     public func toUnicode(
         domainNameUTF8Span utf8Span: UTF8Span
     ) throws(MappingErrors) -> ConversionResult {
-        try self._toUnicode(uncheckedUTF8Span: utf8Span.span)
+        try self._toUnicode(_uncheckedAssumingValidUTF8: utf8Span.span)
     }
 }

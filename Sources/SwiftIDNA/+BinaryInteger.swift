@@ -68,4 +68,11 @@ extension BinaryInteger {
     var isASCII: Bool {
         self <= 0x7F
     }
+
+    @inlinable
+    var isLowercasedLetterOrDigitOrHyphenMinus: Bool {
+        self == .asciiHyphenMinus
+            || (self <= 0x39 && self >= 0x30)
+            || (self >= 0x61 && self <= 0x7A)
+    }
 }

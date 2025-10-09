@@ -27,7 +27,7 @@ extension String {
     }
 
     @_lifetime(copy span)
-    init(uncheckedUTF8Span span: Span<UInt8>) {
+    init(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
         self.init(unsafeUninitializedCapacity: span.count) { stringBuffer in
             let rawStringBuffer = UnsafeMutableRawBufferPointer(stringBuffer)
             span.withUnsafeBytes { spanPtr in
@@ -37,6 +37,23 @@ extension String {
         }
     }
 
+    mutating func withSpan_Compatibility_macOSUnder26<T, E: Error>(
+        _ body: (Span<UInt8>) throws(E) -> T
+    ) throws(E) -> T {
+        do {
+            return try self.withUTF8 { buffer in
+                try body(buffer.span)
+            }
+        } catch let error as E {
+            throw error
+        } catch {
+            fatalError("Unexpected error: \(String(reflecting: error))")
+        }
+    }
+}
+
+@available(swiftIDNAApplePlatforms 13, *)
+extension Substring {
     mutating func withSpan_Compatibility_macOSUnder26<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {

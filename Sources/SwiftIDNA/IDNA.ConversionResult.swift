@@ -13,7 +13,7 @@ extension IDNA {
                 return nil
             case .bytes(let bytes):
                 return bytes.withSpan_Compatibility { span in
-                    String(uncheckedUTF8Span: span)
+                    String(_uncheckedAssumingValidUTF8: span)
                 }
             case .string(let string):
                 return string
@@ -28,7 +28,7 @@ extension IDNA {
                 return original
             case .bytes(let bytes):
                 return bytes.withSpan_Compatibility { span in
-                    String(uncheckedUTF8Span: span)
+                    String(_uncheckedAssumingValidUTF8: span)
                 }
             case .string(let string):
                 return string

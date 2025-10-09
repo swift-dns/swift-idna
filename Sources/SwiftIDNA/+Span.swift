@@ -5,12 +5,12 @@ extension Span<UInt8> {
             var utf8Span = UTF8Span(unchecked: self)
             return utf8Span.checkForNFC(quickCheck: false)
         }
-        return String(uncheckedUTF8Span: self).isInNFC_slow
+        return String(_uncheckedAssumingValidUTF8: self).isInNFC_slow
     }
 
     @inline(__always)
     @_lifetime(copy self)
-    func makeUnicodeScalarIteratorCompatibility() -> (
+    func makeUnicodeScalarIterator_Compatibility() -> (
         any UnicodeScalarsIteratorProtocol & ~Escapable
     ) {
         if #available(swiftIDNAApplePlatforms 26, *) {
@@ -21,7 +21,7 @@ extension Span<UInt8> {
             )
             return iterator
         }
-        let iterator = String(uncheckedUTF8Span: self).unicodeScalars.makeIterator()
+        let iterator = String(_uncheckedAssumingValidUTF8: self).unicodeScalars.makeIterator()
         return UnicodeScalarViewCompatibilityIterator(
             underlyingIterator: iterator,
             currentCodeUnitOffset: 0
@@ -135,9 +135,12 @@ extension Span<UInt8> {
             return false
         }
     }
+}
 
+@available(swiftIDNAApplePlatforms 13, *)
+extension Span {
     @inlinable
-    func contains(where predicate: (UInt8) -> Bool) -> Bool {
+    func contains(where predicate: (Element) -> Bool) -> Bool {
         for idx in self.indices {
             if predicate(self[unchecked: idx]) {
                 return true
@@ -147,7 +150,7 @@ extension Span<UInt8> {
     }
 
     @inlinable
-    func allSatisfy(_ predicate: (UInt8) -> Bool) -> Bool {
+    func allSatisfy(_ predicate: (Element) -> Bool) -> Bool {
         for idx in self.indices {
             if !predicate(self[unchecked: idx]) {
                 return false
@@ -156,7 +159,7 @@ extension Span<UInt8> {
         return true
     }
 
-    func lastIndex(of element: UInt8) -> Int? {
+    func lastIndex(of element: Element) -> Int? where Element: Equatable {
         let endIndex = self.count &- 1
         for idx in self.indices {
             let backwardsIdx = endIndex &- idx
