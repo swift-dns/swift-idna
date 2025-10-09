@@ -36,7 +36,7 @@ extension IDNA {
 
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToASCII
-    @_lifetime(borrow span)
+    @_lifetime(copy span)
     func toASCII(
         uncheckedUTF8Span span: Span<UInt8>,
         canInPlaceModifySpanBytes: Bool
@@ -209,7 +209,7 @@ extension IDNA {
 
     /// `ToUnicode` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToUnicode
-    @_lifetime(borrow span)
+    @_lifetime(copy span)
     func toUnicode(
         uncheckedUTF8Span span: Span<UInt8>,
         canInPlaceModifySpanBytes: Bool
@@ -252,7 +252,7 @@ extension IDNA {
 
     /// Main `Processing` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#Processing
-    @_lifetime(borrow span)
+    @_lifetime(copy span)
     @usableFromInline
     func mainProcessing(
         uncheckedUTF8Span span: Span<UInt8>,
