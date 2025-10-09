@@ -2,14 +2,13 @@
 extension IDNA {
     @usableFromInline
     enum ConversionResult {
-        case noChanges
+        case noActionNeeded
         case bytes([UInt8])
         case string(String)
-        case modifiedInPlace
 
         func collect(original: String) -> String {
             switch self {
-            case .noChanges, .modifiedInPlace:
+            case .noActionNeeded:
                 return original
             case .bytes(let bytes):
                 return bytes.withSpan_Compatibility { span in
@@ -22,7 +21,7 @@ extension IDNA {
 
         func collect(into domainName: inout String) {
             switch self {
-            case .noChanges, .modifiedInPlace:
+            case .noActionNeeded:
                 return
             case .bytes(let bytes):
                 bytes.withSpan_Compatibility { span in
@@ -43,20 +42,16 @@ extension IDNA {
     ) throws(MappingErrors) -> ConversionResult {
         switch IDNA.performCharacterCheck(span: span) {
         case .containsOnlyIDNANoOpCharacters:
-            if !span.containsIDNADomainNameMarkerLabelPrefix {
-                return .noChanges
-            }
+            return .noActionNeeded
         case .onlyNeedsLowercasingOfUppercasedASCIILetters:
-            if !span.containsIDNADomainNameMarkerLabelPrefix {
-                switch convertToLowercasedASCII(
-                    uncheckedUTF8Span: span,
-                    canInPlaceModifySpanBytes: canInPlaceModifySpanBytes
-                ) {
-                case .modifiedInPlace:
-                    return .modifiedInPlace
-                case .string(let string):
-                    return .string(string)
-                }
+            switch convertToLowercasedASCII(
+                uncheckedUTF8Span: span,
+                canInPlaceModifySpanBytes: canInPlaceModifySpanBytes
+            ) {
+            case .modifiedInPlace:
+                return .noActionNeeded
+            case .string(let string):
+                return .string(string)
             }
         case .mightChangeAfterIDNAConversion:
             break
@@ -217,7 +212,7 @@ extension IDNA {
         switch IDNA.performCharacterCheck(span: span) {
         case .containsOnlyIDNANoOpCharacters:
             if !span.containsIDNADomainNameMarkerLabelPrefix {
-                return .noChanges
+                return .noActionNeeded
             }
         case .onlyNeedsLowercasingOfUppercasedASCIILetters:
             if !span.containsIDNADomainNameMarkerLabelPrefix {
@@ -226,7 +221,7 @@ extension IDNA {
                     canInPlaceModifySpanBytes: canInPlaceModifySpanBytes
                 ) {
                 case .modifiedInPlace:
-                    return .modifiedInPlace
+                    return .noActionNeeded
                 case .string(let string):
                     return .string(string)
                 }
@@ -541,19 +536,23 @@ extension IDNA {
         uncheckedUTF8Span span: Span<UInt8>,
         canInPlaceModifySpanBytes: Bool
     ) -> ConvertToLowercasedASCIIResult {
-        let bytesCount = span.count
         if canInPlaceModifySpanBytes {
             span.withUnsafeBufferPointer {
                 let mutableStringBuffer = UnsafeMutableBufferPointer(mutating: $0)
-                for idx in mutableStringBuffer.indices {
+                var idx = 0
+                while idx < mutableStringBuffer.count {
                     mutableStringBuffer[idx] = mutableStringBuffer[idx].toLowercasedASCIILetter()
+                    idx &+= 1
                 }
             }
             return .modifiedInPlace
         } else {
+            let bytesCount = span.count
             let string = String(unsafeUninitializedCapacity: bytesCount) { stringBuffer in
-                for idx in span.indices {
+                var idx = 0
+                while idx < bytesCount {
                     stringBuffer[idx] = span[unchecked: idx].toLowercasedASCIILetter()
+                    idx &+= 1
                 }
                 return bytesCount
             }
