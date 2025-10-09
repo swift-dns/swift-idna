@@ -12,13 +12,13 @@ extension [UInt8] {
     }
 
     borrowing func withSpan_Compatibility<T>(
-        _ body: (Span<UInt8>) -> T
-    ) -> T {
+        _ body: (Span<UInt8>) throws -> T
+    ) rethrows -> T {
         if #available(swiftIDNAApplePlatforms 26, *) {
-            return body(self.span)
+            return try body(self.span)
         }
-        return self.withUnsafeBufferPointer { bytesPtr in
-            body(bytesPtr.span)
+        return try self.withUnsafeBufferPointer { bytesPtr in
+            try body(bytesPtr.span)
         }
     }
 
