@@ -48,7 +48,7 @@ extension IDNA {
     /// For example from `String.utf8Span.span`.
     /// Violating this assumption can result in undefined behavior.
     public func toASCII(
-        uncheckedDomainNameBytesSpan span: Span<UInt8>
+        _uncheckedAssumingValidUTF8 span: Span<UInt8>
     ) throws(MappingErrors) -> ConversionResult {
         try self._toUnicode(_uncheckedAssumingValidUTF8: span)
     }
@@ -60,7 +60,7 @@ extension IDNA {
     /// For example from `String.utf8Span.span`.
     /// Violating this assumption can result in undefined behavior.
     public func toUnicode(
-        uncheckedDomainNameBytesSpan span: Span<UInt8>
+        _uncheckedAssumingValidUTF8 span: Span<UInt8>
     ) throws(MappingErrors) -> ConversionResult {
         try self._toUnicode(_uncheckedAssumingValidUTF8: span)
     }
