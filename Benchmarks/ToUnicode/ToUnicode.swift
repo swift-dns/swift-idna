@@ -16,14 +16,14 @@ let benchmarks: @Sendable () -> Void = {
         /// Mark: - google.com
 
         Benchmark(
-            "To_Unicode_\(namePrefix)_google_dot_com_CPU_500K",
+            "To_Unicode_\(namePrefix)_google_dot_com_CPU_1M",
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 5,
                 maxIterations: 1000,
             )
         ) { benchmark in
-            for _ in 0..<500_000 {
+            for _ in 0..<1_000_000 {
                 var domainName = "google.com"
                 let converted = try! idnaConfig.toUnicode(domainName: &domainName)
                 blackHole(converted)
