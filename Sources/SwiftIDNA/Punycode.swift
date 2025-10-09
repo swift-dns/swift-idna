@@ -1,39 +1,42 @@
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
+@available(swiftIDNAApplePlatforms 13, *)
 enum Punycode {
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Parameter values for Punycode](https://datatracker.ietf.org/doc/html/rfc3492#section-5)
+    ///
+    /// To support 32-bit platforms, we use `UInt32` instead of `Int` throughout this implementation.
     enum Constants {
         @usableFromInline
-        static var base: Int {
+        static var base: UInt32 {
             36
         }
 
         @usableFromInline
-        static var tMin: Int {
+        static var tMin: UInt32 {
             1
         }
 
         @usableFromInline
-        static var tMax: Int {
+        static var tMax: UInt32 {
             26
         }
 
         @usableFromInline
-        static var skew: Int {
+        static var skew: UInt32 {
             38
         }
 
         @usableFromInline
-        static var damp: Int {
+        static var damp: UInt32 {
             700
         }
 
         @usableFromInline
-        static var initialBias: Int {
+        static var initialBias: UInt32 {
             72
         }
 
         @usableFromInline
-        static var initialN: Int {
+        static var initialN: UInt32 {
             128
         }
     }
@@ -66,42 +69,63 @@ enum Punycode {
     /// labels.
     /// ```
     @inlinable
-    static func encode(_ input: inout Substring) -> Bool {
+    static func encode(uncheckedUTF8Span inputBytesSpan: Span<UInt8>) -> [UInt8] {
         var n = Constants.initialN
-        var delta = 0
+        var delta: UInt32 = 0
         var bias = Constants.initialBias
-        var output: [Unicode.Scalar] = []
-        /// ``input.count <= output.count`` is guaranteed, so we reserve the capacity.
-        output.reserveCapacity(input.count)
-        output.append(contentsOf: input.unicodeScalars.filter(\.isASCII))
-        let b = output.count
+        var output: [UInt8] = []
+        /// ``input.count <= output.count`` is guaranteed when using unicode scalars.
+        /// We're using utf8 bytes but we'll reserve the capacity anyway.
+        output.reserveCapacity(inputBytesSpan.count)
+        for idx in inputBytesSpan.indices {
+            let byte = inputBytesSpan[unchecked: idx]
+            if byte.isASCII {
+                output.append(byte)
+            }
+        }
+        let b = UInt32(output.count)
         var h = b
+
+        var unicodeScalarsIterator = inputBytesSpan.makeUnicodeScalarIteratorCompatibility()
+        /// Mark h-amount of Unicode Scalars, as already-read.
+        for _ in 0..<h {
+            _ = unicodeScalarsIterator.skipForward()
+        }
+
         if !output.isEmpty {
-            output.append(Unicode.Scalar.asciiHyphenMinus)
+            output.append(UInt8.asciiHyphenMinus)
         }
 
-        if input.unicodeScalars.contains(where: { !$0.isASCII && $0.value < n }) {
-            return false
-        }
+        /// FIXME: it's probably more efficient to collect all unicode scalars, considering the
+        /// calculations needed for `m`
+        /// We can have a "DecodedUnicodeScalars" type that has already decoded all the scalars
+        /// and keeps a mapping of scalar-index tp utf8-index es, but that would require macOS26
+        /// because we'll need to use `UTF8Span.UnicodeScalarIterator` to be able to decode the
+        /// scalars from utf8 bytes, unless we implement that ourselves which is possible but is not
+        /// trivial.
 
-        while h < input.unicodeScalars.count {
-            let m = Int(
-                input.unicodeScalars.lazy.filter {
-                    !$0.isASCII && $0.value >= n
-                }.min().unsafelyUnwrapped.value
-            )
+        while unicodeScalarsIterator.currentCodeUnitOffset != inputBytesSpan.count {
+            var m: UInt32 = .max
+            var unicodeScalarsIteratorForM = inputBytesSpan.makeUnicodeScalarIteratorCompatibility()
+            while let codePoint = unicodeScalarsIteratorForM.next() {
+                if !codePoint.isASCII, codePoint.value >= n {
+                    m = min(m, codePoint.value)
+                }
+            }
 
             delta &+= ((m &- n) &* (h &+ 1))
 
             n = m
-            for codePoint in input.unicodeScalars {
+            var originalUnicodeScalarsIterator =
+                inputBytesSpan.makeUnicodeScalarIteratorCompatibility()
+            while let codePoint = originalUnicodeScalarsIterator.next() {
                 if codePoint.value < n || codePoint.isASCII {
                     delta &+= 1
                 }
 
                 if codePoint.value == n {
                     var q = delta
-                    for k in stride(from: Constants.base, to: .max, by: Constants.base) {
+                    for k in stride(from: Constants.base, to: .max, by: Int(Constants.base)) {
                         let t =
                             if k <= (bias &+ Constants.tMin) {
                                 Constants.tMin
@@ -118,25 +142,25 @@ enum Punycode {
                         let digit = t &+ ((q &- t) % (Constants.base &- t))
                         /// Logically this is safe because we know that digit is in the range 0...35
                         /// There are also extensive tests for this in the IDNATests.swift.
-                        output.append(Punycode.uncheckedMapDigitToUnicodeScalar(digit))
+                        output.append(Punycode.uncheckedMapDigitToUTF8Byte(digit))
+
                         q = (q &- t) / (Constants.base &- t)
                     }
                     /// Logically this is safe because we know that digit is in the range 0...35
                     /// There are also extensive tests for this in the IDNATests.swift.
-                    output.append(Punycode.uncheckedMapDigitToUnicodeScalar(q))
+                    output.append(Punycode.uncheckedMapDigitToUTF8Byte(q))
 
                     bias = adapt(delta: delta, codePointCount: h &+ 1, isFirstTime: h == b)
                     delta = 0
                     h &+= 1
+                    _ = unicodeScalarsIterator.skipForward()
                 }
             }
             delta &+= 1
             n &+= 1
         }
 
-        input = Substring(Substring.UnicodeScalarView(output))
-
-        return true
+        return output
     }
 
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Decoding procedure](https://datatracker.ietf.org/doc/html/rfc3492#section-6.2)
@@ -167,40 +191,45 @@ enum Punycode {
     /// labels.
     /// ```
     @inlinable
-    static func decode(_ input: inout Substring) -> Bool {
+    static func decode(uncheckedUTF8Span inputBytesSpan: Span<UInt8>) -> [UInt8]? {
+        var inputBytesSpan = inputBytesSpan
         var n = Constants.initialN
-        var i = 0
+        var i: UInt32 = 0
         var bias = Constants.initialBias
-        var output: [Unicode.Scalar] = []
-        output.reserveCapacity(max(input.count, 4))
+        var output: [UInt8] = []
+        output.reserveCapacity(max(inputBytesSpan.count, 4))
 
-        if let idx = input.unicodeScalars.lastIndex(of: Unicode.Scalar.asciiHyphenMinus) {
-            let afterDelimiterIdx = input.index(after: idx)
-            output = Array(input.unicodeScalars[..<idx])
+        if let utf8Idx = inputBytesSpan.lastIndex(of: .asciiHyphenMinus) {
+            let afterDelimiterIdx = utf8Idx &+ 1
+            let range = Range<Int>(uncheckedBounds: (0, utf8Idx))
+            let bytesSpanChunk = inputBytesSpan.extracting(unchecked: range)
+            output.append(span: bytesSpanChunk)
+
             guard output.allSatisfy(\.isASCII) else {
-                return false
+                return nil
             }
-            input = Substring(
-                Substring.UnicodeScalarView(
-                    input.unicodeScalars[afterDelimiterIdx...]
-                )
+
+            let inputBytesRange = Range<Int>(
+                uncheckedBounds: (afterDelimiterIdx, inputBytesSpan.count)
             )
-        } else {
-            output = []
+            inputBytesSpan = inputBytesSpan.extracting(unchecked: inputBytesRange)
         }
 
-        while !input.unicodeScalars.isEmpty {
+        var unicodeScalarsIterator = inputBytesSpan.makeUnicodeScalarIteratorCompatibility()
+
+        /// unicodeScalarsIndexToUtf8Index[unicodeScalarsIndex] = utf8Index
+        var unicodeScalarsIndexToUTF8Index = (0..<output.count).map { $0 }
+        while unicodeScalarsIterator.currentCodeUnitOffset != inputBytesSpan.count {
             let oldi = i
-            var w = 1
-            for k in stride(from: Constants.base, to: .max, by: Constants.base) {
+            var w: UInt32 = 1
+            for k in stride(from: Constants.base, to: .max, by: Int(Constants.base)) {
                 /// Above we check that input is not empty, so this is safe.
                 /// There are also extensive tests for this in the IDNATests.swift.
-                guard let codePoint = input.unicodeScalars.first else {
-                    return false
+                guard let codePoint = unicodeScalarsIterator.next() else {
+                    return nil
                 }
-                input = Substring(input.unicodeScalars.dropFirst())
                 guard let digit = Punycode.mapUnicodeScalarToDigit(codePoint) else {
-                    return false
+                    return nil
                 }
 
                 i &+= (digit &* w)
@@ -220,7 +249,8 @@ enum Punycode {
 
                 w = w &* (Constants.base &- t)
             }
-            let outputCountPlusOne = output.count &+ 1
+            let outputCount = unicodeScalarsIndexToUTF8Index.count
+            let outputCountPlusOne = UInt32(outputCount) &+ 1
             bias = adapt(
                 delta: i &- oldi,
                 codePointCount: outputCountPlusOne,
@@ -229,23 +259,47 @@ enum Punycode {
             n = n &+ (i / outputCountPlusOne)
             i = i % outputCountPlusOne
             /// Check if n is basic (aka ASCII).
-            if n < 128 {
-                return false
+            if n.isASCII {
+                return nil
             }
 
-            output.insert(Unicode.Scalar(n).unsafelyUnwrapped, at: i)
+            let scalar = Unicode.Scalar(n).unsafelyUnwrapped
+
+            if i == unicodeScalarsIndexToUTF8Index.count {
+                output.append(contentsOf: scalar.utf8)
+                unicodeScalarsIndexToUTF8Index.append(output.count &- 1)
+            } else {
+                let iInt = Int(i)
+                let previousIdxOfScalarInBytes =
+                    iInt == 0
+                    ? 0
+                    : unicodeScalarsIndexToUTF8Index[iInt &- 1]
+                let insertIndex =
+                    iInt == 0
+                    ? 0
+                    : previousIdxOfScalarInBytes &+ 1
+                output.insert(contentsOf: scalar.utf8, at: insertIndex)
+                let utf8Count = scalar.utf8.count
+                let firstElementFactor = i == 0 ? -1 : 0
+                unicodeScalarsIndexToUTF8Index.insert(
+                    previousIdxOfScalarInBytes &+ utf8Count &+ firstElementFactor,
+                    at: iInt
+                )
+                let currentCount = unicodeScalarsIndexToUTF8Index.count
+                for idx in (iInt &+ 1)..<currentCount {
+                    unicodeScalarsIndexToUTF8Index[idx] &+= utf8Count
+                }
+            }
 
             i &+= 1
         }
 
-        input = Substring(Substring.UnicodeScalarView(output))
-
-        return true
+        return output
     }
 
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Bias adaptation function](https://datatracker.ietf.org/doc/html/rfc3492#section-6.1)
     @inlinable
-    static func adapt(delta: Int, codePointCount: Int, isFirstTime: Bool) -> Int {
+    static func adapt(delta: UInt32, codePointCount: UInt32, isFirstTime: Bool) -> UInt32 {
         var delta =
             if isFirstTime {
                 delta / Constants.damp
@@ -253,7 +307,7 @@ enum Punycode {
                 delta / 2
             }
         delta = delta &+ (delta / codePointCount)
-        var k = 0
+        var k: UInt32 = 0
         while delta > (((Constants.base &- Constants.tMin) &* Constants.tMax) / 2) {
             delta = delta / (Constants.base &- Constants.tMin)
             k = k &+ Constants.base
@@ -265,33 +319,31 @@ enum Punycode {
     /// 0-25 -> a-z; 26-35 -> 0-9
     /// This function assumes the digit is valid and is in range 0...35.
     @inlinable
-    static func uncheckedMapDigitToUnicodeScalar(_ digit: Int) -> Unicode.Scalar {
+    static func uncheckedMapDigitToUTF8Byte(_ digit: UInt32) -> UInt8 {
         assert(digit >= 0 && digit <= 35, "Invalid digit: \(digit)")
         if digit <= 25 {
-            return Unicode.Scalar(0x61 &+ digit).unsafelyUnwrapped
+            return UInt8(truncatingIfNeeded: 0x61 &+ digit)
         }
-        if digit <= 35 {
-            return Unicode.Scalar(0x30 &+ digit &- 26).unsafelyUnwrapped
-        }
-        preconditionFailure("Invalid digit: \(digit)")
+        /// Assume digit <= 35
+        return UInt8(truncatingIfNeeded: 0x30 &+ digit &- 26)
     }
 
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Parameter values for Punycode](https://datatracker.ietf.org/doc/html/rfc3492#section-5)
     /// A-Z -> 0-25; a-z -> 0-25; 0-9 -> 26-35
     @inlinable
-    static func mapUnicodeScalarToDigit(_ unicodeScalar: Unicode.Scalar) -> Int? {
+    static func mapUnicodeScalarToDigit(_ unicodeScalar: Unicode.Scalar) -> UInt32? {
         let value = unicodeScalar.value
 
         if value >= 0x61, value <= 0x7a {
-            return Int(value &- 0x61)
+            return value &- 0x61
         }
 
         if value >= 0x41, value <= 0x5a {
-            return Int(value &- 0x41)
+            return value &- 0x41
         }
 
         if value <= 0x39, value >= 0x30 {
-            return Int(value &- 0x30 &+ 26)
+            return value &- 0x30 &+ 26
         }
 
         return nil

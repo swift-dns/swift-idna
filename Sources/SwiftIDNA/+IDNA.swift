@@ -1,3 +1,4 @@
+@available(swiftIDNAApplePlatforms 13, *)
 extension IDNA {
     /// The result of checking characters for IDNA compliance.
     public enum CharacterCheckResult {
@@ -84,6 +85,32 @@ extension IDNA {
             if scalar.isUppercasedASCIILetter {
                 containsUppercased = true
             } else if scalar.isASCII {
+                continue
+            } else {
+                return .mightChangeAfterIDNAConversion
+            }
+        }
+
+        return containsUppercased
+            ? .onlyNeedsLowercasingOfUppercasedASCIILetters : .containsOnlyIDNANoOpCharacters
+    }
+
+    /// Checks the bytes to foresee if an IDNA conversion will modify the string.
+    /// This is useful to avoid performing a toASCII IDNA conversion if it's not necessary.
+    @available(swiftIDNAApplePlatforms 13, *)
+    @inlinable
+    public static func performCharacterCheck(
+        span: Span<UInt8>
+    ) -> CharacterCheckResult {
+        var containsUppercased = false
+
+        for idx in span.indices {
+            let byte = span[unchecked: idx]
+            /// Based on IDNA, all ASCII characters other than uppercased letters are 'valid'
+            /// Uppercased letters are each 'mapped' to their lowercased equivalent.
+            if byte.isUppercasedASCIILetter {
+                containsUppercased = true
+            } else if byte.isASCII {
                 continue
             } else {
                 return .mightChangeAfterIDNAConversion

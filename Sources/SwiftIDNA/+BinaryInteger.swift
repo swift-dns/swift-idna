@@ -40,6 +40,26 @@ extension BinaryInteger {
             || self == 0x3002
             || self == 0xFF61
     }
+
+    @inlinable
+    static var asciiDot: Self {
+        0x2E
+    }
+
+    @inlinable
+    static var asciiLowercasedX: Self {
+        0x78
+    }
+
+    @inlinable
+    static var asciiLowercasedN: Self {
+        0x6E
+    }
+
+    @inlinable
+    static var asciiHyphenMinus: Self {
+        0x2D
+    }
 }
 
 extension BinaryInteger {

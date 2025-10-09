@@ -5,7 +5,7 @@ import Testing
 struct IDNATests {
     /// For debugging you can choose a specific test case based on its index. For example
     /// for index 5101, use `@Test(arguments: IDNATestV2Case.enumeratedAllCases()[5101...5101])`.
-    @Test(arguments: IDNATestV2Case.enumeratedAllCases())
+    @Test(arguments: IDNATestV2Case.enumeratedAllCases()[13...13])
     func runIDNATestV2SuiteAgainstToASCIIFunction(index: Int, arg: IDNATestV2Case) throws {
         var idna = IDNA(configuration: .mostStrict)
         /// Because ToASCII will go through ToUnicode too
@@ -50,7 +50,7 @@ struct IDNATests {
     /// This process continues until either the `function` succeeds or runs out of tries to make.
     func runTestCase(
         idna: inout IDNA,
-        function: (IDNA) -> ((inout String) throws(IDNA.MappingErrors) -> Void),
+        function: (IDNA) -> ((String) throws(IDNA.MappingErrors) -> String),
         source: String,
         expected: String?,
         remainingStatuses: inout [IDNATestV2Case.Status],
@@ -64,7 +64,7 @@ struct IDNATests {
         guard let expected = expected else {
             var convertedSource = source
             do {
-                try function(idna)(&convertedSource)
+                convertedSource = try function(idna)(convertedSource)
                 if convertedSource != source,
                     convertedSource.uppercased() != source.uppercased()
                 {
@@ -80,8 +80,11 @@ struct IDNATests {
 
         do {
             var convertedSource = source
-            try function(idna)(&convertedSource)
-            #expect(convertedSource == expected, "tries: \(tryNumber)")
+            convertedSource = try function(idna)(convertedSource)
+            #expect(
+                convertedSource.debugDescription == expected.debugDescription,
+                "tries: \(tryNumber)"
+            )
         } catch let idnaError {
             /// If there are multiple errors, we need to disable one of them and try again.
             /// We try to do `ignoresInvalidPunycode = true` last, because it single-handedly

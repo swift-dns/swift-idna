@@ -1,4 +1,4 @@
-//swift-tools-version: 6.0
+//swift-tools-version: 6.2
 
 import PackageDescription
 
@@ -38,6 +38,16 @@ var settings: [SwiftSetting] {
         .enableUpcomingFeature("InternalImportsByDefault"),
         .enableUpcomingFeature("ExistentialAny"),
         .enableUpcomingFeature("StrictMemorySafety"),
+        .enableExperimentalFeature("Lifetimes"),
+        .enableExperimentalFeature(
+            "AvailabilityMacro=swiftIDNAApplePlatforms 26:macOS 26, iOS 26, tvOS 26, watchOS 26, visionOS 26"
+        ),
+        .enableExperimentalFeature(
+            "AvailabilityMacro=swiftIDNAApplePlatforms 15:macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2"
+        ),
+        .enableExperimentalFeature(
+            "AvailabilityMacro=swiftIDNAApplePlatforms 13:macOS 13, iOS 16, tvOS 16, watchOS 9"
+        ),
     ]
 }
 
