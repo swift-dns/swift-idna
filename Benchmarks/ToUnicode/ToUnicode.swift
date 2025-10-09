@@ -26,8 +26,8 @@ let benchmarks: @Sendable () -> Void = {
     ) { benchmark in
         for _ in 0..<8_000_000 {
             var domainName = "google.com"
-            let converted: Void = try! strictConfig.toUnicode(domainName: &domainName)
-            blackHole(converted)
+            domainName = try! strictConfig.toUnicode(domainName: domainName)
+            blackHole(domainName)
         }
     }
 
@@ -40,8 +40,8 @@ let benchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var domainName = "google.com"
-        let converted: Void = try! strictConfig.toUnicode(domainName: &domainName)
-        blackHole(converted)
+        domainName = try! strictConfig.toUnicode(domainName: domainName)
+        blackHole(domainName)
     }
 
     /// Mark: - Uppercased_google.com
@@ -56,8 +56,8 @@ let benchmarks: @Sendable () -> Void = {
     ) { benchmark in
         for _ in 0..<8_000_000 {
             var domainName = "GOOGLE.COM"
-            let converted: Void = try! strictConfig.toUnicode(domainName: &domainName)
-            blackHole(converted)
+            domainName = try! strictConfig.toUnicode(domainName: domainName)
+            blackHole(domainName)
         }
     }
 
@@ -70,8 +70,8 @@ let benchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var domainName = "GOOGLE.COM"
-        let converted: Void = try! strictConfig.toUnicode(domainName: &domainName)
-        blackHole(converted)
+        domainName = try! strictConfig.toUnicode(domainName: domainName)
+        blackHole(domainName)
     }
 
     /// Mark: - Lowercased_app-analytics-services.com
@@ -86,8 +86,8 @@ let benchmarks: @Sendable () -> Void = {
     ) { benchmark in
         for _ in 0..<4_000_000 {
             var domainName = "app-analytics-services.com"
-            let converted: Void = try! strictConfig.toUnicode(domainName: &domainName)
-            blackHole(converted)
+            domainName = try! strictConfig.toUnicode(domainName: domainName)
+            blackHole(domainName)
         }
     }
 
@@ -100,8 +100,8 @@ let benchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var domainName = "app-analytics-services.com"
-        let converted: Void = try! strictConfig.toUnicode(domainName: &domainName)
-        blackHole(converted)
+        domainName = try! strictConfig.toUnicode(domainName: domainName)
+        blackHole(domainName)
     }
 
     /// Mark: - Uppercased_app-analytics-services.com
@@ -116,8 +116,8 @@ let benchmarks: @Sendable () -> Void = {
     ) { benchmark in
         for _ in 0..<4_000_000 {
             var domainName = "APP-ANALYTICS-SERVICES.COM"
-            let converted: Void = try! strictConfig.toUnicode(domainName: &domainName)
-            blackHole(converted)
+            domainName = try! strictConfig.toUnicode(domainName: domainName)
+            blackHole(domainName)
         }
     }
 
@@ -130,8 +130,8 @@ let benchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var domainName = "APP-ANALYTICS-SERVICES.COM"
-        let converted: Void = try! strictConfig.toUnicode(domainName: &domainName)
-        blackHole(converted)
+        domainName = try! strictConfig.toUnicode(domainName: domainName)
+        blackHole(domainName)
     }
 
     for (namePrefix, idnaConfig) in nameAndConfigs {
@@ -148,8 +148,8 @@ let benchmarks: @Sendable () -> Void = {
         ) { benchmark in
             for _ in 0..<200_000 {
                 var domainName = "xn--ob-eka.se"
-                let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
-                blackHole(converted)
+                domainName = try! idnaConfig.toUnicode(domainName: domainName)
+                blackHole(domainName)
             }
         }
 
@@ -162,8 +162,8 @@ let benchmarks: @Sendable () -> Void = {
             )
         ) { benchmark in
             var domainName = "xn--ob-eka.se"
-            let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
-            blackHole(converted)
+            domainName = try! idnaConfig.toUnicode(domainName: domainName)
+            blackHole(domainName)
         }
 
         /// Mark: - 生命之花.中国
@@ -179,8 +179,8 @@ let benchmarks: @Sendable () -> Void = {
         ) { benchmark in
             for _ in 0..<100_000 {
                 var domainName = "xn--9iqv4mb85adml.xn--fiqs8s"
-                let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
-                blackHole(converted)
+                domainName = try! idnaConfig.toUnicode(domainName: domainName)
+                blackHole(domainName)
             }
         }
 
@@ -193,8 +193,8 @@ let benchmarks: @Sendable () -> Void = {
             )
         ) { benchmark in
             var domainName = "xn--9iqv4mb85adml.xn--fiqs8s"
-            let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
-            blackHole(converted)
+            domainName = try! idnaConfig.toUnicode(domainName: domainName)
+            blackHole(domainName)
         }
     }
 }

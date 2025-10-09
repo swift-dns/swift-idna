@@ -4,22 +4,14 @@ extension IDNA {
     /// https://www.unicode.org/reports/tr46/#ToASCII
     @_lifetime(copy span)
     func _toASCII(
-        uncheckedUTF8Span span: Span<UInt8>,
-        canInPlaceModifySpanBytes: Bool
+        uncheckedUTF8Span span: Span<UInt8>
     ) throws(MappingErrors) -> ConversionResult {
         switch IDNA.performCharacterCheck(span: span) {
         case .containsOnlyIDNANoOpCharacters:
             return .noChangedNeeded
         case .onlyNeedsLowercasingOfUppercasedASCIILetters:
-            switch convertToLowercasedASCII(
-                uncheckedUTF8Span: span,
-                canInPlaceModifySpanBytes: canInPlaceModifySpanBytes
-            ) {
-            case .modifiedInPlace:
-                return .noChangedNeeded
-            case .string(let string):
-                return .string(string)
-            }
+            let string = convertToLowercasedASCII(uncheckedUTF8Span: span)
+            return .string(string)
         case .mightChangeAfterIDNAConversion:
             break
         }
@@ -173,8 +165,7 @@ extension IDNA {
     /// https://www.unicode.org/reports/tr46/#ToUnicode
     @_lifetime(copy span)
     func _toUnicode(
-        uncheckedUTF8Span span: Span<UInt8>,
-        canInPlaceModifySpanBytes: Bool
+        uncheckedUTF8Span span: Span<UInt8>
     ) throws(MappingErrors) -> ConversionResult {
         switch IDNA.performCharacterCheck(span: span) {
         case .containsOnlyIDNANoOpCharacters:
@@ -183,15 +174,8 @@ extension IDNA {
             }
         case .onlyNeedsLowercasingOfUppercasedASCIILetters:
             if !span.containsIDNADomainNameMarkerLabelPrefix {
-                switch convertToLowercasedASCII(
-                    uncheckedUTF8Span: span,
-                    canInPlaceModifySpanBytes: canInPlaceModifySpanBytes
-                ) {
-                case .modifiedInPlace:
-                    return .noChangedNeeded
-                case .string(let string):
-                    return .string(string)
-                }
+                let string = convertToLowercasedASCII(uncheckedUTF8Span: span)
+                return .string(string)
             }
         case .mightChangeAfterIDNAConversion:
             break
@@ -493,37 +477,14 @@ extension IDNA {
     }
 
     @usableFromInline
-    enum ConvertToLowercasedASCIIResult {
-        case string(String)
-        case modifiedInPlace
-    }
-
-    @usableFromInline
-    func convertToLowercasedASCII(
-        uncheckedUTF8Span span: Span<UInt8>,
-        canInPlaceModifySpanBytes: Bool
-    ) -> ConvertToLowercasedASCIIResult {
-        if canInPlaceModifySpanBytes {
-            span.withUnsafeBufferPointer {
-                let mutableStringBuffer = UnsafeMutableBufferPointer(mutating: $0)
-                var idx = 0
-                while idx < mutableStringBuffer.count {
-                    mutableStringBuffer[idx] = mutableStringBuffer[idx].toLowercasedASCIILetter()
-                    idx &+= 1
-                }
+    func convertToLowercasedASCII(uncheckedUTF8Span span: Span<UInt8>) -> String {
+        let bytesCount = span.count
+        let string = String(unsafeUninitializedCapacity: bytesCount) { stringBuffer in
+            for idx in stringBuffer.indices {
+                stringBuffer[idx] = span[unchecked: idx].toLowercasedASCIILetter()
             }
-            return .modifiedInPlace
-        } else {
-            let bytesCount = span.count
-            let string = String(unsafeUninitializedCapacity: bytesCount) { stringBuffer in
-                var idx = 0
-                while idx < bytesCount {
-                    stringBuffer[idx] = span[unchecked: idx].toLowercasedASCIILetter()
-                    idx &+= 1
-                }
-                return bytesCount
-            }
-            return .string(string)
+            return bytesCount
         }
+        return string
     }
 }
