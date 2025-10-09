@@ -1,55 +1,22 @@
 @available(swiftIDNAApplePlatforms 13, *)
 extension IDNA {
-    @usableFromInline
-    enum ConversionResult {
-        case noActionNeeded
-        case bytes([UInt8])
-        case string(String)
-
-        func collect(original: String) -> String {
-            switch self {
-            case .noActionNeeded:
-                return original
-            case .bytes(let bytes):
-                return bytes.withSpan_Compatibility { span in
-                    String(uncheckedUTF8Span: span)
-                }
-            case .string(let string):
-                return string
-            }
-        }
-
-        func collect(into domainName: inout String) {
-            switch self {
-            case .noActionNeeded:
-                return
-            case .bytes(let bytes):
-                bytes.withSpan_Compatibility { span in
-                    domainName = String(uncheckedUTF8Span: span)
-                }
-            case .string(let string):
-                domainName = string
-            }
-        }
-    }
-
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToASCII
     @_lifetime(copy span)
-    func toASCII(
+    func _toASCII(
         uncheckedUTF8Span span: Span<UInt8>,
         canInPlaceModifySpanBytes: Bool
     ) throws(MappingErrors) -> ConversionResult {
         switch IDNA.performCharacterCheck(span: span) {
         case .containsOnlyIDNANoOpCharacters:
-            return .noActionNeeded
+            return .noChangedNeeded
         case .onlyNeedsLowercasingOfUppercasedASCIILetters:
             switch convertToLowercasedASCII(
                 uncheckedUTF8Span: span,
                 canInPlaceModifySpanBytes: canInPlaceModifySpanBytes
             ) {
             case .modifiedInPlace:
-                return .noActionNeeded
+                return .noChangedNeeded
             case .string(let string):
                 return .string(string)
             }
@@ -205,14 +172,14 @@ extension IDNA {
     /// `ToUnicode` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToUnicode
     @_lifetime(copy span)
-    func toUnicode(
+    func _toUnicode(
         uncheckedUTF8Span span: Span<UInt8>,
         canInPlaceModifySpanBytes: Bool
     ) throws(MappingErrors) -> ConversionResult {
         switch IDNA.performCharacterCheck(span: span) {
         case .containsOnlyIDNANoOpCharacters:
             if !span.containsIDNADomainNameMarkerLabelPrefix {
-                return .noActionNeeded
+                return .noChangedNeeded
             }
         case .onlyNeedsLowercasingOfUppercasedASCIILetters:
             if !span.containsIDNADomainNameMarkerLabelPrefix {
@@ -221,7 +188,7 @@ extension IDNA {
                     canInPlaceModifySpanBytes: canInPlaceModifySpanBytes
                 ) {
                 case .modifiedInPlace:
-                    return .noActionNeeded
+                    return .noChangedNeeded
                 case .string(let string):
                     return .string(string)
                 }

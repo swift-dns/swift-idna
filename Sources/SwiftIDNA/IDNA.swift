@@ -118,89 +118,12 @@ public struct IDNA: Sendable {
         }
     }
 
+    /// The configuration to use for the IDNA processing.
+    /// The default configuration is `IDNA.Configuration.default`.
     public var configuration: Configuration
 
-    public init(configuration: Configuration) {
+    /// The configuration to use for the IDNA processing.
+    public init(configuration: Configuration = .default) {
         self.configuration = configuration
-    }
-
-    /// `ToASCII` IDNA implementation.
-    /// https://www.unicode.org/reports/tr46/#ToASCII
-    public func toASCII(domainName: String) throws(MappingErrors) -> String {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            return try self.toASCII(
-                uncheckedUTF8Span: domainName.utf8Span.span,
-                canInPlaceModifySpanBytes: false
-            ).collect(original: domainName)
-        }
-        var copy = domainName
-        return try copy.withSpan_Compatibility_macOSUnder26 {
-            span throws(MappingErrors) -> String in
-            try self.toASCII(
-                uncheckedUTF8Span: span,
-                canInPlaceModifySpanBytes: false
-            ).collect(original: domainName)
-        }
-    }
-
-    /// `ToASCII` IDNA implementation.
-    /// https://www.unicode.org/reports/tr46/#ToASCII
-    /// This function can modify the string in-place.
-    /// If you don't need the original domain name string, use this function to avoid copies.
-    public func toASCII(domainName: inout String) throws(MappingErrors) {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            try self.toASCII(
-                uncheckedUTF8Span: domainName.utf8Span.span,
-                canInPlaceModifySpanBytes: true
-            ).collect(into: &domainName)
-            return
-        }
-        var copy = domainName
-        try copy.withSpan_Compatibility_macOSUnder26 { span throws(MappingErrors) -> Void in
-            try self.toASCII(
-                uncheckedUTF8Span: span,
-                canInPlaceModifySpanBytes: false
-            ).collect(into: &domainName)
-        }
-    }
-
-    /// `ToUnicode` IDNA implementation.
-    /// https://www.unicode.org/reports/tr46/#ToUnicode
-    public func toUnicode(domainName: String) throws(MappingErrors) -> String {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            return try self.toUnicode(
-                uncheckedUTF8Span: domainName.utf8Span.span,
-                canInPlaceModifySpanBytes: false
-            ).collect(original: domainName)
-        }
-        var copy = domainName
-        return try copy.withSpan_Compatibility_macOSUnder26 {
-            span throws(MappingErrors) -> String in
-            try self.toUnicode(
-                uncheckedUTF8Span: span,
-                canInPlaceModifySpanBytes: false
-            ).collect(original: domainName)
-        }
-    }
-
-    /// `ToUnicode` IDNA implementation.
-    /// https://www.unicode.org/reports/tr46/#ToUnicode
-    /// This function can modify the string in-place.
-    /// If you don't need the original domain name string, use this function to avoid copies.
-    public func toUnicode(domainName: inout String) throws(MappingErrors) {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            try self.toUnicode(
-                uncheckedUTF8Span: domainName.utf8Span.span,
-                canInPlaceModifySpanBytes: true
-            ).collect(into: &domainName)
-            return
-        }
-        var copy = domainName
-        try copy.withSpan_Compatibility_macOSUnder26 { span throws(MappingErrors) -> Void in
-            try self.toUnicode(
-                uncheckedUTF8Span: span,
-                canInPlaceModifySpanBytes: false
-            ).collect(into: &domainName)
-        }
     }
 }
