@@ -14,16 +14,21 @@ extension [UInt8] {
     borrowing func withSpan_Compatibility<T>(
         _ body: (Span<UInt8>) -> T
     ) -> T {
+        #if canImport(Darwin)
         if #available(swiftIDNAApplePlatforms 26, *) {
             return body(self.span)
         }
         return self.withUnsafeBufferPointer { bytesPtr in
             body(bytesPtr.span)
         }
+        #else
+        return body(self.span)
+        #endif
     }
 
     mutating func uncheckedUTF8Bytes_ensureNFC() {
         self.withSpan_Compatibility { span in
+            #if canImport(Darwin)
             if #available(swiftIDNAApplePlatforms 26, *) {
                 var utf8Span = UTF8Span(unchecked: span)
                 if !utf8Span.checkForNFC(quickCheck: false) {
@@ -35,6 +40,12 @@ extension [UInt8] {
             if !string.isInNFC_slow {
                 self = string.nfcCodePoints
             }
+            #else
+            var utf8Span = UTF8Span(unchecked: span)
+            if !utf8Span.checkForNFC(quickCheck: false) {
+                self = String(uncheckedUTF8Span: span).nfcCodePoints
+            }
+            #endif
         }
     }
 }

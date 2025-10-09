@@ -127,6 +127,7 @@ public struct IDNA: Sendable {
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToASCII
     public func toASCII(domainName: String) throws(MappingErrors) -> String {
+        #if canImport(Darwin)
         if #available(swiftIDNAApplePlatforms 26, *) {
             return try self.toASCII(
                 uncheckedUTF8Span: domainName.utf8Span.span,
@@ -141,6 +142,12 @@ public struct IDNA: Sendable {
                 canInPlaceModifySpanBytes: false
             ).collect(original: domainName)
         }
+        #else
+        return try self.toASCII(
+            uncheckedUTF8Span: domainName.utf8Span.span,
+            canInPlaceModifySpanBytes: false
+        ).collect(original: domainName)
+        #endif
     }
 
     /// `ToASCII` IDNA implementation.
@@ -148,6 +155,7 @@ public struct IDNA: Sendable {
     /// This function can modify the string in-place.
     /// If you don't need the original domain name string, use this function to avoid copies.
     public func toASCII(domainName: inout String) throws(MappingErrors) {
+        #if canImport(Darwin)
         if #available(swiftIDNAApplePlatforms 26, *) {
             try self.toASCII(
                 uncheckedUTF8Span: domainName.utf8Span.span,
@@ -162,11 +170,18 @@ public struct IDNA: Sendable {
                 canInPlaceModifySpanBytes: false
             ).collect(into: &domainName)
         }
+        #else
+        try self.toASCII(
+            uncheckedUTF8Span: domainName.utf8Span.span,
+            canInPlaceModifySpanBytes: true
+        ).collect(into: &domainName)
+        #endif
     }
 
     /// `ToUnicode` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToUnicode
     public func toUnicode(domainName: String) throws(MappingErrors) -> String {
+        #if canImport(Darwin)
         if #available(swiftIDNAApplePlatforms 26, *) {
             return try self.toUnicode(
                 uncheckedUTF8Span: domainName.utf8Span.span,
@@ -181,6 +196,12 @@ public struct IDNA: Sendable {
                 canInPlaceModifySpanBytes: false
             ).collect(original: domainName)
         }
+        #else
+        return try self.toUnicode(
+            uncheckedUTF8Span: domainName.utf8Span.span,
+            canInPlaceModifySpanBytes: false
+        ).collect(original: domainName)
+        #endif
     }
 
     /// `ToUnicode` IDNA implementation.
@@ -188,6 +209,7 @@ public struct IDNA: Sendable {
     /// This function can modify the string in-place.
     /// If you don't need the original domain name string, use this function to avoid copies.
     public func toUnicode(domainName: inout String) throws(MappingErrors) {
+        #if canImport(Darwin)
         if #available(swiftIDNAApplePlatforms 26, *) {
             try self.toUnicode(
                 uncheckedUTF8Span: domainName.utf8Span.span,
@@ -202,5 +224,11 @@ public struct IDNA: Sendable {
                 canInPlaceModifySpanBytes: false
             ).collect(into: &domainName)
         }
+        #else
+        try self.toUnicode(
+            uncheckedUTF8Span: domainName.utf8Span.span,
+            canInPlaceModifySpanBytes: true
+        ).collect(into: &domainName)
+        #endif
     }
 }
