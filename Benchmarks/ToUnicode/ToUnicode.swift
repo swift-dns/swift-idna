@@ -25,7 +25,7 @@ let benchmarks: @Sendable () -> Void = {
         ) { benchmark in
             for _ in 0..<1_000_000 {
                 var domainName = "google.com"
-                let converted = try! idnaConfig.toUnicode(domainName: &domainName)
+                let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
                 blackHole(converted)
             }
         }
@@ -39,7 +39,7 @@ let benchmarks: @Sendable () -> Void = {
             )
         ) { benchmark in
             var domainName = "google.com"
-            let converted = try! idnaConfig.toUnicode(domainName: &domainName)
+            let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
             blackHole(converted)
         }
 
@@ -55,7 +55,7 @@ let benchmarks: @Sendable () -> Void = {
         ) { benchmark in
             for _ in 0..<500_000 {
                 var domainName = "app-analytics-services.com"
-                let converted = try! idnaConfig.toUnicode(domainName: &domainName)
+                let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
                 blackHole(converted)
             }
         }
@@ -69,7 +69,7 @@ let benchmarks: @Sendable () -> Void = {
             )
         ) { benchmark in
             var domainName = "app-analytics-services.com"
-            let converted = try! idnaConfig.toUnicode(domainName: &domainName)
+            let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
             blackHole(converted)
         }
 
@@ -86,7 +86,7 @@ let benchmarks: @Sendable () -> Void = {
         ) { benchmark in
             for _ in 0..<20_000 {
                 var domainName = "xn--ob-eka.se"
-                let converted = try! idnaConfig.toUnicode(domainName: &domainName)
+                let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
                 blackHole(converted)
             }
         }
@@ -100,7 +100,7 @@ let benchmarks: @Sendable () -> Void = {
             )
         ) { benchmark in
             var domainName = "xn--ob-eka.se"
-            let converted = try! idnaConfig.toUnicode(domainName: &domainName)
+            let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
             blackHole(converted)
         }
 
@@ -117,7 +117,7 @@ let benchmarks: @Sendable () -> Void = {
         ) { benchmark in
             for _ in 0..<20_000 {
                 var domainName = "xn--9iqv4mb85adml.xn--fiqs8s"
-                let converted = try! idnaConfig.toUnicode(domainName: &domainName)
+                let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
                 blackHole(converted)
             }
         }
@@ -131,7 +131,7 @@ let benchmarks: @Sendable () -> Void = {
             )
         ) { benchmark in
             var domainName = "xn--9iqv4mb85adml.xn--fiqs8s"
-            let converted = try! idnaConfig.toUnicode(domainName: &domainName)
+            let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
             blackHole(converted)
         }
     }

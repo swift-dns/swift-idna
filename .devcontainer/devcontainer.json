@@ -1,0 +1,27 @@
+{
+  "name": "swift:nightly-6.2-noble",
+  "image": "swiftlang/swift:nightly-6.2-noble",
+  "mounts": [
+    "source=${localEnv:HOME}/.sourcekit-lsp/config.json,target=/root/.sourcekit-lsp/config.json,type=bind,consistency=cached"
+  ],
+  "postCreateCommand": "apt update && apt install -y libjemalloc-dev",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.lldb-dap",
+        "swiftlang.swift-vscode",
+        "esbenp.prettier-vscode",
+        "usernamehw.errorlens",
+        "github.vscode-github-actions",
+        "GitHub.vscode-pull-request-github",
+        "eamodio.gitlens",
+        "vadimcn.vscode-lldb"
+      ],
+      "settings": {
+        "lldb.library": "/usr/lib/liblldb.so",
+        "swift.path": null,
+        "swift.swiftEnvironmentVariables": {}
+      }
+    }
+  }
+}

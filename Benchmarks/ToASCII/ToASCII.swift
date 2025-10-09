@@ -25,7 +25,7 @@ let benchmarks: @Sendable () -> Void = {
         ) { benchmark in
             for _ in 0..<10_000_000 {
                 var domainName = "google.com"
-                let converted = try! idnaConfig.toASCII(domainName: &domainName)
+                let converted: Void = try! idnaConfig.toASCII(domainName: &domainName)
                 blackHole(converted)
             }
         }
@@ -39,7 +39,7 @@ let benchmarks: @Sendable () -> Void = {
             )
         ) { benchmark in
             var domainName = "google.com"
-            let converted = try! idnaConfig.toASCII(domainName: &domainName)
+            let converted: Void = try! idnaConfig.toASCII(domainName: &domainName)
             blackHole(converted)
         }
 
@@ -55,7 +55,7 @@ let benchmarks: @Sendable () -> Void = {
         ) { benchmark in
             for _ in 0..<5_000_000 {
                 var domainName = "app-analytics-services.com"
-                let converted = try! idnaConfig.toASCII(domainName: &domainName)
+                let converted: Void = try! idnaConfig.toASCII(domainName: &domainName)
                 blackHole(converted)
             }
         }
@@ -69,7 +69,7 @@ let benchmarks: @Sendable () -> Void = {
             )
         ) { benchmark in
             var domainName = "app-analytics-services.com"
-            let converted = try! idnaConfig.toASCII(domainName: &domainName)
+            let converted: Void = try! idnaConfig.toASCII(domainName: &domainName)
             blackHole(converted)
         }
 
@@ -86,7 +86,7 @@ let benchmarks: @Sendable () -> Void = {
         ) { benchmark in
             for _ in 0..<20_000 {
                 var domainName = "öob.dot"
-                let converted = try! idnaConfig.toASCII(domainName: &domainName)
+                let converted: Void = try! idnaConfig.toASCII(domainName: &domainName)
                 blackHole(converted)
             }
         }
@@ -100,7 +100,7 @@ let benchmarks: @Sendable () -> Void = {
             )
         ) { benchmark in
             var domainName = "öob.dot"
-            let converted = try! idnaConfig.toASCII(domainName: &domainName)
+            let converted: Void = try! idnaConfig.toASCII(domainName: &domainName)
             blackHole(converted)
         }
 
@@ -117,7 +117,7 @@ let benchmarks: @Sendable () -> Void = {
         ) { benchmark in
             for _ in 0..<20_000 {
                 var domainName = "生命之花.中国"
-                let converted = try! idnaConfig.toASCII(domainName: &domainName)
+                let converted: Void = try! idnaConfig.toASCII(domainName: &domainName)
                 blackHole(converted)
             }
         }
@@ -131,7 +131,7 @@ let benchmarks: @Sendable () -> Void = {
             )
         ) { benchmark in
             var domainName = "生命之花.中国"
-            let converted = try! idnaConfig.toASCII(domainName: &domainName)
+            let converted: Void = try! idnaConfig.toASCII(domainName: &domainName)
             blackHole(converted)
         }
     }
