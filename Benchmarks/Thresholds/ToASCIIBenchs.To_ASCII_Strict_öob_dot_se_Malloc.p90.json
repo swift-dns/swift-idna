@@ -1,6 +1,3 @@
 {
-  "mallocCountTotal": {
-    "max": 49,
-    "min": 7
-  }
+  "mallocCountTotal": 7
 }
