@@ -170,14 +170,14 @@ let benchmarks: @Sendable () -> Void = {
         /// Grabbed from Cloudflare top 100K domains
 
         Benchmark(
-            "To_Unicode_\(namePrefix)_生命之花_dot_中国_CPU_200K",
+            "To_Unicode_\(namePrefix)_生命之花_dot_中国_CPU_100K",
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 5,
                 maxIterations: 1000,
             )
         ) { benchmark in
-            for _ in 0..<200_000 {
+            for _ in 0..<100_000 {
                 var domainName = "xn--9iqv4mb85adml.xn--fiqs8s"
                 let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
                 blackHole(converted)

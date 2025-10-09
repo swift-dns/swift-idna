@@ -170,14 +170,14 @@ let benchmarks: @Sendable () -> Void = {
         /// Grabbed from Cloudflare top 100K domains
 
         Benchmark(
-            "To_ASCII_\(namePrefix)_生命之花_dot_中国_CPU_200K",
+            "To_ASCII_\(namePrefix)_生命之花_dot_中国_CPU_100K",
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 5,
                 maxIterations: 1000,
             )
         ) { benchmark in
-            for _ in 0..<200_000 {
+            for _ in 0..<100_000 {
                 var domainName = "生命之花.中国"
                 let converted: Void = try! idnaConfig.toASCII(domainName: &domainName)
                 blackHole(converted)
