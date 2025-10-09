@@ -4,12 +4,9 @@ import SwiftIDNA
 let benchmarks: @Sendable () -> Void = {
     Benchmark.defaultConfiguration.maxDuration = .seconds(5)
 
-    let strictIDNA = IDNA(configuration: .mostStrict)
-    let laxIDNA = IDNA(configuration: .mostLax)
-
     let nameAndConfigs = [
-        ("Strict", strictIDNA),
-        ("Lax", laxIDNA),
+        ("Strict", IDNA(configuration: .mostStrict)),
+        ("Lax", IDNA(configuration: .mostLax)),
     ]
 
     for (namePrefix, idnaConfig) in nameAndConfigs {
@@ -19,14 +16,14 @@ let benchmarks: @Sendable () -> Void = {
         /// Mark: - google.com
 
         Benchmark(
-            "To_ASCII_\(namePrefix)_google_dot_com_CPU_500K",
+            "To_ASCII_\(namePrefix)_google_dot_com_CPU_5M",
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 5,
-                maxIterations: 500_000,
+                maxIterations: 1000,
             )
         ) { benchmark in
-            for _ in 0..<500_000 {
+            for _ in 0..<5_000_000 {
                 var domainName = "google.com"
                 let converted = try! idnaConfig.toASCII(domainName: &domainName)
                 blackHole(converted)
@@ -49,14 +46,14 @@ let benchmarks: @Sendable () -> Void = {
         /// Mark: - app-analytics-services.com
 
         Benchmark(
-            "To_ASCII_\(namePrefix)_app-analytics-services_dot_com_CPU_500K",
+            "To_ASCII_\(namePrefix)_app-analytics-services_dot_com_CPU_5M",
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 5,
-                maxIterations: 500_000,
+                maxIterations: 1000,
             )
         ) { benchmark in
-            for _ in 0..<500_000 {
+            for _ in 0..<5_000_000 {
                 var domainName = "app-analytics-services.com"
                 let converted = try! idnaConfig.toASCII(domainName: &domainName)
                 blackHole(converted)
@@ -84,7 +81,7 @@ let benchmarks: @Sendable () -> Void = {
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 5,
-                maxIterations: 500_000,
+                maxIterations: 1000,
             )
         ) { benchmark in
             for _ in 0..<200_000 {
@@ -115,7 +112,7 @@ let benchmarks: @Sendable () -> Void = {
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 5,
-                maxIterations: 500_000,
+                maxIterations: 1000,
             )
         ) { benchmark in
             for _ in 0..<200_000 {
