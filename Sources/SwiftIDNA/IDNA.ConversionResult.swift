@@ -35,22 +35,27 @@ extension IDNA {
             }
         }
 
-        /// This function below would require us to be able to tie `bytes` lifetime to the `UTF8Span` lifetime.
-        /// Which is currently not possible.
-
-        // /// Collect this result into the provided UTF8Span.
-        // @available(swiftIDNAApplePlatforms 26, *)
-        // public func collect(into utf8Span: inout UTF8Span) {
-        //     switch self {
-        //     case .noChangedNeeded:
-        //         return
-        //     case .bytes(let bytes):
-        //         bytes.withSpan_Compatibility { span in
-        //             utf8Span = UTF8Span(unchecked: span)
-        //         }
-        //     case .string(let string):
-        //         domainName = string
-        //     }
-        // }
+        /// Perform an action using the span of the result.
+        public func withSpan<T>(
+            _ block: (Span<UInt8>) throws -> T,
+            ifNotAvailable: () -> T
+        ) rethrows -> T {
+            switch self {
+            case .noChangedNeeded:
+                return ifNotAvailable()
+            case .bytes(let bytes):
+                return try bytes.withSpan_Compatibility {
+                    return try block($0)
+                }
+            case .string(let string):
+                if #available(swiftIDNAApplePlatforms 26, *) {
+                    return try block(string.utf8Span.span)
+                }
+                var string = string
+                return try string.withSpan_Compatibility_macOSUnder26 {
+                    try block($0)
+                }
+            }
+        }
     }
 }
