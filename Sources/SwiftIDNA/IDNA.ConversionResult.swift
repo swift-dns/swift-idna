@@ -35,20 +35,6 @@ extension IDNA {
             }
         }
 
-        /// Collect this result into the provided string.
-        public func collect(into domainName: inout String) {
-            switch self {
-            case .noChangedNeeded:
-                return
-            case .bytes(let bytes):
-                bytes.withSpan_Compatibility { span in
-                    domainName = String(uncheckedUTF8Span: span)
-                }
-            case .string(let string):
-                domainName = string
-            }
-        }
-
         /// This function below would require us to be able to tie `bytes` lifetime to the `UTF8Span` lifetime.
         /// Which is currently not possible.
 
