@@ -14,17 +14,17 @@ let benchmarks: @Sendable () -> Void = {
     /// Swift uses `_SmallString` internally for strings <= 15 utf8s.
     /// We have a benchmark for both `_SmallString` and heap-allocated `String` cases.
 
-    /// Mark: - google.com
+    /// Mark: - Lowercased_google.com
 
     Benchmark(
-        "To_Unicode_google_dot_com_CPU_1M",
+        "To_Unicode_Lowercased_google_dot_com_CPU_8M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<1_000_000 {
+        for _ in 0..<8_000_000 {
             var domainName = "google.com"
             let converted: Void = try! strictConfig.toUnicode(domainName: &domainName)
             blackHole(converted)
@@ -32,7 +32,7 @@ let benchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "To_Unicode_google_dot_com_Malloc",
+        "To_Unicode_Lowercased_google_dot_com_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -44,17 +44,47 @@ let benchmarks: @Sendable () -> Void = {
         blackHole(converted)
     }
 
-    /// Mark: - app-analytics-services.com
+    /// Mark: - Uppercased_google.com
 
     Benchmark(
-        "To_Unicode_app-analytics-services_dot_com_CPU_500K",
+        "To_Unicode_Uppercased_google_dot_com_CPU_8M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<500_000 {
+        for _ in 0..<8_000_000 {
+            var domainName = "GOOGLE.COM"
+            let converted: Void = try! strictConfig.toUnicode(domainName: &domainName)
+            blackHole(converted)
+        }
+    }
+
+    Benchmark(
+        "To_Unicode_Uppercased_google_dot_com_Malloc",
+        configuration: .init(
+            metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10,
+        )
+    ) { benchmark in
+        var domainName = "GOOGLE.COM"
+        let converted: Void = try! strictConfig.toUnicode(domainName: &domainName)
+        blackHole(converted)
+    }
+
+    /// Mark: - Lowercased_app-analytics-services.com
+
+    Benchmark(
+        "To_Unicode_Lowercased_app-analytics-services_dot_com_CPU_4M",
+        configuration: .init(
+            metrics: [.cpuUser],
+            warmupIterations: 5,
+            maxIterations: 1000,
+        )
+    ) { benchmark in
+        for _ in 0..<4_000_000 {
             var domainName = "app-analytics-services.com"
             let converted: Void = try! strictConfig.toUnicode(domainName: &domainName)
             blackHole(converted)
@@ -62,7 +92,7 @@ let benchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "To_Unicode_app-analytics-services_dot_com_Malloc",
+        "To_Unicode_Lowercased_app-analytics-services_dot_com_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -74,19 +104,49 @@ let benchmarks: @Sendable () -> Void = {
         blackHole(converted)
     }
 
+    /// Mark: - Uppercased_app-analytics-services.com
+
+    Benchmark(
+        "To_Unicode_Uppercased_app-analytics-services_dot_com_CPU_4M",
+        configuration: .init(
+            metrics: [.cpuUser],
+            warmupIterations: 5,
+            maxIterations: 1000,
+        )
+    ) { benchmark in
+        for _ in 0..<4_000_000 {
+            var domainName = "APP-ANALYTICS-SERVICES.COM"
+            let converted: Void = try! strictConfig.toUnicode(domainName: &domainName)
+            blackHole(converted)
+        }
+    }
+
+    Benchmark(
+        "To_Unicode_Uppercased_app-analytics-services_dot_com_Malloc",
+        configuration: .init(
+            metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10,
+        )
+    ) { benchmark in
+        var domainName = "APP-ANALYTICS-SERVICES.COM"
+        let converted: Void = try! strictConfig.toUnicode(domainName: &domainName)
+        blackHole(converted)
+    }
+
     for (namePrefix, idnaConfig) in nameAndConfigs {
         /// Mark: - öob.se
         /// Grabbed from Cloudflare top 1M domains
 
         Benchmark(
-            "To_Unicode_\(namePrefix)_öob_dot_se_CPU_20K",
+            "To_Unicode_\(namePrefix)_öob_dot_se_CPU_200K",
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 5,
                 maxIterations: 1000,
             )
         ) { benchmark in
-            for _ in 0..<20_000 {
+            for _ in 0..<200_000 {
                 var domainName = "xn--ob-eka.se"
                 let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
                 blackHole(converted)
@@ -110,14 +170,14 @@ let benchmarks: @Sendable () -> Void = {
         /// Grabbed from Cloudflare top 100K domains
 
         Benchmark(
-            "To_Unicode_\(namePrefix)_生命之花_dot_中国_CPU_20K",
+            "To_Unicode_\(namePrefix)_生命之花_dot_中国_CPU_200K",
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 5,
                 maxIterations: 1000,
             )
         ) { benchmark in
-            for _ in 0..<20_000 {
+            for _ in 0..<200_000 {
                 var domainName = "xn--9iqv4mb85adml.xn--fiqs8s"
                 let converted: Void = try! idnaConfig.toUnicode(domainName: &domainName)
                 blackHole(converted)

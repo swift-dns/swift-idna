@@ -17,14 +17,14 @@ let benchmarks: @Sendable () -> Void = {
     /// Mark: - Lowercased_google.com
 
     Benchmark(
-        "To_ASCII_Lowercased_google_dot_com_CPU_10M",
+        "To_ASCII_Lowercased_google_dot_com_CPU_8M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<10_000_000 {
+        for _ in 0..<8_000_000 {
             var domainName = "google.com"
             let converted: Void = try! strictConfig.toASCII(domainName: &domainName)
             blackHole(converted)
@@ -139,14 +139,14 @@ let benchmarks: @Sendable () -> Void = {
         /// Grabbed from Cloudflare top 1M domains
 
         Benchmark(
-            "To_ASCII_\(namePrefix)_öob_dot_se_CPU_20K",
+            "To_ASCII_\(namePrefix)_öob_dot_se_CPU_200K",
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 5,
                 maxIterations: 1000,
             )
         ) { benchmark in
-            for _ in 0..<20_000 {
+            for _ in 0..<200_000 {
                 var domainName = "öob.dot"
                 let converted: Void = try! idnaConfig.toASCII(domainName: &domainName)
                 blackHole(converted)
@@ -170,14 +170,14 @@ let benchmarks: @Sendable () -> Void = {
         /// Grabbed from Cloudflare top 100K domains
 
         Benchmark(
-            "To_ASCII_\(namePrefix)_生命之花_dot_中国_CPU_20K",
+            "To_ASCII_\(namePrefix)_生命之花_dot_中国_CPU_200K",
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 5,
                 maxIterations: 1000,
             )
         ) { benchmark in
-            for _ in 0..<20_000 {
+            for _ in 0..<200_000 {
                 var domainName = "生命之花.中国"
                 let converted: Void = try! idnaConfig.toASCII(domainName: &domainName)
                 blackHole(converted)
