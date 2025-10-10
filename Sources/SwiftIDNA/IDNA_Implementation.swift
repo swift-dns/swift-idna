@@ -2,7 +2,6 @@
 extension IDNA {
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToASCII
-    @_lifetime(copy span)
     func _toASCII(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>
     ) throws(MappingErrors) -> ConversionResult {
@@ -163,7 +162,6 @@ extension IDNA {
 
     /// `ToUnicode` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToUnicode
-    @_lifetime(copy span)
     func _toUnicode(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>
     ) throws(MappingErrors) -> ConversionResult {
@@ -198,7 +196,6 @@ extension IDNA {
 
     /// Main `Processing` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#Processing
-    @_lifetime(copy span)
     @usableFromInline
     func mainProcessing(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,

@@ -26,7 +26,6 @@ extension String {
             || self.utf8.elementsEqual(self.nfcCodePoints)
     }
 
-    @_lifetime(copy span)
     init(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
         self.init(unsafeUninitializedCapacity: span.count) { stringBuffer in
             let rawStringBuffer = UnsafeMutableRawBufferPointer(stringBuffer)
