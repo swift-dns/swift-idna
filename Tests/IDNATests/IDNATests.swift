@@ -3,10 +3,23 @@ import Testing
 
 @Suite
 struct IDNATests {
+    @available(swiftIDNAApplePlatforms 26, *)
+    @Test func `performDNSComplaintByteCheck works correctly`() {
+        let bytes: [UInt8] = [
+            0x07, 0x45, 0x78, 0x61,
+            0x6d, 0x70, 0x6c, 0x65,
+            0x03, 0x63, 0x4f, 0x6d,
+            0x00,
+        ]
+
+        let result = IDNA.performDNSComplaintByteCheck(onDNSWireFormatSpan: bytes.span)
+        #expect(result == .onlyNeedsLowercasingOfUppercasedASCIILetters)
+    }
+
     /// For debugging you can choose a specific test case based on its index. For example
     /// for index 5101, use `@Test(arguments: IDNATestV2Case.enumeratedAllCases()[5101...5101])`.
-    @Test(arguments: IDNATestV2Case.enumeratedAllCases()[13...13])
-    func runIDNATestV2SuiteAgainstToASCIIFunction(index: Int, arg: IDNATestV2Case) throws {
+    @Test(arguments: IDNATestV2Case.enumeratedAllCases())
+    func `run IDNATestV2Suite against toASCII function`(index: Int, arg: IDNATestV2Case) throws {
         var idna = IDNA(configuration: .mostStrict)
         /// Because ToASCII will go through ToUnicode too
         var statuses = arg.toUnicodeStatus + arg.toAsciiNStatus
@@ -22,7 +35,7 @@ struct IDNATests {
     /// For debugging you can choose a specific test case based on its index. For example
     /// for index 5101, use `@Test(arguments: IDNATestV2Case.enumeratedAllCases()[5101...5101])`.
     @Test(arguments: IDNATestV2Case.enumeratedAllCases())
-    func runIDNATestV2SuiteAgainstToUnicodeFunction(index: Int, arg: IDNATestV2Case) throws {
+    func `run IDNATestV2Suite against toUnicode function`(index: Int, arg: IDNATestV2Case) throws {
         var idna = IDNA(configuration: .mostStrict)
         var statuses = arg.toUnicodeStatus
         try runTestCase(

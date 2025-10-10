@@ -27,16 +27,17 @@ extension IDNA {
     ) -> CharacterCheckResult? {
         var containsUppercased = false
 
-        for idx in span.indices {
-            let length = span[unchecked: idx]
+        var idx = 0
+        while idx < span.count {
+            let length = Int(span[unchecked: idx])
 
-            guard span.count > idx &+ Int(length) else {
+            guard span.count > idx &+ length else {
                 return nil
             }
 
-            for anotherIdx in 1...length {
+            for anotherIdx in 0..<length {
                 /// We checked above that the span has enough elements, so we can safely index it.
-                let byte = span[unchecked: idx &+ Int(anotherIdx)]
+                let byte = span[unchecked: idx &+ anotherIdx &+ 1]
 
                 /// Based on IDNA, all ASCII characters other than uppercased letters are 'valid'
                 /// Uppercased letters are each 'mapped' to their lowercased equivalent.
@@ -50,6 +51,8 @@ extension IDNA {
                     return .mightChangeAfterIDNAConversion
                 }
             }
+
+            idx &+= length &+ 1
         }
 
         return containsUppercased
