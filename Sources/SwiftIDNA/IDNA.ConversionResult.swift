@@ -30,7 +30,7 @@ extension IDNA {
                 return try ifNotAvailable()
             case .bytes(let bytes):
                 return try bytes.withSpan_Compatibility {
-                    return try block($0)
+                    try block($0)
                 }
             case .string(let string):
                 if #available(swiftIDNAApplePlatforms 26, *) {
