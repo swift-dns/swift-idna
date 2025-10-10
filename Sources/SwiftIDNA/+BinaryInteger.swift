@@ -15,7 +15,7 @@ extension BinaryInteger {
     /// Turns the character into a lowercased ASCII letter only if it's an uppercased ASCII letter.
     /// Does not check if the value is an uppercased ASCII letter.
     @inlinable
-    public func uncheckedToLowercasedASCIILetter() -> Self {
+    public func _uncheckedToLowercasedASCIILetterAssumingUppercasedLetter() -> Self {
         /// https://ss64.com/ascii.html
         /// The difference between an upper and lower cased ASCII byte is their sixth bit.
         /// Turn the sixth bit on to ensure lowercased ASCII byte.
