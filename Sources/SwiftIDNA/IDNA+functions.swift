@@ -5,34 +5,24 @@ extension IDNA {
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToASCII
     public func toASCII(domainName: String) throws(MappingErrors) -> String {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            return try self._toASCII(
-                _uncheckedAssumingValidUTF8: domainName.utf8Span.span
-            ).collect(original: domainName)
-        }
         var copy = domainName
-        return try copy.withSpan_Compatibility_macOSUnder26 {
+        return try copy.withSpan_Compatibility {
             span throws(MappingErrors) -> String in
             try self._toASCII(
                 _uncheckedAssumingValidUTF8: span
-            ).collect(original: domainName)
+            ).collect() ?? domainName
         }
     }
 
     /// `ToUnicode` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToUnicode
     public func toUnicode(domainName: String) throws(MappingErrors) -> String {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            return try self._toUnicode(
-                _uncheckedAssumingValidUTF8: domainName.utf8Span.span
-            ).collect(original: domainName)
-        }
         var copy = domainName
-        return try copy.withSpan_Compatibility_macOSUnder26 {
+        return try copy.withSpan_Compatibility {
             span throws(MappingErrors) -> String in
             try self._toUnicode(
                 _uncheckedAssumingValidUTF8: span
-            ).collect(original: domainName)
+            ).collect() ?? domainName
         }
     }
 }
@@ -44,8 +34,8 @@ extension IDNA {
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#toASCII
     ///
-    /// The `span` will be assumed to be coming right from a `String`'s bytes.
-    /// For example from `String.utf8Span.span`.
+    /// The `span` will be assumed to be valid `String` UTF8 bytes.
+    /// For example `String.utf8Span.span` is a valid span.
     /// Violating this assumption can result in undefined behavior.
     public func toASCII(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>
@@ -56,8 +46,8 @@ extension IDNA {
     /// `ToUnicode` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToUnicode
     ///
-    /// The `span` will be assumed to be coming right from a `String`'s bytes.
-    /// For example from `String.utf8Span.span`.
+    /// The `span` will be assumed to be valid `String` UTF8 bytes.
+    /// For example `String.utf8Span.span` is a valid span.
     /// Violating this assumption can result in undefined behavior.
     public func toUnicode(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>
@@ -73,7 +63,7 @@ extension IDNA {
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#toASCII
     public func toASCII(
-        domainNameUTF8Span utf8Span: UTF8Span
+        domainName utf8Span: UTF8Span
     ) throws(MappingErrors) -> ConversionResult {
         try self._toUnicode(_uncheckedAssumingValidUTF8: utf8Span.span)
     }
@@ -81,7 +71,7 @@ extension IDNA {
     /// `ToUnicode` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToUnicode
     public func toUnicode(
-        domainNameUTF8Span utf8Span: UTF8Span
+        domainName utf8Span: UTF8Span
     ) throws(MappingErrors) -> ConversionResult {
         try self._toUnicode(_uncheckedAssumingValidUTF8: utf8Span.span)
     }
