@@ -13,7 +13,7 @@
     </a>
     <a href="https://swift.org">
         <img
-            src="https://design.vapor.codes/images/swift60up.svg"
+            src="https://design.vapor.codes/images/swift62up.svg"
             alt="Swift 6.2+"
         >
     </a>
@@ -119,7 +119,7 @@ To use the `swift-idna` library in a SwiftPM project,
 add the following line to the dependencies in your `Package.swift` file:
 
 ```swift
-.package(url: "https://github.com/mahdibm/swift-idna.git", from: "1.0.0-beta.5"),
+.package(url: "https://github.com/mahdibm/swift-idna.git", from: "1.0.0-beta.15"),
 ```
 
 Include `SwiftIDNA` as a dependency for your targets:
