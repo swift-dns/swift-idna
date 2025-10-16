@@ -3,6 +3,10 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     const char* source;
     const char* toUnicode;
@@ -13,6 +17,10 @@ typedef struct {
     size_t toAsciiNStatusCount;
 } CSwiftIDNATestV2CCase;
 
-const CSwiftIDNATestV2CCase* cswift_idna_test_v2_all_cases(size_t* count);
+const CSwiftIDNATestV2CCase *cswift_idna_test_v2_all_cases(size_t *count);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // CSWIFT_DNS_IDNA_TESTING_H

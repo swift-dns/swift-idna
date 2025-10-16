@@ -12,7 +12,7 @@ struct IDNATests {
             0x00,
         ]
 
-        let result = IDNA.performDNSComplaintByteCheck(onDNSWireFormatSpan: bytes.span)
+        let result = IDNA.performByteCheck(onDNSWireFormatSpan: bytes.span)
         #expect(result == .onlyNeedsLowercasingOfUppercasedASCIILetters)
     }
 

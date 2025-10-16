@@ -52,10 +52,10 @@ Domain names are inherently case-insensitive, and they will always be lowercased
 Note that these public functions are not sufficient to assert that a `ToUnicode` conversion will also have no effect on the string.
 For `ToUnicode`, simply use the `toUnicode` functions and they will automatically skip the conversion if not needed.
 
-- `IDNA.performCharacterCheck(on: String)`
-- `IDNA.performCharacterCheck(on: Substring)`
-- `IDNA.performCharacterCheck(on: Span<UInt>)`
-- `IDNA.performCharacterCheck(onDNSWireFormatSpan: Span<UInt8>)`
+- `IDNA.performByteCheck(on: String)`
+- `IDNA.performByteCheck(on: Substring)`
+- `IDNA.performByteCheck(on: Span<UInt8>)`
+- `IDNA.performByteCheck(onDNSWireFormatSpan: Span<UInt8>)`
 
 `swift-idna` also provides public functions to turn an uppercased ASCII byte into lowercased, as well as a few more useful functions.
 
