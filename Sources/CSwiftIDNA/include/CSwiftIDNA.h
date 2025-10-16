@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // IDNA2008 status enum values (matching IDNAMapping.IDNA2008Status)
 typedef enum {
     IDNA_STATUS_NV8 = 0,
@@ -31,5 +35,9 @@ typedef struct {
 // Look up IDNA mapping for a given Unicode code point
 // Returns a pointer to a static CSwiftIDNAMappingResult
 const CSwiftIDNAMappingResult *cswift_idna_mapping_lookup(uint32_t code_point);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // CSWIFT_DNS_IDNA_H

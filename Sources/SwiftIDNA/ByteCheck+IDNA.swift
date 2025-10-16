@@ -22,7 +22,7 @@ extension IDNA {
     /// If you want to be complaint with the DNS wire format, you need to ensure those unacceptable
     /// ASCII characters are not present in the sequence. This is out of scope for this library.
     @inlinable
-    public static func performDNSComplaintByteCheck(
+    public static func performByteCheck(
         onDNSWireFormatSpan span: Span<UInt8>
     ) -> CharacterCheckResult? {
         var containsUppercased = false
