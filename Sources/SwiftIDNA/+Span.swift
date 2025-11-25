@@ -1,4 +1,4 @@
-@available(swiftIDNAApplePlatforms 13, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension Span<UInt8> {
     var isInNFC: Bool {
         if #available(swiftIDNAApplePlatforms 26, *) {
@@ -137,7 +137,7 @@ extension Span<UInt8> {
     }
 }
 
-@available(swiftIDNAApplePlatforms 13, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension Span {
     @inlinable
     func contains(where predicate: (Element) -> Bool) -> Bool {

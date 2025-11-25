@@ -1,4 +1,4 @@
-@available(swiftIDNAApplePlatforms 13, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNA {
     /// The result of checking characters for IDNA compliance.
     public enum CharacterCheckResult {
