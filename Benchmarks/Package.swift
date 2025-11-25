@@ -45,10 +45,10 @@ var settings: [SwiftSetting] {
             "AvailabilityMacro=swiftIDNAApplePlatforms 26:macOS 26, iOS 26, tvOS 26, watchOS 26, visionOS 26"
         ),
         .enableExperimentalFeature(
-            "AvailabilityMacro=swiftIDNAApplePlatforms 15:macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2"
+            "AvailabilityMacro=swiftIDNAApplePlatforms 11:macOS 11, iOS 14, tvOS 14, watchOS 7"
         ),
         .enableExperimentalFeature(
-            "AvailabilityMacro=swiftIDNAApplePlatforms 13:macOS 13, iOS 16, tvOS 16, watchOS 9"
+            "AvailabilityMacro=swiftIDNAApplePlatforms 10.15:macOS 10.15, iOS 13, tvOS 13, watchOS 6"
         ),
     ]
 }

@@ -1,4 +1,4 @@
-@available(swiftIDNAApplePlatforms 13, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNA {
     public enum ConversionResult {
         case noChangedNeeded

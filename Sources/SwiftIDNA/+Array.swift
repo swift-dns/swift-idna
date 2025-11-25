@@ -1,4 +1,4 @@
-@available(swiftIDNAApplePlatforms 13, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension [UInt8] {
     @inlinable
     mutating func append(span: Span<UInt8>) {

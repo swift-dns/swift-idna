@@ -1,4 +1,4 @@
-@available(swiftIDNAApplePlatforms 13, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNA {
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToASCII
@@ -478,13 +478,13 @@ extension IDNA {
 
     @usableFromInline
     func convertToLowercasedASCII(_uncheckedAssumingValidUTF8 span: Span<UInt8>) -> String {
-        let bytesCount = span.count
-        let string = String(unsafeUninitializedCapacity: bytesCount) { stringBuffer in
-            for idx in stringBuffer.indices {
-                stringBuffer[idx] = span[unchecked: idx].toLowercasedASCIILetter()
+        String(
+            unsafeUninitializedCapacity_Compatibility: span.count
+        ) {
+            appendFunction in
+            for idx in span.indices {
+                appendFunction(span[unchecked: idx].toLowercasedASCIILetter())
             }
-            return bytesCount
         }
-        return string
     }
 }

@@ -1,4 +1,4 @@
-@available(swiftIDNAApplePlatforms 13, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension String {
     var nfcCodePoints: [UInt8] {
         var codePoints = [UInt8]()
@@ -10,13 +10,12 @@ extension String {
     }
 
     var asNFC: String {
-        String(unsafeUninitializedCapacity: self.utf8.count) { stringBuffer in
-            var idx = 0
+        String(
+            unsafeUninitializedCapacity_Compatibility: self.utf8.count
+        ) { appendFunction in
             self._withNFCCodeUnits {
-                stringBuffer[idx] = $0
-                idx &+= 1
+                appendFunction($0)
             }
-            return idx
         }
     }
 
@@ -27,12 +26,23 @@ extension String {
     }
 
     init(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
-        self.init(unsafeUninitializedCapacity: span.count) { stringBuffer in
-            let rawStringBuffer = UnsafeMutableRawBufferPointer(stringBuffer)
-            span.withUnsafeBytes { spanPtr in
-                rawStringBuffer.copyMemory(from: spanPtr)
+        if #available(swiftIDNAApplePlatforms 11, *) {
+            self.init(unsafeUninitializedCapacity: span.count) { stringBuffer in
+                let rawStringBuffer = UnsafeMutableRawBufferPointer(stringBuffer)
+                span.withUnsafeBytes { spanPtr in
+                    rawStringBuffer.copyMemory(from: spanPtr)
+                }
+                return span.count
             }
-            return span.count
+        } else {
+            var string = ""
+            string.reserveCapacity(span.count)
+            span.withUnsafeBytes { spanPtr in
+                for idx in spanPtr.indices {
+                    string.append(String(UnicodeScalar(spanPtr[idx])))
+                }
+            }
+            self = string
         }
     }
 
@@ -52,9 +62,36 @@ extension String {
             fatalError("Unexpected error: \(String(reflecting: error))")
         }
     }
+
+    @inline(__always)
+    @usableFromInline
+    init(
+        unsafeUninitializedCapacity_Compatibility capacity: Int,
+        initializingWith initializer: (
+            _ appendFunction: (UInt8) -> Void
+        ) throws -> Void
+    ) rethrows {
+        if #available(swiftIDNAApplePlatforms 11, *) {
+            try self.init(unsafeUninitializedCapacity: capacity) { stringBuffer in
+                var idx = 0
+                try initializer {
+                    stringBuffer[idx] = $0
+                    idx &+= 1
+                }
+                return idx
+            }
+        } else {
+            var string = ""
+            string.reserveCapacity(capacity)
+            try initializer {
+                string.append(String(UnicodeScalar($0)))
+            }
+            self = string
+        }
+    }
 }
 
-@available(swiftIDNAApplePlatforms 13, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension Substring {
     mutating func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
