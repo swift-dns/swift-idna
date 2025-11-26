@@ -480,9 +480,9 @@ extension IDNA {
     func convertToLowercasedASCII(_uncheckedAssumingValidUTF8 span: Span<UInt8>) -> String {
         String(
             unsafeUninitializedCapacity_Compatibility: span.count
-        ) { outputSpan in
+        ) { handle in
             for idx in span.indices {
-                outputSpan.append(span[unchecked: idx].toLowercasedASCIILetter())
+                handle.append(span[unchecked: idx].toLowercasedASCIILetter())
             }
         }
     }
