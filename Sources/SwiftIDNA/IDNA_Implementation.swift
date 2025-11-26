@@ -447,7 +447,9 @@ extension IDNA {
         }
 
         if !configuration.ignoreInvalidPunycode || configuration.useSTD3ASCIIRules {
-            var unicodeScalarsIterator = globalCompatibilityHelper.makeUnicodeScalarIterator(of: span)
+            var unicodeScalarsIterator = globalCompatibilityHelper.makeUnicodeScalarIterator(
+                of: span
+            )
 
             while let codePoint = unicodeScalarsIterator.next() {
                 if !configuration.ignoreInvalidPunycode {

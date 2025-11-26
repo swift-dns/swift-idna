@@ -1,6 +1,6 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
-protocol CompatibilityHelper: Sendable /*: ~Copyable*/ {
+protocol CompatibilityHelper: Sendable, ~Copyable {
     func makeString(
         unsafeUninitializedCapacity capacity: Int,
         initializingWith initializer: (
