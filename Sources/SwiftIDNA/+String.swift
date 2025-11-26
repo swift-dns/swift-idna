@@ -12,9 +12,9 @@ extension String {
     var asNFC: String {
         String(
             unsafeUninitializedCapacity_Compatibility: self.utf8.count
-        ) { handle in
+        ) { outputSpan in
             self._withNFCCodeUnits {
-                handle.append($0)
+                outputSpan.append($0)
             }
         }
     }
@@ -28,9 +28,13 @@ extension String {
     @inline(__always)
     @inlinable
     init(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
-        self.init(unsafeUninitializedCapacity_Compatibility: span.count) { handle in
+        self.init(unsafeUninitializedCapacity_Compatibility: span.count) { outputSpan in
             span.withUnsafeBytes { spanPtr in
-                handle.copyMemory(from: spanPtr)
+                outputSpan.withUnsafeMutableBufferPointer { (outputSpanPtr, initializedCount) in
+                    let rawPointer = UnsafeMutableRawBufferPointer(outputSpanPtr)
+                    rawPointer.copyMemory(from: spanPtr)
+                    initializedCount = span.count
+                }
             }
         }
     }
@@ -52,57 +56,25 @@ extension String {
         }
     }
 
-    @usableFromInline
-    struct BytesHandle: ~Copyable {
-        @usableFromInline
-        var buffer: UnsafeMutableBufferPointer<UInt8>
-        @usableFromInline
-        var idx: Int = 0
-
-        @inlinable
-        init(buffer: UnsafeMutableBufferPointer<UInt8>) {
-            self.buffer = buffer
-        }
-
-        @inlinable
-        mutating func append(_ byte: UInt8) {
-            self.buffer[self.idx] = byte
-            self.idx &+= 1
-        }
-
-        @inlinable
-        mutating func copyMemory(from source: UnsafeRawBufferPointer) {
-            let pointer = UnsafeMutableRawBufferPointer(self.buffer)
-            pointer.copyMemory(from: source)
-            self.idx &+= source.count
-        }
-
-        consuming func consumeReturningInitializedCount() -> Int {
-            self.idx
-        }
-    }
-
     @inline(__always)
     @usableFromInline
     init(
         unsafeUninitializedCapacity_Compatibility capacity: Int,
-        initializingWith initializer: (
-            _ buffer: inout BytesHandle
-        ) throws -> Void
+        initializingWith initializer: (_ handle: inout OutputSpan<UInt8>) throws -> Void
     ) rethrows {
         if #available(swiftIDNAApplePlatforms 11, *) {
             try self.init(unsafeUninitializedCapacity: capacity) { stringBuffer in
-                var handle = BytesHandle(buffer: stringBuffer)
-                try initializer(&handle)
-                return handle.consumeReturningInitializedCount()
+                var span = OutputSpan(buffer: stringBuffer, initializedCount: 0)
+                try initializer(&span)
+                return span.count
             }
         } else {
             let array = try [UInt8].init(
                 unsafeUninitializedCapacity: capacity
             ) { buffer, initializedCount in
-                var handle = BytesHandle(buffer: buffer)
-                try initializer(&handle)
-                initializedCount = handle.consumeReturningInitializedCount()
+                var span = OutputSpan(buffer: buffer, initializedCount: 0)
+                try initializer(&span)
+                initializedCount = span.count
             }
             self = String(decoding: array, as: Unicode.UTF8.self)
         }
