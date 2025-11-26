@@ -96,7 +96,7 @@ extension IDNA {
         on string: String
     ) -> CharacterCheckResult {
         var string = string
-        return string.withSpan_Compatibility {
+        return globalCompatibilityHelper.withSpan(for: &string) {
             performByteCheck(on: $0)
         }
     }
@@ -108,7 +108,7 @@ extension IDNA {
         on substring: Substring
     ) -> CharacterCheckResult {
         var substring = substring
-        return substring.withSpan_Compatibility {
+        return globalCompatibilityHelper.withSpan(for: &substring) {
             performByteCheck(on: $0)
         }
     }

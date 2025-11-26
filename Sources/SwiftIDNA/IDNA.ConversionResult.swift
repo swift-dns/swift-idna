@@ -12,8 +12,8 @@ extension IDNA {
             case .noChangedNeeded:
                 return nil
             case .bytes(let bytes):
-                return bytes.withSpan_Compatibility { span in
-                    String(_uncheckedAssumingValidUTF8: span)
+                return globalCompatibilityHelper.withSpan(for: bytes) { span in
+                    globalCompatibilityHelper.makeString(_uncheckedAssumingValidUTF8: span)
                 }
             case .string(let string):
                 return string
@@ -29,7 +29,7 @@ extension IDNA {
             case .noChangedNeeded:
                 return try ifNotAvailable()
             case .bytes(let bytes):
-                return try bytes.withSpan_Compatibility {
+                return try globalCompatibilityHelper.withSpan(for: bytes) {
                     try block($0)
                 }
             case .string(let string):
@@ -37,7 +37,7 @@ extension IDNA {
                     return try block(string.utf8Span.span)
                 }
                 var string = string
-                return try string.withSpan_Compatibility {
+                return try globalCompatibilityHelper.withSpan(for: &string) {
                     try block($0)
                 }
             }

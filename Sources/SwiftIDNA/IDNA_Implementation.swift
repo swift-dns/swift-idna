@@ -17,7 +17,7 @@ extension IDNA {
         }
 
         var errors = MappingErrors(
-            domainName: String(_uncheckedAssumingValidUTF8: span)
+            domainName: globalCompatibilityHelper.makeString(_uncheckedAssumingValidUTF8: span)
         )
 
         // 1.
@@ -27,7 +27,7 @@ extension IDNA {
 
         var convertedBytes: [UInt8] = []
         var startIndex = 0
-        utf8Bytes.withSpan_Compatibility { bytesSpan in
+        globalCompatibilityHelper.withSpan(for: utf8Bytes) { bytesSpan in
             for idx in bytesSpan.indices {
                 /// If this is not a label separator, then continue
                 var endIndex = idx
@@ -80,7 +80,7 @@ extension IDNA {
 
         if configuration.verifyDNSLength {
             if convertedBytes.count >= 254 {
-                convertedBytes.withSpan_Compatibility { span in
+                globalCompatibilityHelper.withSpan(for: convertedBytes) { span in
                     errors.append(
                         .trueVerifyDNSLengthArgumentRequiresDomainNameToBe254BytesOrLess(
                             length: convertedBytes.count,
@@ -90,7 +90,7 @@ extension IDNA {
                 }
             }
             if convertedBytes.isEmpty {
-                convertedBytes.withSpan_Compatibility { span in
+                globalCompatibilityHelper.withSpan(for: convertedBytes) { span in
                     errors.append(
                         .trueVerifyDNSLengthArgumentDisallowsEmptyDomainName(
                             labels: convertedBytes
@@ -133,7 +133,7 @@ extension IDNA {
             let newBytes = Punycode.encode(_uncheckedAssumingValidUTF8: labelSpan)
             convertedBytes.reserveCapacity(4 + newBytes.count + 1)
             convertedBytes.append(contentsOf: "xn--".utf8)
-            newBytes.withSpan_Compatibility { span in
+            globalCompatibilityHelper.withSpan(for: newBytes) { span in
                 convertedBytes.append(span: span)
             }
             labelByteLength = 4 + newBytes.count
@@ -183,7 +183,7 @@ extension IDNA {
         }
 
         var errors = MappingErrors(
-            domainName: String(_uncheckedAssumingValidUTF8: span)
+            domainName: globalCompatibilityHelper.makeString(_uncheckedAssumingValidUTF8: span)
         )
 
         // 1.
@@ -208,7 +208,7 @@ extension IDNA {
         /// TODO: optimize reserve capacity
         newBytes.reserveCapacity(span.count * 14 / 10)
 
-        var unicodeScalarsIterator = span.makeUnicodeScalarIterator_Compatibility()
+        var unicodeScalarsIterator = globalCompatibilityHelper.makeUnicodeScalarIterator(of: span)
 
         /// 1. Map
         while let scalar = unicodeScalarsIterator.next() {
@@ -231,7 +231,7 @@ extension IDNA {
         /// 2. Normalize
 
         /// Make `newBytes` NFC, if not already NFC
-        newBytes._uncheckedAssumingValidUTF8_ensureNFC()
+        globalCompatibilityHelper._uncheckedAssumingValidUTF8_ensureNFC(on: &newBytes)
 
         var newerBytes: [UInt8] = []
 
@@ -303,7 +303,7 @@ extension IDNA {
         {
             errors.append(
                 .labelStartsWithXNHyphenMinusHyphenMinusButContainsNonASCII(
-                    label: String(_uncheckedAssumingValidUTF8: span)
+                    label: globalCompatibilityHelper.makeString(_uncheckedAssumingValidUTF8: span)
                 )
             )
             /// continue to next label
@@ -318,7 +318,9 @@ extension IDNA {
         if let conversionResult = Punycode.decode(
             _uncheckedAssumingValidUTF8: span.extracting(unchecked: noXNRange)
         ) {
-            let conversionResult = conversionResult.withSpan_Compatibility { conversionSpan in
+            let conversionResult = globalCompatibilityHelper.withSpan(
+                for: conversionResult
+            ) { conversionSpan in
                 /// 4.3:
                 checkInvalidPunycode(span: conversionSpan, errors: &errors)
 
@@ -341,7 +343,9 @@ extension IDNA {
             case false:
                 errors.append(
                     .labelPunycodeDecodeFailed(
-                        label: String(_uncheckedAssumingValidUTF8: span)
+                        label: globalCompatibilityHelper.makeString(
+                            _uncheckedAssumingValidUTF8: span
+                        )
                     )
                 )
                 /// continue to next label
@@ -359,7 +363,7 @@ extension IDNA {
         if span.isEmpty {
             errors.append(
                 .labelIsEmptyAfterPunycodeConversion(
-                    label: String(_uncheckedAssumingValidUTF8: span)
+                    label: globalCompatibilityHelper.makeString(_uncheckedAssumingValidUTF8: span)
                 )
             )
         }
@@ -367,7 +371,7 @@ extension IDNA {
         if span.allSatisfy(\.isASCII) {
             errors.append(
                 .labelContainsOnlyASCIIAfterPunycodeDecode(
-                    label: String(_uncheckedAssumingValidUTF8: span)
+                    label: globalCompatibilityHelper.makeString(_uncheckedAssumingValidUTF8: span)
                 )
             )
         }
@@ -385,12 +389,12 @@ extension IDNA {
             if let spanString = spanString {
                 return spanString
             }
-            spanString = String(_uncheckedAssumingValidUTF8: span)
+            spanString = globalCompatibilityHelper.makeString(_uncheckedAssumingValidUTF8: span)
             return spanString!
         }
 
         if !configuration.ignoreInvalidPunycode,
-            !span.isInNFC
+            !globalCompatibilityHelper.isInNFC(span: span)
         {
             errors.append(.labelIsNotInNormalizationFormC(label: getSpanString()))
         }
@@ -430,7 +434,7 @@ extension IDNA {
             }
         }
 
-        var unicodeScalarsIterator = span.makeUnicodeScalarIterator_Compatibility()
+        var unicodeScalarsIterator = globalCompatibilityHelper.makeUnicodeScalarIterator(of: span)
         if !configuration.ignoreInvalidPunycode,
             let firstScalar = unicodeScalarsIterator.next(),
             firstScalar.properties.generalCategory.isMark == true
@@ -443,7 +447,7 @@ extension IDNA {
         }
 
         if !configuration.ignoreInvalidPunycode || configuration.useSTD3ASCIIRules {
-            var unicodeScalarsIterator = span.makeUnicodeScalarIterator_Compatibility()
+            var unicodeScalarsIterator = globalCompatibilityHelper.makeUnicodeScalarIterator(of: span)
 
             while let codePoint = unicodeScalarsIterator.next() {
                 if !configuration.ignoreInvalidPunycode {
@@ -482,10 +486,9 @@ extension IDNA {
 
     @inlinable
     func convertToLowercasedASCII(_uncheckedAssumingValidUTF8 span: Span<UInt8>) -> String {
-        String(
-            unsafeUninitializedCapacity_Compatibility: span.count
-        ) {
-            appendFunction in
+        globalCompatibilityHelper.makeString(
+            unsafeUninitializedCapacity: span.count
+        ) { appendFunction in
             for idx in span.indices {
                 appendFunction(span[unchecked: idx].toLowercasedASCIILetter())
             }

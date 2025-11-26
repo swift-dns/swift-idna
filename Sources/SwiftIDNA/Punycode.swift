@@ -88,7 +88,9 @@ enum Punycode {
         let b = UInt32(output.count)
         var h = b
 
-        var unicodeScalarsIterator = inputBytesSpan.makeUnicodeScalarIterator_Compatibility()
+        var unicodeScalarsIterator =
+            globalCompatibilityHelper
+            .makeUnicodeScalarIterator(of: inputBytesSpan)
         /// Mark h-amount of Unicode Scalars, as already-read.
         for _ in 0..<h {
             _ = unicodeScalarsIterator.skipForward()
@@ -109,7 +111,8 @@ enum Punycode {
         while unicodeScalarsIterator.currentCodeUnitOffset != inputBytesSpan.count {
             var m: UInt32 = .max
             var unicodeScalarsIteratorForM =
-                inputBytesSpan.makeUnicodeScalarIterator_Compatibility()
+                globalCompatibilityHelper
+                .makeUnicodeScalarIterator(of: inputBytesSpan)
             while let codePoint = unicodeScalarsIteratorForM.next() {
                 if !codePoint.isASCII, codePoint.value >= n {
                     m = min(m, codePoint.value)
@@ -120,7 +123,8 @@ enum Punycode {
 
             n = m
             var originalUnicodeScalarsIterator =
-                inputBytesSpan.makeUnicodeScalarIterator_Compatibility()
+                globalCompatibilityHelper
+                .makeUnicodeScalarIterator(of: inputBytesSpan)
             while let codePoint = originalUnicodeScalarsIterator.next() {
                 if codePoint.value < n || codePoint.isASCII {
                     delta &+= 1
@@ -218,7 +222,9 @@ enum Punycode {
             inputBytesSpan = inputBytesSpan.extracting(unchecked: inputBytesRange)
         }
 
-        var unicodeScalarsIterator = inputBytesSpan.makeUnicodeScalarIterator_Compatibility()
+        var unicodeScalarsIterator =
+            globalCompatibilityHelper
+            .makeUnicodeScalarIterator(of: inputBytesSpan)
 
         /// unicodeScalarsIndexToUtf8Index[unicodeScalarsIndex] = utf8Index
         var unicodeScalarsIndexToUTF8Index = (0..<output.count).map { $0 }

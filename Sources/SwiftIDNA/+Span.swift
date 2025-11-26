@@ -1,35 +1,5 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension Span<UInt8> {
-    @usableFromInline
-    var isInNFC: Bool {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            var utf8Span = UTF8Span(unchecked: self)
-            return utf8Span.checkForNFC(quickCheck: false)
-        }
-        return String(_uncheckedAssumingValidUTF8: self).isInNFC_slow
-    }
-
-    @inline(__always)
-    @_lifetime(copy self)
-    @usableFromInline
-    func makeUnicodeScalarIterator_Compatibility() -> (
-        any UnicodeScalarsIteratorProtocol & ~Escapable
-    ) {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            let utf8Span = UTF8Span(unchecked: self)
-            let iterator = _overrideLifetime(
-                utf8Span.makeUnicodeScalarIterator(),
-                copying: self
-            )
-            return iterator
-        }
-        let iterator = String(_uncheckedAssumingValidUTF8: self).unicodeScalars.makeIterator()
-        return UnicodeScalarViewCompatibilityIterator(
-            underlyingIterator: iterator,
-            currentCodeUnitOffset: 0
-        )
-    }
-
     /// Checks if contains any labels that start with “xn--”
     @inlinable
     var containsIDNADomainNameMarkerLabelPrefix: Bool {

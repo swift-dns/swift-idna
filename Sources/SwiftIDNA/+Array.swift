@@ -10,35 +10,4 @@ extension [UInt8] {
             self.append(span[unchecked: idx])
         }
     }
-
-    @inline(__always)
-    @usableFromInline
-    borrowing func withSpan_Compatibility<T>(
-        _ body: (Span<UInt8>) throws -> T
-    ) rethrows -> T {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            return try body(self.span)
-        }
-        return try self.withUnsafeBufferPointer { bytesPtr in
-            try body(bytesPtr.span)
-        }
-    }
-
-    @inline(__always)
-    @usableFromInline
-    mutating func _uncheckedAssumingValidUTF8_ensureNFC() {
-        self.withSpan_Compatibility { span in
-            if #available(swiftIDNAApplePlatforms 26, *) {
-                var utf8Span = UTF8Span(unchecked: span)
-                if !utf8Span.checkForNFC(quickCheck: false) {
-                    self = String(_uncheckedAssumingValidUTF8: span).nfcCodePoints
-                }
-                return
-            }
-            let string = String(_uncheckedAssumingValidUTF8: span)
-            if !string.isInNFC_slow {
-                self = string.nfcCodePoints
-            }
-        }
-    }
 }

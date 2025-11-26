@@ -6,7 +6,7 @@ extension IDNA {
     /// https://www.unicode.org/reports/tr46/#ToASCII
     public func toASCII(domainName: String) throws(MappingErrors) -> String {
         var copy = domainName
-        return try copy.withSpan_Compatibility {
+        return try globalCompatibilityHelper.withSpan(for: &copy) {
             span throws(MappingErrors) -> String in
             try self._toASCII(
                 _uncheckedAssumingValidUTF8: span
@@ -18,7 +18,7 @@ extension IDNA {
     /// https://www.unicode.org/reports/tr46/#ToUnicode
     public func toUnicode(domainName: String) throws(MappingErrors) -> String {
         var copy = domainName
-        return try copy.withSpan_Compatibility {
+        return try globalCompatibilityHelper.withSpan(for: &copy) {
             span throws(MappingErrors) -> String in
             try self._toUnicode(
                 _uncheckedAssumingValidUTF8: span
