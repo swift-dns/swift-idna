@@ -15,11 +15,7 @@ extension Span<UInt8> {
     ) {
         if #available(swiftIDNAApplePlatforms 26, *) {
             let utf8Span = UTF8Span(unchecked: self)
-            let iterator = _overrideLifetime(
-                utf8Span.makeUnicodeScalarIterator(),
-                copying: self
-            )
-            return iterator
+            return utf8Span.makeUnicodeScalarIterator()
         }
         let iterator = String(_uncheckedAssumingValidUTF8: self).unicodeScalars.makeIterator()
         return UnicodeScalarViewCompatibilityIterator(
@@ -101,6 +97,7 @@ extension Span<UInt8> {
 
     /// There are 4 IDNA label separators, 1 of which is `.`, which is only 1 byte.
     /// The other 3 are the ones in this function.
+    /// This function doesn't try to detect `.`.
     @inlinable
     static func isIDNALabelSeparator(_ first: UInt8, _ second: UInt8, _ third: UInt8) -> Bool {
         /// U+3002 ( 。 ) IDEOGRAPHIC FULL STOP
