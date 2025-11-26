@@ -56,7 +56,7 @@ extension String {
         @usableFromInline
         var buffer: UnsafeMutableBufferPointer<UInt8>
         @usableFromInline
-        var idx: Int = 0
+        var count: Int = 0
 
         @inlinable
         init(buffer: UnsafeMutableBufferPointer<UInt8>) {
@@ -66,8 +66,8 @@ extension String {
         @inlinable
         @_lifetime(&self)
         mutating func append(_ byte: UInt8) {
-            self.buffer[self.idx] = byte
-            self.idx &+= 1
+            self.buffer[self.count] = byte
+            self.count &+= 1
         }
 
         @inlinable
@@ -75,12 +75,12 @@ extension String {
         mutating func copyMemory(from source: UnsafeRawBufferPointer) {
             let pointer = UnsafeMutableRawBufferPointer(self.buffer)
             pointer.copyMemory(from: source)
-            self.idx &+= source.count
+            self.count &+= source.count
         }
 
         @inlinable
         consuming func consumeReturningInitializedCount() -> Int {
-            self.idx
+            self.count
         }
     }
 
