@@ -2,6 +2,7 @@
 extension IDNA {
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToASCII
+    @inlinable
     func _toASCII(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>
     ) throws(MappingErrors) -> ConversionResult {
@@ -106,6 +107,7 @@ extension IDNA {
         return .bytes(convertedBytes)
     }
 
+    @inlinable
     func appendLabel(
         domainNameSpan bytesSpan: Span<UInt8>,
         startIndex: Int,
@@ -162,6 +164,7 @@ extension IDNA {
 
     /// `ToUnicode` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToUnicode
+    @inlinable
     func _toUnicode(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>
     ) throws(MappingErrors) -> ConversionResult {
@@ -283,7 +286,7 @@ extension IDNA {
 
     /// https://www.unicode.org/reports/tr46/#ProcessingStepConvertValidate
     @_lifetime(copy span)
-    @usableFromInline
+    @inlinable
     func convertAndValidateLabel(
         _ span: Span<UInt8>,
         errors: inout MappingErrors
@@ -347,6 +350,7 @@ extension IDNA {
         }
     }
 
+    @inlinable
     func checkInvalidPunycode(span: Span<UInt8>, errors: inout MappingErrors) {
         if configuration.ignoreInvalidPunycode {
             return
@@ -370,7 +374,7 @@ extension IDNA {
     }
 
     /// https://www.unicode.org/reports/tr46/#Validity_Criteria
-    @usableFromInline
+    @inlinable
     func verifyValidLabel(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
         errors: inout MappingErrors
@@ -476,7 +480,7 @@ extension IDNA {
         // }
     }
 
-    @usableFromInline
+    @inlinable
     func convertToLowercasedASCII(_uncheckedAssumingValidUTF8 span: Span<UInt8>) -> String {
         String(
             unsafeUninitializedCapacity_Compatibility: span.count

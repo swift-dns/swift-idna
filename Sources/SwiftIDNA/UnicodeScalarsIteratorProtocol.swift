@@ -1,4 +1,5 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
+@usableFromInline
 protocol UnicodeScalarsIteratorProtocol: ~Escapable {
     var currentCodeUnitOffset: Int { get }
     mutating func next() -> Unicode.Scalar?

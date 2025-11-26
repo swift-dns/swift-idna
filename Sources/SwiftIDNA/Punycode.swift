@@ -1,9 +1,11 @@
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
 @available(swiftIDNAApplePlatforms 10.15, *)
+@usableFromInline
 enum Punycode {
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Parameter values for Punycode](https://datatracker.ietf.org/doc/html/rfc3492#section-5)
     ///
     /// To support 32-bit platforms, we use `UInt32` instead of `Int` throughout this implementation.
+    @usableFromInline
     enum Constants {
         @usableFromInline
         static var base: UInt32 {

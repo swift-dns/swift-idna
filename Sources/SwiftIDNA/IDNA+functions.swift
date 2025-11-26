@@ -37,6 +37,7 @@ extension IDNA {
     /// The `span` will be assumed to be valid `String` UTF8 bytes.
     /// For example `String.utf8Span.span` is a valid span.
     /// Violating this assumption can result in undefined behavior.
+    @inlinable
     public func toASCII(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>
     ) throws(MappingErrors) -> ConversionResult {

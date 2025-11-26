@@ -1,5 +1,6 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension Span<UInt8> {
+    @usableFromInline
     var isInNFC: Bool {
         if #available(swiftIDNAApplePlatforms 26, *) {
             var utf8Span = UTF8Span(unchecked: self)
@@ -10,6 +11,7 @@ extension Span<UInt8> {
 
     @inline(__always)
     @_lifetime(copy self)
+    @usableFromInline
     func makeUnicodeScalarIterator_Compatibility() -> (
         any UnicodeScalarsIteratorProtocol & ~Escapable
     ) {
@@ -159,6 +161,7 @@ extension Span {
         return true
     }
 
+    @inlinable
     func lastIndex(of element: Element) -> Int? where Element: Equatable {
         let endIndex = self.count &- 1
         for idx in self.indices {
