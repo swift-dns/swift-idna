@@ -3,7 +3,7 @@ import Testing
 
 @Suite
 struct IDNATests {
-    @available(swiftIDNAApplePlatforms 26, *)
+    @available(macOS 26, iOS 26, tvOS 26, watchOS 26, visionOS 26, *)
     @Test func `performDNSComplaintByteCheck works correctly`() {
         let bytes: [UInt8] = [
             0x07, 0x45, 0x78, 0x61,

@@ -1,14 +1,14 @@
-@available(swiftIDNAApplePlatforms 10.15, *)
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 protocol UnicodeScalarsIteratorProtocol: ~Escapable {
     var currentCodeUnitOffset: Int { get }
     mutating func next() -> Unicode.Scalar?
     mutating func skipForward() -> Int
 }
 
-@available(swiftIDNAApplePlatforms 26, *)
+@available(macOS 26, iOS 26, tvOS 26, watchOS 26, visionOS 26, *)
 extension UTF8Span.UnicodeScalarIterator: UnicodeScalarsIteratorProtocol {}
 
-@available(swiftIDNAApplePlatforms 10.15, *)
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 struct UnicodeScalarViewCompatibilityIterator: UnicodeScalarsIteratorProtocol {
     var underlyingIterator: String.UnicodeScalarView.Iterator
     var currentCodeUnitOffset: Int
