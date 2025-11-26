@@ -25,7 +25,6 @@ extension String {
             || self.utf8.elementsEqual(self.nfcCodePoints)
     }
 
-    @inline(__always)
     @inlinable
     init(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
         self.init(unsafeUninitializedCapacity_Compatibility: span.count) { outputSpan in
@@ -56,7 +55,6 @@ extension String {
         }
     }
 
-    @inline(__always)
     @usableFromInline
     init(
         unsafeUninitializedCapacity_Compatibility capacity: Int,
