@@ -1,5 +1,6 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension String {
+    @inlinable
     var nfcCodePoints: [UInt8] {
         var codePoints = [UInt8]()
         codePoints.reserveCapacity(self.utf8.count)
@@ -9,6 +10,7 @@ extension String {
         return codePoints
     }
 
+    @inlinable
     var asNFC: String {
         String(
             unsafeUninitializedCapacity_Compatibility: self.utf8.count
@@ -20,11 +22,14 @@ extension String {
     }
 
     /// Faster way is to use `utf8Span.checkForNFC(quickCheck: false)`
+    @inlinable
     var isInNFC_slow: Bool {
         self.unicodeScalars.allSatisfy(\.isASCII)
             || self.utf8.elementsEqual(self.nfcCodePoints)
     }
 
+    @inline(__always)
+    @usableFromInline
     init(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
         if #available(swiftIDNAApplePlatforms 11, *) {
             self.init(unsafeUninitializedCapacity: span.count) { stringBuffer in
@@ -46,6 +51,8 @@ extension String {
         }
     }
 
+    @inline(__always)
+    @usableFromInline
     mutating func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
@@ -93,6 +100,8 @@ extension String {
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension Substring {
+    @inline(__always)
+    @usableFromInline
     mutating func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
