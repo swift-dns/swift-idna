@@ -1,4 +1,4 @@
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension String {
     var nfcCodePoints: [UInt8] {
         var codePoints = [UInt8]()
@@ -26,7 +26,7 @@ extension String {
     }
 
     init(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
-        if #available(macOS 11, iOS 14, tvOS 14, watchOS 7, *) {
+        if #available(swiftIDNAApplePlatforms 11, *) {
             self.init(unsafeUninitializedCapacity: span.count) { stringBuffer in
                 let rawStringBuffer = UnsafeMutableRawBufferPointer(stringBuffer)
                 span.withUnsafeBytes { spanPtr in
@@ -49,7 +49,7 @@ extension String {
     mutating func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
-        if #available(macOS 26, iOS 26, tvOS 26, watchOS 26, visionOS 26, *) {
+        if #available(swiftIDNAApplePlatforms 26, *) {
             return try body(self.utf8Span.span)
         }
         do {
@@ -71,7 +71,7 @@ extension String {
             _ appendFunction: (UInt8) -> Void
         ) throws -> Void
     ) rethrows {
-        if #available(macOS 11, iOS 14, tvOS 14, watchOS 7, *) {
+        if #available(swiftIDNAApplePlatforms 11, *) {
             try self.init(unsafeUninitializedCapacity: capacity) { stringBuffer in
                 var idx = 0
                 try initializer {
@@ -91,12 +91,12 @@ extension String {
     }
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension Substring {
     mutating func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
-        if #available(macOS 26, iOS 26, tvOS 26, watchOS 26, visionOS 26, *) {
+        if #available(swiftIDNAApplePlatforms 26, *) {
             return try body(self.utf8Span.span)
         }
         do {

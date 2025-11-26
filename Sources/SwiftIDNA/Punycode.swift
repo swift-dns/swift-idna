@@ -1,5 +1,5 @@
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 enum Punycode {
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Parameter values for Punycode](https://datatracker.ietf.org/doc/html/rfc3492#section-5)
     ///

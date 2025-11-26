@@ -1,4 +1,4 @@
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension [UInt8] {
     @inlinable
     mutating func append(span: Span<UInt8>) {
@@ -14,7 +14,7 @@ extension [UInt8] {
     borrowing func withSpan_Compatibility<T>(
         _ body: (Span<UInt8>) throws -> T
     ) rethrows -> T {
-        if #available(macOS 26, iOS 26, tvOS 26, watchOS 26, visionOS 26, *) {
+        if #available(swiftIDNAApplePlatforms 26, *) {
             return try body(self.span)
         }
         return try self.withUnsafeBufferPointer { bytesPtr in
@@ -24,7 +24,7 @@ extension [UInt8] {
 
     mutating func _uncheckedAssumingValidUTF8_ensureNFC() {
         self.withSpan_Compatibility { span in
-            if #available(macOS 26, iOS 26, tvOS 26, watchOS 26, visionOS 26, *) {
+            if #available(swiftIDNAApplePlatforms 26, *) {
                 var utf8Span = UTF8Span(unchecked: span)
                 if !utf8Span.checkForNFC(quickCheck: false) {
                     self = String(_uncheckedAssumingValidUTF8: span).nfcCodePoints

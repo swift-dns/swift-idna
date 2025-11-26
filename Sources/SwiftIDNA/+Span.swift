@@ -1,7 +1,7 @@
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension Span<UInt8> {
     var isInNFC: Bool {
-        if #available(macOS 26, iOS 26, tvOS 26, watchOS 26, visionOS 26, *) {
+        if #available(swiftIDNAApplePlatforms 26, *) {
             var utf8Span = UTF8Span(unchecked: self)
             return utf8Span.checkForNFC(quickCheck: false)
         }
@@ -13,7 +13,7 @@ extension Span<UInt8> {
     func makeUnicodeScalarIterator_Compatibility() -> (
         any UnicodeScalarsIteratorProtocol & ~Escapable
     ) {
-        if #available(macOS 26, iOS 26, tvOS 26, watchOS 26, visionOS 26, *) {
+        if #available(swiftIDNAApplePlatforms 26, *) {
             let utf8Span = UTF8Span(unchecked: self)
             let iterator = _overrideLifetime(
                 utf8Span.makeUnicodeScalarIterator(),
@@ -137,7 +137,7 @@ extension Span<UInt8> {
     }
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension Span {
     @inlinable
     func contains(where predicate: (Element) -> Bool) -> Bool {

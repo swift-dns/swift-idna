@@ -1,6 +1,6 @@
 /// Provides compatibility with IDNA: Internationalized Domain Names in Applications.
 /// [Unicode IDNA Compatibility Processing](https://www.unicode.org/reports/tr46/)
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 public struct IDNA: Sendable {
     /// [Unicode IDNA Compatibility Processing: Processing](https://www.unicode.org/reports/tr46/#Processing)
     /// All parameters are used in both `toASCII` and `toUnicode`, except for

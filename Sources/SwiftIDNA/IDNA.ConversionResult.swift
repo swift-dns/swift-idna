@@ -1,4 +1,4 @@
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNA {
     public enum ConversionResult {
         case noChangedNeeded
@@ -33,7 +33,7 @@ extension IDNA {
                     try block($0)
                 }
             case .string(let string):
-                if #available(macOS 26, iOS 26, tvOS 26, watchOS 26, visionOS 26, *) {
+                if #available(swiftIDNAApplePlatforms 26, *) {
                     return try block(string.utf8Span.span)
                 }
                 var string = string
