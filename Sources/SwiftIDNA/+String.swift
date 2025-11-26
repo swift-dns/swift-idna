@@ -78,6 +78,7 @@ extension String {
             self.idx &+= source.count
         }
 
+        @inlinable
         consuming func consumeReturningInitializedCount() -> Int {
             self.idx
         }
