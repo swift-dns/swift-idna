@@ -62,13 +62,13 @@ extension String {
         unsafeUninitializedCapacity_Compatibility capacity: Int,
         initializingWith initializer: (_ handle: inout OutputSpan<UInt8>) throws -> Void
     ) rethrows {
-        // if #available(swiftIDNAApplePlatforms 11, *) {
-        //     try self.init(unsafeUninitializedCapacity: capacity) { stringBuffer in
-        //         var span = OutputSpan(buffer: stringBuffer, initializedCount: 0)
-        //         try initializer(&span)
-        //         return span.count
-        //     }
-        // } else {
+        if #available(swiftIDNAApplePlatforms 11, *) {
+            try self.init(unsafeUninitializedCapacity: capacity) { stringBuffer in
+                var span = OutputSpan(buffer: stringBuffer, initializedCount: 0)
+                try initializer(&span)
+                return span.count
+            }
+        } else {
             let array = try [UInt8].init(
                 unsafeUninitializedCapacity: capacity
             ) { buffer, initializedCount in
@@ -76,8 +76,8 @@ extension String {
                 try initializer(&span)
                 initializedCount = span.count
             }
-            self = String(decoding: array, as: Unicode.UTF8.self)
-        // }
+            self.init(decoding: array, as: Unicode.UTF8.self)
+        }
     }
 }
 
