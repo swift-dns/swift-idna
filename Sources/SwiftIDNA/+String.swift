@@ -54,7 +54,7 @@ extension String {
     @usableFromInline
     struct BytesHandle: ~Copyable, ~Escapable {
         @usableFromInline
-        var buffer: UnsafeMutableBufferPointer<UInt8>
+        let buffer: UnsafeMutableBufferPointer<UInt8>
         @usableFromInline
         var count: Int = 0
 
