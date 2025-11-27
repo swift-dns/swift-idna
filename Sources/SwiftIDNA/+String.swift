@@ -89,6 +89,8 @@ extension String {
         unsafeUninitializedCapacity_Compatibility capacity: Int,
         initializingWith initializer: (_ handle: inout BytesHandle) throws -> Void
     ) rethrows {
+        /// For some reason if we don't use this compilation condition, Linux benchmarks become like 20% slower.
+        #if canImport(Darwin)
         if #available(swiftIDNAApplePlatforms 11, *) {
             try self.init(unsafeUninitializedCapacity: capacity) { stringBuffer in
                 var handle = BytesHandle(buffer: stringBuffer)
@@ -105,6 +107,13 @@ extension String {
             }
             self.init(decoding: array, as: Unicode.UTF8.self)
         }
+        #else
+        try self.init(unsafeUninitializedCapacity: capacity) { stringBuffer in
+            var handle = BytesHandle(buffer: stringBuffer)
+            try initializer(&handle)
+            return handle.consumeReturningInitializedCount()
+        }
+        #endif
     }
 }
 
