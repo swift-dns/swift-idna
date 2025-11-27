@@ -10,12 +10,13 @@ extension String {
     }
 
     var asNFC: String {
-        String(
-            unsafeUninitializedCapacity_Compatibility: self.utf8.count
-        ) { appendFunction in
+        String(unsafeUninitializedCapacity_Compatibility: self.utf8.count) { buffer in
+            var idx = 0
             self._withNFCCodeUnits {
-                appendFunction($0)
+                buffer[idx] = $0
+                idx &+= 1
             }
+            return idx
         }
     }
 
@@ -25,24 +26,15 @@ extension String {
             || self.utf8.elementsEqual(self.nfcCodePoints)
     }
 
+    @inlinable
     init(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
-        if #available(swiftIDNAApplePlatforms 11, *) {
-            self.init(unsafeUninitializedCapacity: span.count) { stringBuffer in
-                let rawStringBuffer = UnsafeMutableRawBufferPointer(stringBuffer)
-                span.withUnsafeBytes { spanPtr in
-                    rawStringBuffer.copyMemory(from: spanPtr)
-                }
-                return span.count
-            }
-        } else {
-            var string = ""
-            string.reserveCapacity(span.count)
+        let count = span.count
+        self.init(unsafeUninitializedCapacity_Compatibility: count) { buffer in
             span.withUnsafeBytes { spanPtr in
-                for idx in spanPtr.indices {
-                    string.append(String(UnicodeScalar(spanPtr[idx])))
-                }
+                let rawBuffer = UnsafeMutableRawBufferPointer(buffer)
+                rawBuffer.copyMemory(from: spanPtr)
             }
-            self = string
+            return count
         }
     }
 
@@ -63,32 +55,43 @@ extension String {
         }
     }
 
-    @inline(__always)
+    #if canImport(Darwin)
     @usableFromInline
     init(
         unsafeUninitializedCapacity_Compatibility capacity: Int,
-        initializingWith initializer: (
-            _ appendFunction: (UInt8) -> Void
-        ) throws -> Void
+        initializingUTF8With initializer: (
+            _ buffer: UnsafeMutableBufferPointer<UInt8>
+        ) throws -> Int
     ) rethrows {
         if #available(swiftIDNAApplePlatforms 11, *) {
-            try self.init(unsafeUninitializedCapacity: capacity) { stringBuffer in
-                var idx = 0
-                try initializer {
-                    stringBuffer[idx] = $0
-                    idx &+= 1
-                }
-                return idx
+            try self.init(unsafeUninitializedCapacity: capacity) { buffer in
+                try initializer(buffer)
             }
         } else {
-            var string = ""
-            string.reserveCapacity(capacity)
-            try initializer {
-                string.append(String(UnicodeScalar($0)))
+            let array = try [UInt8].init(
+                unsafeUninitializedCapacity: capacity
+            ) { buffer, initializedCount in
+                initializedCount = try initializer(buffer)
             }
-            self = string
+            self.init(decoding: array, as: UTF8.self)
         }
     }
+    #else
+    /// @_transparent helps mitigate some performance regressions on Linux that happened when
+    /// moving from directly using the underlying initializer, to this compatibility initializer.
+    @_transparent
+    @inlinable
+    init(
+        unsafeUninitializedCapacity_Compatibility capacity: Int,
+        initializingWith initializer: (
+            _ buffer: UnsafeMutableBufferPointer<UInt8>
+        ) throws -> Int
+    ) rethrows {
+        try self.init(unsafeUninitializedCapacity: capacity) { buffer in
+            try initializer(buffer)
+        }
+    }
+    #endif
 }
 
 @available(swiftIDNAApplePlatforms 10.15, *)

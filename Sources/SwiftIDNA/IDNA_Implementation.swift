@@ -478,13 +478,12 @@ extension IDNA {
 
     @usableFromInline
     func convertToLowercasedASCII(_uncheckedAssumingValidUTF8 span: Span<UInt8>) -> String {
-        String(
-            unsafeUninitializedCapacity_Compatibility: span.count
-        ) {
-            appendFunction in
-            for idx in span.indices {
-                appendFunction(span[unchecked: idx].toLowercasedASCIILetter())
+        let count = span.count
+        return String(unsafeUninitializedCapacity_Compatibility: count) { buffer in
+            for idx in 0..<count {
+                buffer[idx] = span[unchecked: idx].toLowercasedASCIILetter()
             }
+            return count
         }
     }
 }
