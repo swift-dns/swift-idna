@@ -54,39 +54,7 @@ extension String {
         }
     }
 
-    @usableFromInline
-    struct BytesHandle: ~Copyable, ~Escapable {
-        @usableFromInline
-        let buffer: UnsafeMutableBufferPointer<UInt8>
-        @usableFromInline
-        var count: Int = 0
-
-        @inlinable
-        init(buffer: UnsafeMutableBufferPointer<UInt8>) {
-            self.buffer = buffer
-        }
-
-        @inlinable
-        @_lifetime(&self)
-        mutating func append(_ byte: UInt8) {
-            self.buffer[self.count] = byte
-            self.count &+= 1
-        }
-
-        @inlinable
-        @_lifetime(&self)
-        mutating func copyMemory(from source: UnsafeRawBufferPointer) {
-            let pointer = UnsafeMutableRawBufferPointer(self.buffer)
-            pointer.copyMemory(from: source)
-            self.count &+= source.count
-        }
-
-        @inlinable
-        consuming func consumeReturningInitializedCount() -> Int {
-            self.count
-        }
-    }
-
+    #if canImport(Darwin)
     @usableFromInline
     init(
         unsafeUninitializedCapacity_Compatibility capacity: Int,
@@ -95,8 +63,8 @@ extension String {
         ) throws -> Int
     ) rethrows {
         if #available(swiftIDNAApplePlatforms 11, *) {
-            try self.init(unsafeUninitializedCapacity: capacity) { stringBuffer in
-                try initializer(stringBuffer)
+            try self.init(unsafeUninitializedCapacity: capacity) { buffer in
+                try initializer(buffer)
             }
         } else {
             let array = try [UInt8].init(
@@ -107,6 +75,19 @@ extension String {
             self.init(decoding: array, as: Unicode.UTF8.self)
         }
     }
+    #else
+    @inlinable
+    init(
+        unsafeUninitializedCapacity_Compatibility capacity: Int,
+        initializingWith initializer: (
+            _ buffer: UnsafeMutableBufferPointer<UInt8>
+        ) throws -> Int
+    ) rethrows {
+        try self.init(unsafeUninitializedCapacity: capacity) { buffer in
+            try initializer(buffer)
+        }
+    }
+    #endif
 }
 
 @available(swiftIDNAApplePlatforms 10.15, *)
