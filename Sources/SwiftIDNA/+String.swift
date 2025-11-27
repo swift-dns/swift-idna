@@ -77,7 +77,7 @@ extension String {
         }
     }
     #else
-    @inlinable
+    @usableFromInline
     init(
         unsafeUninitializedCapacity_Compatibility capacity: Int,
         initializingWith initializer: (
