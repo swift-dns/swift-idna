@@ -28,12 +28,13 @@ extension String {
 
     @inlinable
     init(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
-        self.init(unsafeUninitializedCapacity_Compatibility: span.count) { buffer in
+        let count = span.count
+        self.init(unsafeUninitializedCapacity_Compatibility: count) { buffer in
             span.withUnsafeBytes { spanPtr in
                 let rawBuffer = UnsafeMutableRawBufferPointer(buffer)
                 rawBuffer.copyMemory(from: spanPtr)
-                return rawBuffer.count
             }
+            return count
         }
     }
 
