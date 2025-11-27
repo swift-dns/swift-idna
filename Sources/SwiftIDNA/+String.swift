@@ -77,7 +77,6 @@ extension String {
         }
     }
     #else
-    @_transparent
     @inlinable
     init(
         unsafeUninitializedCapacity_Compatibility capacity: Int,
