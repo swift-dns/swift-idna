@@ -10,6 +10,7 @@ extension String {
     }
 
     var asNFC: String {
+        #if canImport(Darwin)
         String(unsafeUninitializedCapacity_Compatibility: self.utf8.count) { buffer in
             var idx = 0
             self._withNFCCodeUnits {
@@ -18,6 +19,16 @@ extension String {
             }
             return idx
         }
+        #else
+        String(unsafeUninitializedCapacity: self.utf8.count) { buffer in
+            var idx = 0
+            self._withNFCCodeUnits {
+                buffer[idx] = $0
+                idx &+= 1
+            }
+            return idx
+        }
+        #endif
     }
 
     /// Faster way is to use `utf8Span.checkForNFC(quickCheck: false)`
@@ -29,6 +40,7 @@ extension String {
     @inlinable
     init(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
         let count = span.count
+        #if canImport(Darwin)
         self.init(unsafeUninitializedCapacity_Compatibility: count) { buffer in
             span.withUnsafeBytes { spanPtr in
                 let rawBuffer = UnsafeMutableRawBufferPointer(buffer)
@@ -36,6 +48,15 @@ extension String {
             }
             return count
         }
+        #else
+        self.init(unsafeUninitializedCapacity: count) { buffer in
+            span.withUnsafeBytes { spanPtr in
+                let rawBuffer = UnsafeMutableRawBufferPointer(buffer)
+                rawBuffer.copyMemory(from: spanPtr)
+            }
+            return count
+        }
+        #endif
     }
 
     mutating func withSpan_Compatibility<T, E: Error>(
@@ -74,18 +95,6 @@ extension String {
                 initializedCount = try initializer(buffer)
             }
             self.init(decoding: array, as: Unicode.UTF8.self)
-        }
-    }
-    #else
-    @usableFromInline
-    init(
-        unsafeUninitializedCapacity_Compatibility capacity: Int,
-        initializingWith initializer: (
-            _ buffer: UnsafeMutableBufferPointer<UInt8>
-        ) throws -> Int
-    ) rethrows {
-        try self.init(unsafeUninitializedCapacity: capacity) { buffer in
-            try initializer(buffer)
         }
     }
     #endif
