@@ -10,12 +10,13 @@ extension String {
     }
 
     var asNFC: String {
-        String(
-            unsafeUninitializedCapacity_Compatibility: self.utf8.count
-        ) { handle in
+        String(unsafeUninitializedCapacity_Compatibility: self.utf8.count) { buffer in
+            var idx = 0
             self._withNFCCodeUnits {
-                handle.append($0)
+                buffer[idx] = $0
+                idx &+= 1
             }
+            return idx
         }
     }
 
@@ -27,9 +28,11 @@ extension String {
 
     @inlinable
     init(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
-        self.init(unsafeUninitializedCapacity_Compatibility: span.count) { handle in
+        self.init(unsafeUninitializedCapacity_Compatibility: span.count) { buffer in
             span.withUnsafeBytes { spanPtr in
-                handle.copyMemory(from: spanPtr)
+                let rawBuffer = UnsafeMutableRawBufferPointer(buffer)
+                rawBuffer.copyMemory(from: spanPtr)
+                return rawBuffer.count
             }
         }
     }
@@ -87,33 +90,22 @@ extension String {
     @usableFromInline
     init(
         unsafeUninitializedCapacity_Compatibility capacity: Int,
-        initializingWith initializer: (_ handle: inout BytesHandle) throws -> Void
+        initializingWith initializer: (
+            _ buffer: UnsafeMutableBufferPointer<UInt8>
+        ) throws -> Int
     ) rethrows {
-        /// For some reason if we don't use this compilation condition, Linux benchmarks become like 20% slower.
-        #if canImport(Darwin)
         if #available(swiftIDNAApplePlatforms 11, *) {
             try self.init(unsafeUninitializedCapacity: capacity) { stringBuffer in
-                var handle = BytesHandle(buffer: stringBuffer)
-                try initializer(&handle)
-                return handle.consumeReturningInitializedCount()
+                try initializer(stringBuffer)
             }
         } else {
             let array = try [UInt8].init(
                 unsafeUninitializedCapacity: capacity
             ) { buffer, initializedCount in
-                var handle = BytesHandle(buffer: buffer)
-                try initializer(&handle)
-                initializedCount = handle.consumeReturningInitializedCount()
+                initializedCount = try initializer(buffer)
             }
             self.init(decoding: array, as: Unicode.UTF8.self)
         }
-        #else
-        try self.init(unsafeUninitializedCapacity: capacity) { stringBuffer in
-            var handle = BytesHandle(buffer: stringBuffer)
-            try initializer(&handle)
-            return handle.consumeReturningInitializedCount()
-        }
-        #endif
     }
 }
 
