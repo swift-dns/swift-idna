@@ -59,7 +59,7 @@ extension String {
     @usableFromInline
     init(
         unsafeUninitializedCapacity_Compatibility capacity: Int,
-        initializingWith initializer: (
+        initializingUTF8With initializer: (
             _ buffer: UnsafeMutableBufferPointer<UInt8>
         ) throws -> Int
     ) rethrows {
@@ -73,10 +73,11 @@ extension String {
             ) { buffer, initializedCount in
                 initializedCount = try initializer(buffer)
             }
-            self.init(decoding: array, as: Unicode.UTF8.self)
+            self.init(decoding: array, as: UTF8.self)
         }
     }
     #else
+    @_transparent
     @inlinable
     init(
         unsafeUninitializedCapacity_Compatibility capacity: Int,
