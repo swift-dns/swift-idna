@@ -479,20 +479,11 @@ extension IDNA {
     @usableFromInline
     func convertToLowercasedASCII(_uncheckedAssumingValidUTF8 span: Span<UInt8>) -> String {
         let count = span.count
-        #if canImport(Darwin)
         return String(unsafeUninitializedCapacity_Compatibility: count) { buffer in
             for idx in 0..<count {
                 buffer[idx] = span[unchecked: idx].toLowercasedASCIILetter()
             }
             return count
         }
-        #else
-        return String(unsafeUninitializedCapacity: count) { buffer in
-            for idx in 0..<count {
-                buffer[idx] = span[unchecked: idx].toLowercasedASCIILetter()
-            }
-            return count
-        }
-        #endif
     }
 }
