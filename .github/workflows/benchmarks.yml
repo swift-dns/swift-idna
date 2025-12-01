@@ -28,6 +28,9 @@ jobs:
       contents: write # For committing threshold updates
 
     steps:
+      - name: Enable performance-mode in runner
+        run: ordo-performance
+
       # jemalloc is a dependency of the Benchmarking package
       # actions/cache will detect zstd and will become much faster.
       - name: Install jemalloc, zstd, curl and jq
@@ -279,6 +282,10 @@ jobs:
           if [[ -n '${{ steps.commit-info.outputs.pr_number }}' ]]; then
             echo 'Commented at ${{ steps.pr-comment.outputs.html-url }}' >> "${GITHUB_STEP_SUMMARY}"
           fi
+
+      - name: Disable performance-mode in runner
+        if: always()
+        run: ordo-performance powersave
 
       - name: Exit with correct status
         run: exit ${{ steps.comparison.outputs.exit-status }}
