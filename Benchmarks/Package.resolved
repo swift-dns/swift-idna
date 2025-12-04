@@ -1,5 +1,5 @@
 {
-  "originHash" : "2b0c43594e44053e2ea01463be89a7ebb7e5fcf0866dce144593ad04438efc28",
+  "originHash" : "b15c65959d52c3afbd3b5a606af46b607e55159fb6fc47c50b6f09acc9a1fce8",
   "pins" : [
     {
       "identity" : "hdrhistogram-swift",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-argument-parser.git",
       "state" : {
-        "revision" : "309a47b2b1d9b5e991f36961c983ecec72275be3",
-        "version" : "1.6.1"
+        "revision" : "cdd0ef3755280949551dc26dee5de9ddeda89f54",
+        "version" : "1.6.2"
       }
     },
     {
