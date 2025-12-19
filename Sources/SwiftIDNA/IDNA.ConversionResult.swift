@@ -1,5 +1,6 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNA {
+    @nonexhaustive
     public enum ConversionResult {
         case noChangedNeeded
         case bytes([UInt8])

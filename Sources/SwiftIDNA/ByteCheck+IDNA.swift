@@ -1,6 +1,7 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNA {
     /// The result of checking characters for IDNA compliance.
+    @nonexhaustive
     public enum CharacterCheckResult {
         /// The sequence contains only characters that IDNA's toASCII function won't change.
         case containsOnlyIDNANoOpCharacters

@@ -8,13 +8,13 @@
     <a href="https://github.com/swift-dns/swift-idna/actions/workflows/benchmarks.yml">
         <img
             src="https://img.shields.io/github/actions/workflow/status/swift-dns/swift-idna/benchmarks.yml?event=push&style=plastic&logo=github&label=benchmarks&logoColor=%23ccc"
-            alt="Benchamrks CI"
+            alt="Benchmarks CI"
         >
     </a>
     <a href="https://swift.org">
         <img
-            src="https://design.vapor.codes/images/swift62up.svg"
-            alt="Swift 6.2+"
+            src="https://design.vapor.codes/images/swift623up.svg"
+            alt="Swift 6.2.3+"
         >
     </a>
 </p>

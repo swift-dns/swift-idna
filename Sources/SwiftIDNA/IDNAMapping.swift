@@ -1,6 +1,8 @@
 public import CSwiftIDNA
 
+@nonexhaustive
 public enum IDNAMapping: Equatable {
+    @nonexhaustive
     public enum IDNA2008Status {
         case NV8
         case XV8

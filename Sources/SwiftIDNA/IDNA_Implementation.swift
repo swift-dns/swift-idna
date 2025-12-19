@@ -15,6 +15,7 @@ extension IDNA {
             break
         }
 
+        /// TODO: We can probably skip this conversion here
         var errors = MappingErrors(
             domainName: String(_uncheckedAssumingValidUTF8: span)
         )

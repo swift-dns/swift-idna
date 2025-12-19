@@ -1,6 +1,7 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNA {
     public struct MappingErrors: Error {
+        @nonexhaustive
         public enum Element: Sendable, CustomStringConvertible {
             case labelStartsWithXNHyphenMinusHyphenMinusButContainsNonASCII(label: String)
             case labelPunycodeEncodeFailed(label: [UInt8])
