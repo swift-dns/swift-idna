@@ -70,12 +70,20 @@ enum Punycode {
     /// is necessary because the inputs are not necessarily valid IDNA
     /// labels.
     /// ```
+    ///
+    /// `outputBufferForReuse` is used as a performance optimization.
+    /// Don't expect it to contain anything.
+    /// You should pass 1 shared `outputBufferForReuse` for all labels, so this function can
+    /// reuse the buffer.
     @inlinable
-    static func encode(_uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>) -> [UInt8] {
+    static func encode(
+        _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
+        outputBufferForReuse output: inout [UInt8]
+    ) -> [UInt8] {
         var n = Constants.initialN
         var delta: UInt32 = 0
         var bias = Constants.initialBias
-        var output: [UInt8] = []
+        output.removeAll(keepingCapacity: true)
         /// ``input.count <= output.count`` is guaranteed when using unicode scalars.
         /// We're using utf8 bytes but we'll reserve the capacity anyway.
         output.reserveCapacity(inputBytesSpan.count)
@@ -193,13 +201,21 @@ enum Punycode {
     /// is necessary because the inputs are not necessarily valid IDNA
     /// labels.
     /// ```
+    ///
+    /// `outputBufferForReuse` is used as a performance optimization.
+    /// Don't expect it to contain anything.
+    /// You should pass 1 shared `outputBufferForReuse` for all labels, so this function can
+    /// reuse the buffer.
     @inlinable
-    static func decode(_uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>) -> [UInt8]? {
+    static func decode(
+        _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
+        outputBufferForReuse output: inout [UInt8]
+    ) -> [UInt8]? {
         var inputBytesSpan = inputBytesSpan
         var n = Constants.initialN
         var i: UInt32 = 0
         var bias = Constants.initialBias
-        var output: [UInt8] = []
+        output.removeAll(keepingCapacity: true)
         output.reserveCapacity(max(inputBytesSpan.count, 4))
 
         if let utf8Idx = inputBytesSpan.lastIndex(of: .asciiHyphenMinus) {
