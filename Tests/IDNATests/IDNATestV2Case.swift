@@ -107,7 +107,7 @@ extension IDNATestV2Case.Status: CustomStringConvertible {
     }
 }
 
-extension IDNA.MappingErrors.Element {
+extension IDNA.MappingError {
     var correspondingIDNAStatus: IDNATestV2Case.Status? {
         switch self {
         case .labelStartsWithXNHyphenMinusHyphenMinusButContainsNonASCII:

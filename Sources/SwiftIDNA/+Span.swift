@@ -167,6 +167,7 @@ extension Span {
         return true
     }
 
+    @inlinable
     func lastIndex(of element: Element) -> Int? where Element: Equatable {
         let endIndex = self.count &- 1
         for idx in self.indices {

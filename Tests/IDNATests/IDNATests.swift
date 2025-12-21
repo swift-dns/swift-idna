@@ -63,7 +63,7 @@ struct IDNATests {
     /// This process continues until either the `function` succeeds or runs out of tries to make.
     func runTestCase(
         idna: inout IDNA,
-        function: (IDNA) -> ((String) throws(IDNA.MappingErrors) -> String),
+        function: (IDNA) -> ((String) throws(IDNA.CollectedMappingErrors) -> String),
         source: String,
         expected: String?,
         remainingStatuses: inout [IDNATestV2Case.Status],

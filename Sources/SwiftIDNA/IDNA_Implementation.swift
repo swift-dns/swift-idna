@@ -2,9 +2,11 @@
 extension IDNA {
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToASCII
+    @inlinable
+    @_lifetime(borrow span)
     func _toASCII(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>
-    ) throws(MappingErrors) -> ConversionResult {
+    ) throws(CollectedMappingErrors) -> ConversionResult {
         switch IDNA.performByteCheck(on: span) {
         case .containsOnlyIDNANoOpCharacters:
             return .noChangedNeeded
@@ -15,10 +17,7 @@ extension IDNA {
             break
         }
 
-        /// TODO: We can probably skip this conversion here
-        var errors = MappingErrors(
-            domainName: String(_uncheckedAssumingValidUTF8: span)
-        )
+        var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
         let utf8Bytes = self.mainProcessing(_uncheckedAssumingValidUTF8: span, errors: &errors)
@@ -101,12 +100,14 @@ extension IDNA {
         }
 
         if !errors.isEmpty {
-            throw errors
+            throw CollectedMappingErrors(mappingErrors: errors)
         }
 
         return .bytes(convertedBytes)
     }
 
+    @inlinable
+    @_lifetime(&errors)
     func appendLabel(
         domainNameSpan bytesSpan: Span<UInt8>,
         startIndex: Int,
@@ -163,9 +164,11 @@ extension IDNA {
 
     /// `ToUnicode` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToUnicode
+    @inlinable
+    @_lifetime(borrow span)
     func _toUnicode(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>
-    ) throws(MappingErrors) -> ConversionResult {
+    ) throws(CollectedMappingErrors) -> ConversionResult {
         switch IDNA.performByteCheck(on: span) {
         case .containsOnlyIDNANoOpCharacters:
             if !span.containsIDNADomainNameMarkerLabelPrefix {
@@ -180,16 +183,14 @@ extension IDNA {
             break
         }
 
-        var errors = MappingErrors(
-            domainName: String(_uncheckedAssumingValidUTF8: span)
-        )
+        var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
         let newBytes = self.mainProcessing(_uncheckedAssumingValidUTF8: span, errors: &errors)
 
         // 2.
         if !errors.isEmpty {
-            throw errors
+            throw CollectedMappingErrors(mappingErrors: errors)
         }
 
         return .bytes(newBytes)
@@ -197,7 +198,8 @@ extension IDNA {
 
     /// Main `Processing` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#Processing
-    @usableFromInline
+    @inlinable
+    @_lifetime(&errors)
     func mainProcessing(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
         errors: inout MappingErrors
@@ -283,8 +285,8 @@ extension IDNA {
     }
 
     /// https://www.unicode.org/reports/tr46/#ProcessingStepConvertValidate
+    @inlinable
     @_lifetime(copy span)
-    @usableFromInline
     func convertAndValidateLabel(
         _ span: Span<UInt8>,
         errors: inout MappingErrors
@@ -348,6 +350,8 @@ extension IDNA {
         }
     }
 
+    @inlinable
+    @_lifetime(&errors)
     func checkInvalidPunycode(span: Span<UInt8>, errors: inout MappingErrors) {
         if configuration.ignoreInvalidPunycode {
             return
@@ -372,6 +376,7 @@ extension IDNA {
 
     /// https://www.unicode.org/reports/tr46/#Validity_Criteria
     @inlinable
+    @_lifetime(&errors)
     func verifyValidLabel(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
         errors: inout MappingErrors
