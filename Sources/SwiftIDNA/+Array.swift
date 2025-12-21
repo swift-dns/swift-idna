@@ -21,6 +21,7 @@ extension [UInt8] {
         }
     }
 
+    @usableFromInline
     borrowing func withSpan_Compatibility<T>(
         _ body: (Span<UInt8>) throws -> T
     ) rethrows -> T {
@@ -32,6 +33,7 @@ extension [UInt8] {
         }
     }
 
+    @usableFromInline
     mutating func _uncheckedAssumingValidUTF8_ensureNFC() {
         self.withSpan_Compatibility { span in
             if #available(swiftIDNAApplePlatforms 26, *) {

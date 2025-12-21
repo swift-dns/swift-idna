@@ -8,6 +8,7 @@ extension IDNA {
 
         /// Collect this result into a new string.
         /// `nil` means no changes were needed.
+        @inlinable
         public func collect() -> String? {
             switch self {
             case .noChangedNeeded:
@@ -22,6 +23,7 @@ extension IDNA {
         }
 
         /// Perform an action using the span of the result.
+        @inlinable
         public func withSpan<T>(
             _ block: (Span<UInt8>) throws -> T,
             ifNotAvailable: () throws -> T
@@ -34,9 +36,6 @@ extension IDNA {
                     try block($0)
                 }
             case .string(let string):
-                if #available(swiftIDNAApplePlatforms 26, *) {
-                    return try block(string.utf8Span.span)
-                }
                 var string = string
                 return try string.withSpan_Compatibility {
                     try block($0)

@@ -105,19 +105,28 @@ extension IDNA {
         }
 
         public let domainName: String
-        public private(set) var errors: [Element]
+        @usableFromInline
+        var _errors: [Element]
+        public var errors: [Element] {
+            _read {
+                yield self._errors
+            }
+        }
 
+        @inlinable
         var isEmpty: Bool {
             self.errors.isEmpty
         }
 
+        @inlinable
         init(domainName: String) {
             self.domainName = domainName
-            self.errors = []
+            self._errors = []
         }
 
+        @inlinable
         mutating func append(_ error: Element) {
-            self.errors.append(error)
+            self._errors.append(error)
         }
     }
 }
