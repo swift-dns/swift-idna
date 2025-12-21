@@ -206,7 +206,7 @@ enum Punycode {
             let bytesSpanChunk = inputBytesSpan.extracting(unchecked: range)
             output.append(span: bytesSpanChunk)
 
-            guard output.allSatisfy(\.isASCII) else {
+            guard output.isASCII else {
                 return nil
             }
 

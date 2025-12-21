@@ -1,5 +1,15 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension Span<UInt8> {
+    @inlinable
+    var isASCII: Bool {
+        /// This is faster than a naive loop over the bytes and checking each byte for <= 0x7F.
+        var result: UInt8 = 0
+        for idx in self.indices {
+            result |= self[unchecked: idx]
+        }
+        return result <= 0x7F
+    }
+
     var isInNFC: Bool {
         if #available(swiftIDNAApplePlatforms 26, *) {
             var utf8Span = UTF8Span(unchecked: self)
