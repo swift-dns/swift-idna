@@ -92,6 +92,7 @@ extension IDNA {
 
     /// Checks the bytes to foresee if an IDNA conversion will modify the string.
     /// This is useful to avoid performing a ToASCII IDNA conversion if it's not necessary.
+    @inlinable
     public static func performByteCheck(
         on string: String
     ) -> CharacterCheckResult {
@@ -103,6 +104,7 @@ extension IDNA {
 
     /// Checks the bytes to foresee if an IDNA conversion will modify the string.
     /// This is useful to avoid performing a ToASCII IDNA conversion if it's not necessary.
+    @inlinable
     public static func performByteCheck(
         on substring: Substring
     ) -> CharacterCheckResult {

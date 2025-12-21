@@ -7,7 +7,7 @@ extension IDNA {
         case string(String)
 
         /// Collect this result into a new string.
-        /// `nil` means no changes were needed.
+        /// `nil` means no changes were needed and the original string was all-good.
         @inlinable
         public func collect() -> String? {
             switch self {
@@ -23,6 +23,7 @@ extension IDNA {
         }
 
         /// Perform an action using the span of the result.
+        /// `ifNotAvailable` is called when no changes were needed and the original string was all-good.
         @inlinable
         public func withSpan<T>(
             _ block: (Span<UInt8>) throws -> T,
