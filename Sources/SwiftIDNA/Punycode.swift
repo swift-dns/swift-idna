@@ -72,14 +72,13 @@ enum Punycode {
     /// ```
     ///
     /// `outputBufferForReuse` is used as a performance optimization.
-    /// Don't expect it to contain anything.
     /// You should pass 1 shared `outputBufferForReuse` for all labels, so this function can
     /// reuse the buffer.
     @inlinable
     static func encode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
         outputBufferForReuse output: inout [UInt8]
-    ) -> [UInt8] {
+    ) {
         var n = Constants.initialN
         var delta: UInt32 = 0
         var bias = Constants.initialBias
@@ -170,8 +169,6 @@ enum Punycode {
             delta &+= 1
             n &+= 1
         }
-
-        return output
     }
 
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Decoding procedure](https://datatracker.ietf.org/doc/html/rfc3492#section-6.2)
@@ -203,14 +200,14 @@ enum Punycode {
     /// ```
     ///
     /// `outputBufferForReuse` is used as a performance optimization.
-    /// Don't expect it to contain anything.
     /// You should pass 1 shared `outputBufferForReuse` for all labels, so this function can
     /// reuse the buffer.
+    /// Returns true if successful.
     @inlinable
     static func decode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
         outputBufferForReuse output: inout [UInt8]
-    ) -> [UInt8]? {
+    ) -> Bool {
         var inputBytesSpan = inputBytesSpan
         var n = Constants.initialN
         var i: UInt32 = 0
@@ -225,7 +222,7 @@ enum Punycode {
             output.append(span: bytesSpanChunk)
 
             guard output.isASCII else {
-                return nil
+                return false
             }
 
             let inputBytesRange = Range<Int>(
@@ -245,10 +242,10 @@ enum Punycode {
                 /// Above we check that input is not empty, so this is safe.
                 /// There are also extensive tests for this in the IDNATests.swift.
                 guard let codePoint = unicodeScalarsIterator.next() else {
-                    return nil
+                    return false
                 }
                 guard let digit = Punycode.mapUnicodeScalarToDigit(codePoint) else {
-                    return nil
+                    return false
                 }
 
                 i &+= (digit &* w)
@@ -279,7 +276,7 @@ enum Punycode {
             i = i % outputCountPlusOne
             /// Check if n is basic (aka ASCII).
             if n.isASCII {
-                return nil
+                return false
             }
 
             let scalar = Unicode.Scalar(n).unsafelyUnwrapped
@@ -313,7 +310,7 @@ enum Punycode {
             i &+= 1
         }
 
-        return output
+        return true
     }
 
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Bias adaptation function](https://datatracker.ietf.org/doc/html/rfc3492#section-6.1)

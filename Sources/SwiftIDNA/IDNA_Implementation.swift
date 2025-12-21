@@ -141,16 +141,16 @@ extension IDNA {
             }
         } else {
             /// TODO: can we pass convertedBytes to Punycode.encode instead of it returning a new array?
-            let newBytes = Punycode.encode(
+            Punycode.encode(
                 _uncheckedAssumingValidUTF8: labelSpan,
                 outputBufferForReuse: &outputBufferForReuse
             )
-            convertedBytes.reserveCapacity(4 + newBytes.count + 1)
+            convertedBytes.reserveCapacity(4 + outputBufferForReuse.count + 1)
             convertedBytes.append(contentsOf: "xn--".utf8)
-            newBytes.withSpan_Compatibility { span in
+            outputBufferForReuse.withSpan_Compatibility { span in
                 convertedBytes.append(span: span)
             }
-            labelByteLength = 4 + newBytes.count
+            labelByteLength = 4 + outputBufferForReuse.count
             if appendDot {
                 convertedBytes.append(.asciiDot)
             }
@@ -344,19 +344,17 @@ extension IDNA {
 
         /// Drop the "xn--" prefix
         let noXNRange = Range<Int>(uncheckedBounds: (4, span.count))
-        if let conversionResult = Punycode.decode(
+        if Punycode.decode(
             _uncheckedAssumingValidUTF8: span.extracting(unchecked: noXNRange),
             outputBufferForReuse: &outputBufferForReuse
         ) {
-            let conversionResult = conversionResult.withSpan_Compatibility { conversionSpan in
+            outputBufferForReuse.withSpan_Compatibility { conversionSpan in
                 /// 4.3:
                 checkInvalidPunycode(span: conversionSpan, errors: &errors)
 
                 verifyValidLabel(_uncheckedAssumingValidUTF8: conversionSpan, errors: &errors)
-
-                return conversionResult
             }
-            return .bytes(conversionResult)
+            return .bytes(outputBufferForReuse)
         } else {
             switch configuration.ignoreInvalidPunycode {
             case true:
