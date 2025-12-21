@@ -73,7 +73,8 @@ enum Punycode {
     ///
     /// `outputBufferForReuse` is used as a performance optimization.
     /// You should pass 1 shared `outputBufferForReuse` for all labels, so this function can
-    /// reuse the buffer.
+    /// reset and reuse the buffer.
+    /// You can use use the `outputBufferForReuse` after the function returns.
     @inlinable
     static func encode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
@@ -201,8 +202,8 @@ enum Punycode {
     ///
     /// `outputBufferForReuse` is used as a performance optimization.
     /// You should pass 1 shared `outputBufferForReuse` for all labels, so this function can
-    /// reuse the buffer.
-    /// Returns true if successful.
+    /// reset and reuse the buffer.
+    /// Returns true if successful, in which case you should use the `outputBufferForReuse`.
     @inlinable
     static func decode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
