@@ -1,6 +1,15 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension [UInt8] {
     @inlinable
+    var isASCII: Bool {
+        var result: UInt8 = 0
+        for byte in self {
+            result |= byte
+        }
+        return result <= 0x7F
+    }
+
+    @inlinable
     mutating func append(span: Span<UInt8>) {
         guard span.count > 0 else {
             return
@@ -11,6 +20,7 @@ extension [UInt8] {
         }
     }
 
+    @usableFromInline
     borrowing func withSpan_Compatibility<T>(
         _ body: (Span<UInt8>) throws -> T
     ) rethrows -> T {
@@ -22,6 +32,7 @@ extension [UInt8] {
         }
     }
 
+    @usableFromInline
     mutating func _uncheckedAssumingValidUTF8_ensureNFC() {
         self.withSpan_Compatibility { span in
             if #available(swiftIDNAApplePlatforms 26, *) {

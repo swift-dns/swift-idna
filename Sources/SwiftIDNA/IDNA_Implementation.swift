@@ -118,7 +118,7 @@ extension IDNA {
         let range = Range<Int>(uncheckedBounds: (startIndex, endIndex))
         let labelSpan = bytesSpan.extracting(unchecked: range)
         var labelByteLength = 0
-        if labelSpan.allSatisfy(\.isASCII) {
+        if labelSpan.isASCII {
             if !labelSpan.isEmpty {
                 convertedBytes.reserveCapacity(labelSpan.count + 1)
                 convertedBytes.append(span: labelSpan)
@@ -297,7 +297,7 @@ extension IDNA {
 
         /// 4.1:
         if !configuration.ignoreInvalidPunycode,
-            span.contains(where: { !$0.isASCII })
+            !span.isASCII
         {
             errors.append(
                 .labelStartsWithXNHyphenMinusHyphenMinusButContainsNonASCII(
@@ -361,7 +361,7 @@ extension IDNA {
             )
         }
 
-        if span.allSatisfy(\.isASCII) {
+        if span.isASCII {
             errors.append(
                 .labelContainsOnlyASCIIAfterPunycodeDecode(
                     label: String(_uncheckedAssumingValidUTF8: span)
@@ -371,7 +371,7 @@ extension IDNA {
     }
 
     /// https://www.unicode.org/reports/tr46/#Validity_Criteria
-    @usableFromInline
+    @inlinable
     func verifyValidLabel(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
         errors: inout MappingErrors
