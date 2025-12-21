@@ -31,7 +31,6 @@ extension String {
 
     @inlinable
     static func isASCII(_ utf8View: String.UTF8View) -> Bool {
-        /// This is faster than a naive loop over the bytes and checking each byte for <= 0x7F.
         var result: UInt8 = 0
         for byte in utf8View {
             result |= byte

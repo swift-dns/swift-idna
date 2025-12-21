@@ -2,7 +2,6 @@
 extension [UInt8] {
     @inlinable
     var isASCII: Bool {
-        /// This is faster than a naive loop over the bytes and checking each byte for <= 0x7F.
         var result: UInt8 = 0
         for byte in self {
             result |= byte
