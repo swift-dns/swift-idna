@@ -383,18 +383,14 @@ extension IDNA {
     ) {
 
         var spanString: String?
-        func getSpanString() -> String {
-            if let spanString = spanString {
-                return spanString
-            }
-            spanString = String(_uncheckedAssumingValidUTF8: span)
-            return spanString!
-        }
 
         if !configuration.ignoreInvalidPunycode,
             !span.isInNFC
         {
-            errors.append(.labelIsNotInNormalizationFormC(label: getSpanString()))
+            errors.append(.labelIsNotInNormalizationFormC(
+                    label: getSpanString(&spanString, span: span)
+                )
+            )
         }
 
         switch configuration.checkHyphens {
@@ -406,7 +402,7 @@ extension IDNA {
             {
                 errors.append(
                     .trueCheckHyphensArgumentRequiresLabelToNotContainHyphenMinusAtPostion3and4(
-                        label: getSpanString()
+                        label: getSpanString(&spanString, span: span)
                     )
                 )
             }
@@ -416,7 +412,7 @@ extension IDNA {
             {
                 errors.append(
                     .trueCheckHyphensArgumentRequiresLabelToNotStartOrEndWithHyphenMinus(
-                        label: getSpanString()
+                        label: getSpanString(&spanString, span: span)
                     )
                 )
             }
@@ -426,7 +422,7 @@ extension IDNA {
             {
                 errors.append(
                     .falseCheckHyphensArgumentRequiresLabelToNotStartWithXNHyphenMinusHyphenMinus(
-                        label: getSpanString()
+                        label: getSpanString(&spanString, span: span)
                     )
                 )
             }
@@ -439,7 +435,7 @@ extension IDNA {
         {
             errors.append(
                 .labelStartsWithCombiningMark(
-                    label: getSpanString()
+                    label: getSpanString(&spanString, span: span)
                 )
             )
         }
@@ -454,7 +450,10 @@ extension IDNA {
                         break
                     case .mapped, .disallowed, .ignored:
                         errors.append(
-                            .labelContainsInvalidUnicode(codePoint, label: getSpanString())
+                            .labelContainsInvalidUnicode(
+                                codePoint,
+                                label: getSpanString(&spanString, span: span)
+                            )
                         )
                     }
                 }
@@ -465,7 +464,7 @@ extension IDNA {
                     {
                         errors.append(
                             .trueUseSTD3ASCIIRulesArgumentRequiresLabelToOnlyContainCertainASCIICharacters(
-                                label: getSpanString()
+                                label: getSpanString(&spanString, span: span)
                             )
                         )
                     }
@@ -480,6 +479,15 @@ extension IDNA {
         // if configuration.checkBidi {
         // TODO: implement
         // }
+    }
+
+    @inlinable
+    func getSpanString(_ spanString: inout String?, span: Span<UInt8>) -> String {
+        if let spanString = spanString {
+            return spanString
+        }
+        spanString = String(_uncheckedAssumingValidUTF8: span)
+        return spanString!
     }
 
     @usableFromInline
