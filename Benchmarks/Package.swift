@@ -17,7 +17,7 @@ let package = Package(
             name: "SwiftIDNA",
             dependencies: [
                 "CSwiftIDNA",
-                .product(name: "BasicContainers", package: "swift-collections")
+                .product(name: "BasicContainers", package: "swift-collections"),
             ],
             swiftSettings: settings
         ),

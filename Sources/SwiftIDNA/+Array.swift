@@ -49,3 +49,26 @@ extension [UInt8] {
         }
     }
 }
+
+@available(swiftIDNAApplePlatforms 10.15, *)
+extension [UInt8].SubSequence {
+    @inlinable
+    var isASCII: Bool {
+        var result: UInt8 = 0
+        for byte in self {
+            result |= byte
+        }
+        return result <= 0x7F
+    }
+
+    @inlinable
+    mutating func append(span: Span<UInt8>) {
+        guard span.count > 0 else {
+            return
+        }
+        self.reserveCapacity(span.count)
+        for idx in span.indices {
+            self.append(span[unchecked: idx])
+        }
+    }
+}

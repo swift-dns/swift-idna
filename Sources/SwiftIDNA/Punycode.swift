@@ -211,13 +211,12 @@ enum Punycode {
     static func decode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
         scalarsIndexToUTF8IndexForReuse unicodeScalarsIndexToUTF8Index: inout LazyRigidArrayOfInt,
-        outputBufferForReuse output: inout [UInt8]
+        outputBuffer output: inout [UInt8].SubSequence
     ) -> Bool {
         var inputBytesSpan = inputBytesSpan
         var n = Constants.initialN
         var i: UInt32 = 0
         var bias = Constants.initialBias
-        output.removeAll(keepingCapacity: true)
         output.reserveCapacity(max(inputBytesSpan.count, 4))
 
         if let utf8Idx = inputBytesSpan.lastIndex(of: .asciiHyphenMinus) {
@@ -227,6 +226,7 @@ enum Punycode {
             output.append(span: bytesSpanChunk)
 
             guard output.isASCII else {
+                output.removeAll(keepingCapacity: true)
                 return false
             }
 
@@ -256,6 +256,7 @@ enum Punycode {
                         let codePoint = unicodeScalarsIterator.next(),
                         let digit = Punycode.mapUnicodeScalarToDigit(codePoint)
                     else {
+                        output.removeAll(keepingCapacity: true)
                         return false
                     }
 
@@ -307,7 +308,10 @@ enum Punycode {
                         iInt == 0
                         ? 0
                         : previousIdxOfScalarInBytes &+ 1
-                    output.insert(contentsOf: scalar.utf8, at: insertIndex)
+                    output.insert(
+                        contentsOf: scalar.utf8,
+                        at: insertIndex &+ output.startIndex
+                    )
                     let utf8Count = scalar.utf8.count
                     let firstElementFactor = i == 0 ? -1 : 0
 
