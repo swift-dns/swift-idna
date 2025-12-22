@@ -22,17 +22,19 @@ extension IDNA {
         var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
-        var newerBytesBufferForReuse: [UInt8] = []
+        var convertedBytes: [UInt8] = []
+        var outputBufferForReuse: [UInt8] = []
         let utf8Bytes = self.mainProcessing(
             _uncheckedAssumingValidUTF8: span,
-            newerBytesBufferForReuse: &newerBytesBufferForReuse,
+            reuseBuffer1: &convertedBytes,
+            reuseBuffer2: &outputBufferForReuse,
             errors: &errors
         )
 
         // 2., 3.
 
         /// TODO: Use a tiny-array here?
-        var convertedBytes: [UInt8] = []
+        convertedBytes.removeAll(keepingCapacity: true)
         convertedBytes.reserveCapacity(span.count)
 
         var startIndex = 0
@@ -70,7 +72,7 @@ extension IDNA {
                     endIndex: endIndex,
                     appendDot: true,
                     convertedBytes: &convertedBytes,
-                    outputBufferForReuse: &newerBytesBufferForReuse,
+                    outputBufferForReuse: &outputBufferForReuse,
                     errors: &errors
                 )
 
@@ -84,7 +86,7 @@ extension IDNA {
                 endIndex: bytesSpan.count,
                 appendDot: false,
                 convertedBytes: &convertedBytes,
-                outputBufferForReuse: &newerBytesBufferForReuse,
+                outputBufferForReuse: &outputBufferForReuse,
                 errors: &errors
             )
         }
@@ -202,10 +204,12 @@ extension IDNA {
         var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
-        var newerBytesBufferForReuse: [UInt8] = []
+        var reuseBuffer1: [UInt8] = []
+        var reuseBuffer2: [UInt8] = []
         let newBytes = self.mainProcessing(
             _uncheckedAssumingValidUTF8: span,
-            newerBytesBufferForReuse: &newerBytesBufferForReuse,
+            reuseBuffer1: &reuseBuffer1,
+            reuseBuffer2: &reuseBuffer2,
             errors: &errors
         )
 
@@ -223,10 +227,11 @@ extension IDNA {
     @_lifetime(&errors)
     func mainProcessing(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
-        newerBytesBufferForReuse newerBytes: inout [UInt8],
+        reuseBuffer1 newBytes: inout [UInt8],
+        reuseBuffer2 newerBytes: inout [UInt8],
         errors: inout MappingErrors
     ) -> [UInt8] {
-        var newBytes: [UInt8] = []
+        assert(newBytes.isEmpty)
         newBytes.reserveCapacity(span.count * 12 / 10)
 
         var unicodeScalarsIterator = span.makeUnicodeScalarIterator_Compatibility()
@@ -254,8 +259,8 @@ extension IDNA {
         /// Make `newBytes` NFC, if not already NFC
         newBytes._uncheckedAssumingValidUTF8_ensureNFC()
 
-        newerBytes.reserveCapacity(newBytes.count * 14 / 10)
         assert(newerBytes.isEmpty)
+        newerBytes.reserveCapacity(newBytes.count * 14 / 10)
 
         newBytes.withUnsafeBufferPointer { newBytesBuffer in
             let newBytesSpan = newBytesBuffer.span
