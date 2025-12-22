@@ -20,7 +20,12 @@ extension IDNA {
         var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
-        let utf8Bytes = self.mainProcessing(_uncheckedAssumingValidUTF8: span, errors: &errors)
+        var outputBufferForReuse: [UInt8] = []
+        let utf8Bytes = self.mainProcessing(
+            _uncheckedAssumingValidUTF8: span,
+            outputBufferForReuse: &outputBufferForReuse,
+            errors: &errors
+        )
 
         // 2., 3.
 
@@ -63,6 +68,7 @@ extension IDNA {
                     endIndex: endIndex,
                     appendDot: true,
                     convertedBytes: &convertedBytes,
+                    outputBufferForReuse: &outputBufferForReuse,
                     errors: &errors
                 )
 
@@ -76,6 +82,7 @@ extension IDNA {
                 endIndex: bytesSpan.count,
                 appendDot: false,
                 convertedBytes: &convertedBytes,
+                outputBufferForReuse: &outputBufferForReuse,
                 errors: &errors
             )
         }
@@ -117,6 +124,7 @@ extension IDNA {
         endIndex: Int,
         appendDot: Bool,
         convertedBytes: inout [UInt8],
+        outputBufferForReuse: inout [UInt8],
         errors: inout MappingErrors
     ) {
         let range = Range<Int>(uncheckedBounds: (startIndex, endIndex))
@@ -133,13 +141,16 @@ extension IDNA {
             }
         } else {
             /// TODO: can we pass convertedBytes to Punycode.encode instead of it returning a new array?
-            let newBytes = Punycode.encode(_uncheckedAssumingValidUTF8: labelSpan)
-            convertedBytes.reserveCapacity(4 + newBytes.count + 1)
+            Punycode.encode(
+                _uncheckedAssumingValidUTF8: labelSpan,
+                outputBufferForReuse: &outputBufferForReuse
+            )
+            convertedBytes.reserveCapacity(4 + outputBufferForReuse.count + 1)
             convertedBytes.append(contentsOf: "xn--".utf8)
-            newBytes.withSpan_Compatibility { span in
+            outputBufferForReuse.withSpan_Compatibility { span in
                 convertedBytes.append(span: span)
             }
-            labelByteLength = 4 + newBytes.count
+            labelByteLength = 4 + outputBufferForReuse.count
             if appendDot {
                 convertedBytes.append(.asciiDot)
             }
@@ -189,7 +200,12 @@ extension IDNA {
         var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
-        let newBytes = self.mainProcessing(_uncheckedAssumingValidUTF8: span, errors: &errors)
+        var outputBufferForReuse: [UInt8] = []
+        let newBytes = self.mainProcessing(
+            _uncheckedAssumingValidUTF8: span,
+            outputBufferForReuse: &outputBufferForReuse,
+            errors: &errors
+        )
 
         // 2.
         if !errors.isEmpty {
@@ -205,6 +221,7 @@ extension IDNA {
     @_lifetime(&errors)
     func mainProcessing(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
+        outputBufferForReuse: inout [UInt8],
         errors: inout MappingErrors
     ) -> [UInt8] {
         var newBytes: [UInt8] = []
@@ -251,7 +268,11 @@ extension IDNA {
                 let range = Range<Int>(uncheckedBounds: (startIndex, idx))
                 let chunk = newBytesSpan.extracting(unchecked: range)
                 /// TODO: can we pass newerBytes to convertAndValidateLabel instead of it returning a new buffer?!
-                switchStatement: switch convertAndValidateLabel(chunk, errors: &errors) {
+                switchStatement: switch convertAndValidateLabel(
+                    chunk,
+                    outputBufferForReuse: &outputBufferForReuse,
+                    errors: &errors
+                ) {
                 case .span(let labelSpan):
                     newerBytes.append(span: labelSpan)
                     newerBytes.append(.asciiDot)
@@ -267,7 +288,11 @@ extension IDNA {
 
             let range = Range<Int>(uncheckedBounds: (startIndex, newBytesSpan.count))
             let chunk = newBytesSpan.extracting(unchecked: range)
-            switchStatement: switch convertAndValidateLabel(chunk, errors: &errors) {
+            switchStatement: switch convertAndValidateLabel(
+                chunk,
+                outputBufferForReuse: &outputBufferForReuse,
+                errors: &errors
+            ) {
             case .span(let labelSpan):
                 newerBytes.append(span: labelSpan)
             case .bytes(let bytes):
@@ -292,6 +317,7 @@ extension IDNA {
     @_lifetime(copy span)
     func convertAndValidateLabel(
         _ span: Span<UInt8>,
+        outputBufferForReuse: inout [UInt8],
         errors: inout MappingErrors
     ) -> ConvertAndValidateResult {
         /// Checks if the label starts with “xn--”
@@ -318,18 +344,17 @@ extension IDNA {
 
         /// Drop the "xn--" prefix
         let noXNRange = Range<Int>(uncheckedBounds: (4, span.count))
-        if let conversionResult = Punycode.decode(
-            _uncheckedAssumingValidUTF8: span.extracting(unchecked: noXNRange)
+        if Punycode.decode(
+            _uncheckedAssumingValidUTF8: span.extracting(unchecked: noXNRange),
+            outputBufferForReuse: &outputBufferForReuse
         ) {
-            let conversionResult = conversionResult.withSpan_Compatibility { conversionSpan in
+            outputBufferForReuse.withSpan_Compatibility { conversionSpan in
                 /// 4.3:
                 checkInvalidPunycode(span: conversionSpan, errors: &errors)
 
                 verifyValidLabel(_uncheckedAssumingValidUTF8: conversionSpan, errors: &errors)
-
-                return conversionResult
             }
-            return .bytes(conversionResult)
+            return .bytes(outputBufferForReuse)
         } else {
             switch configuration.ignoreInvalidPunycode {
             case true:
