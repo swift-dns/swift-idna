@@ -236,16 +236,17 @@ enum Punycode {
 
         /// unicodeScalarsIndexToUtf8Index[unicodeScalarsIndex] = utf8Index
         var unicodeScalarsIndexToUTF8Index = (0..<output.count).map { $0 }
+        // unicodeScalarsIndexToUTF8Index.insert(Int, at: Int)
         while unicodeScalarsIterator.currentCodeUnitOffset != inputBytesSpan.count {
             let oldi = i
             var w: UInt32 = 1
             for k in stride(from: Constants.base, to: .max, by: Int(Constants.base)) {
                 /// Above we check that input is not empty, so this is safe.
                 /// There are also extensive tests for this in the IDNATests.swift.
-                guard let codePoint = unicodeScalarsIterator.next() else {
-                    return false
-                }
-                guard let digit = Punycode.mapUnicodeScalarToDigit(codePoint) else {
+                guard
+                    let codePoint = unicodeScalarsIterator.next(),
+                    let digit = Punycode.mapUnicodeScalarToDigit(codePoint)
+                else {
                     return false
                 }
 
