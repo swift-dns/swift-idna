@@ -113,8 +113,8 @@ extension IDNA {
             }
         }
 
-        if let errors = errors.collect() {
-            throw errors
+        if !errors.isEmpty {
+            throw CollectedMappingErrors(mappingErrors: errors)
         }
 
         return .bytes(convertedBytes)
@@ -212,8 +212,8 @@ extension IDNA {
         )
 
         // 2.
-        if let errors = errors.collect() {
-            throw errors
+        if !errors.isEmpty {
+            throw CollectedMappingErrors(mappingErrors: errors)
         }
 
         return .bytes(utf8Bytes)
