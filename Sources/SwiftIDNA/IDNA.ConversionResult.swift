@@ -1,9 +1,11 @@
+public import BasicContainers
+
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNA {
     @nonexhaustive
-    public enum ConversionResult {
+    public enum ConversionResult: ~Copyable {
         case noChangedNeeded
-        case bytes([UInt8])
+        case bytes(UniqueArray<UInt8>)
         case string(String)
 
         /// Collect this result into a new string.
@@ -14,9 +16,7 @@ extension IDNA {
             case .noChangedNeeded:
                 return nil
             case .bytes(let bytes):
-                return bytes.withSpan_Compatibility { span in
-                    String(_uncheckedAssumingValidUTF8: span)
-                }
+                return String(_uncheckedAssumingValidUTF8: bytes.span)
             case .string(let string):
                 return string
             }
@@ -33,9 +33,7 @@ extension IDNA {
             case .noChangedNeeded:
                 return try ifNotAvailable()
             case .bytes(let bytes):
-                return try bytes.withSpan_Compatibility {
-                    try block($0)
-                }
+                return try block(bytes.span)
             case .string(let string):
                 var string = string
                 return try string.withSpan_Compatibility {

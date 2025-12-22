@@ -15,7 +15,8 @@ extension Span<UInt8> {
             var utf8Span = UTF8Span(unchecked: self)
             return utf8Span.checkForNFC(quickCheck: false)
         }
-        return String(_uncheckedAssumingValidUTF8: self).isInNFC_slow
+        var string = String(_uncheckedAssumingValidUTF8: self)
+        return string.isInNFC_slow
     }
 
     @usableFromInline
@@ -147,16 +148,6 @@ extension Span<UInt8> {
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension Span {
-    @inlinable
-    func contains(where predicate: (Element) -> Bool) -> Bool {
-        for idx in self.indices {
-            if predicate(self[unchecked: idx]) {
-                return true
-            }
-        }
-        return false
-    }
-
     @inlinable
     func allSatisfy(_ predicate: (Element) -> Bool) -> Bool {
         for idx in self.indices {

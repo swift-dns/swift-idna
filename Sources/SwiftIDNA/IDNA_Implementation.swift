@@ -1,4 +1,4 @@
-import BasicContainers
+public import BasicContainers
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNA {
@@ -22,7 +22,8 @@ extension IDNA {
         var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
-        var convertedBytes: [UInt8] = []
+        var convertedBytes = UniqueArray<UInt8>()
+        var convertedBytesAsArray: [UInt8]?
         let utf8Bytes = self.mainProcessing(
             _uncheckedAssumingValidUTF8: span,
             reuseBuffer: &convertedBytes,
@@ -36,80 +37,77 @@ extension IDNA {
         convertedBytes.reserveCapacity(span.count)
 
         var startIndex = 0
-        utf8Bytes.withSpan_Compatibility { bytesSpan in
-            var outputBufferForReuse: [UInt8] = []
+        let bytesSpan = utf8Bytes.span
+        var outputBufferForReuse = UniqueArray<UInt8>()
 
-            for idx in bytesSpan.indices {
-                /// If this is not a label separator, then continue
-                var endIndex = idx
-                let countBehindX = idx
-                switch countBehindX {
-                case 0, 1, 2:
-                    guard bytesSpan[unchecked: idx] == .asciiDot else {
-                        continue
-                    }
-                case 3...:
-                    let third = bytesSpan[unchecked: idx]
-                    let second = bytesSpan[unchecked: idx &- 1]
-                    let first = bytesSpan[unchecked: idx &- 2]
-                    if !Span<UInt8>.isIDNALabelSeparator(first, second, third),
-                        third != .asciiDot
-                    {
-                        continue
-                    }
-                    if third != .asciiDot {
-                        /// Set last index to bytes before e.g. `U+3002 ( 。 ) IDEOGRAPHIC FULL STOP`
-                        /// which is 3 bytes, not 1, like `U+002E ( . ) FULL STOP` (asciiDot) is.
-                        endIndex = idx &- 2
-                    }
-                default:
-                    fatalError("Invalid count behind X: \(countBehindX)")
+        for idx in bytesSpan.indices {
+            /// If this is not a label separator, then continue
+            var endIndex = idx
+            let countBehindX = idx
+            switch countBehindX {
+            case 0, 1, 2:
+                guard bytesSpan[unchecked: idx] == .asciiDot else {
+                    continue
                 }
-
-                appendLabel(
-                    domainNameSpan: bytesSpan,
-                    startIndex: startIndex,
-                    endIndex: endIndex,
-                    appendDot: true,
-                    convertedBytes: &convertedBytes,
-                    outputBufferForReuse: &outputBufferForReuse,
-                    errors: &errors
-                )
-
-                startIndex = idx &+ 1
+            case 3...:
+                let third = bytesSpan[unchecked: idx]
+                let second = bytesSpan[unchecked: idx &- 1]
+                let first = bytesSpan[unchecked: idx &- 2]
+                if !Span<UInt8>.isIDNALabelSeparator(first, second, third),
+                    third != .asciiDot
+                {
+                    continue
+                }
+                if third != .asciiDot {
+                    /// Set last index to bytes before e.g. `U+3002 ( 。 ) IDEOGRAPHIC FULL STOP`
+                    /// which is 3 bytes, not 1, like `U+002E ( . ) FULL STOP` (asciiDot) is.
+                    endIndex = idx &- 2
+                }
+            default:
+                fatalError("Invalid count behind X: \(countBehindX)")
             }
 
-            /// Last label
             appendLabel(
                 domainNameSpan: bytesSpan,
                 startIndex: startIndex,
-                endIndex: bytesSpan.count,
-                appendDot: false,
+                endIndex: endIndex,
+                appendDot: true,
                 convertedBytes: &convertedBytes,
+                convertedBytesAsArray: &convertedBytesAsArray,
                 outputBufferForReuse: &outputBufferForReuse,
                 errors: &errors
             )
+
+            startIndex = idx &+ 1
         }
+
+        /// Last label
+        appendLabel(
+            domainNameSpan: bytesSpan,
+            startIndex: startIndex,
+            endIndex: bytesSpan.count,
+            appendDot: false,
+            convertedBytes: &convertedBytes,
+            convertedBytesAsArray: &convertedBytesAsArray,
+            outputBufferForReuse: &outputBufferForReuse,
+            errors: &errors
+        )
 
         if configuration.verifyDNSLength {
             if convertedBytes.count >= 254 {
-                convertedBytes.withSpan_Compatibility { span in
-                    errors.append(
-                        .trueVerifyDNSLengthArgumentRequiresDomainNameToBe254BytesOrLess(
-                            length: convertedBytes.count,
-                            labels: convertedBytes
-                        )
+                errors.append(
+                    .trueVerifyDNSLengthArgumentRequiresDomainNameToBe254BytesOrLess(
+                        length: convertedBytes.count,
+                        labels: self.getAsArray(&convertedBytesAsArray, span: convertedBytes.span)
                     )
-                }
+                )
             }
             if convertedBytes.isEmpty {
-                convertedBytes.withSpan_Compatibility { span in
-                    errors.append(
-                        .trueVerifyDNSLengthArgumentDisallowsEmptyDomainName(
-                            labels: convertedBytes
-                        )
+                errors.append(
+                    .trueVerifyDNSLengthArgumentDisallowsEmptyDomainName(
+                        labels: self.getAsArray(&convertedBytesAsArray, span: convertedBytes.span)
                     )
-                }
+                )
             }
         }
 
@@ -127,8 +125,9 @@ extension IDNA {
         startIndex: Int,
         endIndex: Int,
         appendDot: Bool,
-        convertedBytes: inout [UInt8],
-        outputBufferForReuse: inout [UInt8],
+        convertedBytes: inout UniqueArray<UInt8>,
+        convertedBytesAsArray: inout [UInt8]?,
+        outputBufferForReuse: inout UniqueArray<UInt8>,
         errors: inout MappingErrors
     ) {
         let range = Range<Int>(uncheckedBounds: (startIndex, endIndex))
@@ -137,7 +136,7 @@ extension IDNA {
         if labelSpan.isASCII {
             if !labelSpan.isEmpty {
                 convertedBytes.reserveCapacity(labelSpan.count + 1)
-                convertedBytes.append(span: labelSpan)
+                convertedBytes.append(copying: labelSpan)
                 labelByteLength = labelSpan.count
             }
             if appendDot {
@@ -150,10 +149,8 @@ extension IDNA {
                 outputBufferForReuse: &outputBufferForReuse
             )
             convertedBytes.reserveCapacity(4 + outputBufferForReuse.count + 1)
-            convertedBytes.append(contentsOf: "xn--".utf8)
-            outputBufferForReuse.withSpan_Compatibility { span in
-                convertedBytes.append(span: span)
-            }
+            convertedBytes.append(copying: "xn--".utf8)
+            convertedBytes.append(copying: outputBufferForReuse.span)
             labelByteLength = 4 + outputBufferForReuse.count
             if appendDot {
                 convertedBytes.append(.asciiDot)
@@ -165,7 +162,7 @@ extension IDNA {
                 errors.append(
                     .trueVerifyDNSLengthArgumentRequiresLabelToBe63BytesOrLess(
                         length: labelByteLength,
-                        labels: convertedBytes
+                        labels: self.getAsArray(&convertedBytesAsArray, span: convertedBytes.span)
                     )
                 )
             }
@@ -173,7 +170,7 @@ extension IDNA {
             if labelByteLength == 0 {
                 errors.append(
                     .trueVerifyDNSLengthArgumentDisallowsEmptyLabel(
-                        labels: convertedBytes
+                        labels: self.getAsArray(&convertedBytesAsArray, span: convertedBytes.span)
                     )
                 )
             }
@@ -204,7 +201,7 @@ extension IDNA {
         var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
-        var reuseBuffer: [UInt8] = []
+        var reuseBuffer = UniqueArray<UInt8>()
         let utf8Bytes = self.mainProcessing(
             _uncheckedAssumingValidUTF8: span,
             reuseBuffer: &reuseBuffer,
@@ -225,9 +222,9 @@ extension IDNA {
     @_lifetime(&errors)
     func mainProcessing(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
-        reuseBuffer newBytes: inout [UInt8],
+        reuseBuffer newBytes: inout UniqueArray<UInt8>,
         errors: inout MappingErrors
-    ) -> [UInt8] {
+    ) -> UniqueArray<UInt8> {
         assert(newBytes.isEmpty)
         newBytes.reserveCapacity(span.count * 12 / 10)
 
@@ -237,15 +234,15 @@ extension IDNA {
         while let scalar = unicodeScalarsIterator.next() {
             switch IDNAMapping.for(scalar: scalar) {
             case .valid(_):
-                newBytes.append(contentsOf: scalar.utf8)
+                newBytes.append(copying: scalar.utf8)
             case .mapped(let mappedScalars):
                 for mappedScalar in mappedScalars {
-                    newBytes.append(contentsOf: mappedScalar.utf8)
+                    newBytes.append(copying: mappedScalar.utf8)
                 }
             case .deviation(_):
-                newBytes.append(contentsOf: scalar.utf8)
+                newBytes.append(copying: scalar.utf8)
             case .disallowed:
-                newBytes.append(contentsOf: scalar.utf8)
+                newBytes.append(copying: scalar.utf8)
             case .ignored:
                 break
             }
@@ -256,10 +253,10 @@ extension IDNA {
         /// Make `newBytes` NFC, if not already NFC
         newBytes._uncheckedAssumingValidUTF8_ensureNFC()
 
-        var newerBytes: [UInt8] = []
+        var newerBytes = UniqueArray<UInt8>()
         newerBytes.reserveCapacity(newBytes.count)
 
-        newBytes.withUnsafeBufferPointer { newBytesBuffer in
+        newBytes.span.withUnsafeBufferPointer { newBytesBuffer in
             let newBytesSpan = newBytesBuffer.span
 
             let maxRequiredCapacityForAllLabels = self.maxLabelLength(span: newBytesSpan)
@@ -335,13 +332,13 @@ extension IDNA {
     func convertAndValidateLabel(
         _ span: Span<UInt8>,
         scalarsIndexToUTF8IndexForReuse: inout LazyRigidArrayOfInt,
-        newerBytes: inout [UInt8],
+        newerBytes: inout UniqueArray<UInt8>,
         errors: inout MappingErrors
     ) -> Bool {
         /// Checks if the label starts with “xn--”
         guard span.hasIDNADomainNameMarkerPrefix else {
             verifyValidLabel(_uncheckedAssumingValidUTF8: span, errors: &errors)
-            newerBytes.append(span: span)
+            newerBytes.append(copying: span)
             return true
         }
 
@@ -365,23 +362,31 @@ extension IDNA {
         let noXNRange = Range<Int>(uncheckedBounds: (4, span.count))
         let currentNewerBytesCount = newerBytes.count
 
+        var outputBuffer = UniqueArraySubSequence<UInt8>(
+            base: newerBytes,
+            startIndex: currentNewerBytesCount
+        )
         if Punycode.decode(
             _uncheckedAssumingValidUTF8: span.extracting(unchecked: noXNRange),
             scalarsIndexToUTF8IndexForReuse: &scalarsIndexToUTF8IndexForReuse,
-            outputBuffer: &newerBytes[currentNewerBytesCount...]
+            outputBuffer: &outputBuffer
         ) {
-            newerBytes.withSpan_Compatibility { conversionSpan in
-                let range = Range<Int>(
-                    uncheckedBounds: (currentNewerBytesCount, conversionSpan.count)
-                )
-                let conversionSpan = conversionSpan.extracting(unchecked: range)
-                /// 4.3:
-                checkInvalidPunycode(span: conversionSpan, errors: &errors)
+            newerBytes = outputBuffer.base
 
-                verifyValidLabel(_uncheckedAssumingValidUTF8: conversionSpan, errors: &errors)
-            }
+            let range = Range<Int>(
+                uncheckedBounds: (currentNewerBytesCount, newerBytes.count)
+            )
+            let conversionSpan = newerBytes.span.extracting(unchecked: range)
+
+            /// 4.3:
+            checkInvalidPunycode(span: conversionSpan, errors: &errors)
+
+            verifyValidLabel(_uncheckedAssumingValidUTF8: conversionSpan, errors: &errors)
+
             return true
         } else {
+            newerBytes = outputBuffer.base
+
             switch configuration.ignoreInvalidPunycode {
             case true:
                 /// Use the original label
@@ -391,7 +396,7 @@ extension IDNA {
 
                 verifyValidLabel(_uncheckedAssumingValidUTF8: span, errors: &errors)
 
-                newerBytes.append(span: span)
+                newerBytes.append(copying: span)
                 return true
             case false:
                 errors.append(
@@ -543,6 +548,15 @@ extension IDNA {
         }
         spanString = String(_uncheckedAssumingValidUTF8: span)
         return spanString!
+    }
+
+    @inlinable
+    func getAsArray(_ array: inout [UInt8]?, span: Span<UInt8>) -> [UInt8] {
+        if let array {
+            return array
+        }
+        array = [UInt8](copying: span)
+        return array!
     }
 
     @usableFromInline

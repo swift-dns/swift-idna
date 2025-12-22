@@ -1,32 +1,57 @@
+public import BasicContainers
+
+#if os(Windows)
+public import func ucrt.memcmp
+#elseif canImport(Darwin)
+public import func Darwin.memcmp
+#elseif canImport(Glibc)
+@preconcurrency public import func Glibc.memcmp
+#elseif canImport(Musl)
+@preconcurrency public import func Musl.memcmp
+#elseif canImport(Bionic)
+@preconcurrency public import func Bionic.memcmp
+#elseif canImport(WASILibc)
+@preconcurrency public import func WASILibc.memcmp
+#else
+#error("The SwiftIDNA.+String module was unable to identify your C library.")
+#endif
+
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension String {
     @inlinable
-    var nfcCodePoints: [UInt8] {
-        var codePoints = [UInt8]()
-        codePoints.reserveCapacity(self.utf8.count)
+    var nfcCodePoints: UniqueArray<UInt8> {
+        var codePoints = UniqueArray<UInt8>(capacity: self.utf8.count)
         self._withNFCCodeUnits {
             codePoints.append($0)
         }
         return codePoints
     }
 
-    @inlinable
-    var asNFC: String {
-        String(unsafeUninitializedCapacity_Compatibility: self.utf8.count) { buffer in
-            var idx = 0
-            self._withNFCCodeUnits {
-                buffer[idx] = $0
-                idx &+= 1
-            }
-            return idx
-        }
-    }
-
     /// Faster way is to use `utf8Span.checkForNFC(quickCheck: false)`
     @inlinable
     var isInNFC_slow: Bool {
-        Self.isASCII(self.utf8)
-            || self.utf8.elementsEqual(self.nfcCodePoints)
+        mutating get {
+            if self.isEmpty || Self.isASCII(self.utf8) { return true }
+
+            let nfcCodePoints = self.nfcCodePoints
+            let count = nfcCodePoints.count
+            if count != self.utf8.count {
+                return false
+            }
+            return nfcCodePoints.span.withUnsafeBytes { nfcPtr in
+                self.withSpan_Compatibility { selfSpan in
+                    selfSpan.withUnsafeBytes { selfPtr in
+                        let nfcPtrBase: UnsafeRawPointer? = nfcPtr.baseAddress
+                        let selfPtrBase: UnsafeRawPointer? = selfPtr.baseAddress
+                        return memcmp(
+                            nfcPtrBase.unsafelyUnwrapped,
+                            selfPtrBase.unsafelyUnwrapped,
+                            count
+                        ) == 0
+                    }
+                }
+            }
+        }
     }
 
     @inlinable
