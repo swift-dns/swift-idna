@@ -23,11 +23,9 @@ extension IDNA {
 
         // 1.
         var convertedBytes: [UInt8] = []
-        var outputBufferForReuse: [UInt8] = []
         let utf8Bytes = self.mainProcessing(
             _uncheckedAssumingValidUTF8: span,
-            reuseBuffer1: &convertedBytes,
-            reuseBuffer2: &outputBufferForReuse,
+            reuseBuffer: &convertedBytes,
             errors: &errors
         )
 
@@ -39,6 +37,8 @@ extension IDNA {
 
         var startIndex = 0
         utf8Bytes.withSpan_Compatibility { bytesSpan in
+            var outputBufferForReuse: [UInt8] = []
+
             for idx in bytesSpan.indices {
                 /// If this is not a label separator, then continue
                 var endIndex = idx
@@ -204,12 +204,10 @@ extension IDNA {
         var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
-        var reuseBuffer1: [UInt8] = []
-        var reuseBuffer2: [UInt8] = []
-        let newBytes = self.mainProcessing(
+        var reuseBuffer: [UInt8] = []
+        let utf8Bytes = self.mainProcessing(
             _uncheckedAssumingValidUTF8: span,
-            reuseBuffer1: &reuseBuffer1,
-            reuseBuffer2: &reuseBuffer2,
+            reuseBuffer: &reuseBuffer,
             errors: &errors
         )
 
@@ -218,7 +216,7 @@ extension IDNA {
             throw CollectedMappingErrors(mappingErrors: errors)
         }
 
-        return .bytes(newBytes)
+        return .bytes(utf8Bytes)
     }
 
     /// Main `Processing` IDNA implementation.
@@ -227,8 +225,7 @@ extension IDNA {
     @_lifetime(&errors)
     func mainProcessing(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
-        reuseBuffer1 newBytes: inout [UInt8],
-        reuseBuffer2 newerBytes: inout [UInt8],
+        reuseBuffer newBytes: inout [UInt8],
         errors: inout MappingErrors
     ) -> [UInt8] {
         assert(newBytes.isEmpty)
@@ -259,8 +256,8 @@ extension IDNA {
         /// Make `newBytes` NFC, if not already NFC
         newBytes._uncheckedAssumingValidUTF8_ensureNFC()
 
-        assert(newerBytes.isEmpty)
-        newerBytes.reserveCapacity(newBytes.count * 14 / 10)
+        var newerBytes: [UInt8] = []
+        newerBytes.reserveCapacity(newBytes.count)
 
         newBytes.withUnsafeBufferPointer { newBytesBuffer in
             let newBytesSpan = newBytesBuffer.span
