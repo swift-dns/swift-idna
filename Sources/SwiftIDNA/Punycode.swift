@@ -109,7 +109,7 @@ enum Punycode {
         /// FIXME: it's probably more efficient to collect all unicode scalars, considering the
         /// calculations needed for `m`
         /// We can have a "DecodedUnicodeScalars" type that has already decoded all the scalars
-        /// and keeps a mapping of scalar-index tp utf8-index es, but that would require macOS26
+        /// and keeps a mapping of scalar-index to utf8-index es, but that would require macOS26
         /// because we'll need to use `UTF8Span.UnicodeScalarIterator` to be able to decode the
         /// scalars from utf8 bytes, unless we implement that ourselves which is possible but is not
         /// trivial.
@@ -209,6 +209,7 @@ enum Punycode {
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
         outputBufferForReuse output: inout [UInt8]
     ) -> Bool {
+        let initialInputBytesSpanCount = inputBytesSpan.count
         var inputBytesSpan = inputBytesSpan
         var n = Constants.initialN
         var i: UInt32 = 0
@@ -235,8 +236,15 @@ enum Punycode {
         var unicodeScalarsIterator = inputBytesSpan.makeUnicodeScalarIterator_Compatibility()
 
         /// unicodeScalarsIndexToUtf8Index[unicodeScalarsIndex] = utf8Index
-        var unicodeScalarsIndexToUTF8Index = (0..<output.count).map { $0 }
-        // unicodeScalarsIndexToUTF8Index.insert(Int, at: Int)
+        let unicodeScalarsIndexToUTF8Index = UnsafeMutablePointer<Int>.allocate(
+            capacity: initialInputBytesSpanCount
+        )
+        defer { unicodeScalarsIndexToUTF8Index.deallocate() }
+        for idx in 0..<output.count {
+            unicodeScalarsIndexToUTF8Index[idx] = idx
+        }
+        var unicodeScalarsIndexToUTF8IndexCount = output.count
+
         while unicodeScalarsIterator.currentCodeUnitOffset != inputBytesSpan.count {
             let oldi = i
             var w: UInt32 = 1
@@ -267,7 +275,7 @@ enum Punycode {
 
                 w = w &* (Constants.base &- t)
             }
-            let outputCount = unicodeScalarsIndexToUTF8Index.count
+            let outputCount = unicodeScalarsIndexToUTF8IndexCount
             let outputCountPlusOne = UInt32(outputCount) &+ 1
             bias = adapt(
                 delta: i &- oldi,
@@ -283,9 +291,11 @@ enum Punycode {
 
             let scalar = Unicode.Scalar(n).unsafelyUnwrapped
 
-            if i == unicodeScalarsIndexToUTF8Index.count {
+            if i == unicodeScalarsIndexToUTF8IndexCount {
                 output.append(contentsOf: scalar.utf8)
-                unicodeScalarsIndexToUTF8Index.append(output.count &- 1)
+                unicodeScalarsIndexToUTF8Index[unicodeScalarsIndexToUTF8IndexCount] =
+                    output.count &- 1
+                unicodeScalarsIndexToUTF8IndexCount &+= 1
             } else {
                 let iInt = Int(i)
                 let previousIdxOfScalarInBytes =
@@ -299,11 +309,16 @@ enum Punycode {
                 output.insert(contentsOf: scalar.utf8, at: insertIndex)
                 let utf8Count = scalar.utf8.count
                 let firstElementFactor = i == 0 ? -1 : 0
-                unicodeScalarsIndexToUTF8Index.insert(
-                    previousIdxOfScalarInBytes &+ utf8Count &+ firstElementFactor,
-                    at: iInt
+
+                unicodeScalarsIndexToUTF8Index.advanced(by: iInt &+ 1).update(
+                    from: unicodeScalarsIndexToUTF8Index.advanced(by: iInt),
+                    count: unicodeScalarsIndexToUTF8IndexCount - iInt
                 )
-                let currentCount = unicodeScalarsIndexToUTF8Index.count
+                let toInsert = previousIdxOfScalarInBytes &+ utf8Count &+ firstElementFactor
+                unicodeScalarsIndexToUTF8Index[iInt] = toInsert
+
+                unicodeScalarsIndexToUTF8IndexCount &+= 1
+                let currentCount = unicodeScalarsIndexToUTF8IndexCount
                 for idx in (iInt &+ 1)..<currentCount {
                     unicodeScalarsIndexToUTF8Index[idx] &+= utf8Count
                 }
