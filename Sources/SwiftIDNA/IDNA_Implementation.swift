@@ -254,7 +254,7 @@ extension IDNA {
         /// Make `newBytes` NFC, if not already NFC
         newBytes._uncheckedAssumingValidUTF8_ensureNFC()
 
-        newerBytes.reserveCapacity(newBytes.count)
+        newerBytes.reserveCapacity(newBytes.count * 14 / 10)
         assert(newerBytes.isEmpty)
 
         newBytes.withUnsafeBufferPointer { newBytesBuffer in
