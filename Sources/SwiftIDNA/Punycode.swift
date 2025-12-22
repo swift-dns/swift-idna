@@ -1,3 +1,5 @@
+public import BasicContainers
+
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
@@ -205,11 +207,17 @@ enum Punycode {
     /// reset and reuse the buffer.
     /// Returns true if successful, in which case you should use the `outputBufferForReuse`.
     @inlinable
+    @_lifetime(&unicodeScalarsIndexToUTF8Index)
     static func decode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
+        scalarsIndexToUTF8IndexForReuse unicodeScalarsIndexToUTF8Index: inout RigidArray<Int>,
         outputBufferForReuse output: inout [UInt8]
     ) -> Bool {
-        let initialInputBytesSpanCount = inputBytesSpan.count
+        assert(
+            unicodeScalarsIndexToUTF8Index.capacity >= inputBytesSpan.count,
+            "Should have already allocated enough space (\(unicodeScalarsIndexToUTF8Index.capacity)) for the scalars index to utf8 index mapping (\(inputBytesSpan.count))"
+        )
+
         var inputBytesSpan = inputBytesSpan
         var n = Constants.initialN
         var i: UInt32 = 0
@@ -235,11 +243,6 @@ enum Punycode {
 
         var unicodeScalarsIterator = inputBytesSpan.makeUnicodeScalarIterator_Compatibility()
 
-        /// unicodeScalarsIndexToUtf8Index[unicodeScalarsIndex] = utf8Index
-        let unicodeScalarsIndexToUTF8Index = UnsafeMutablePointer<Int>.allocate(
-            capacity: initialInputBytesSpanCount
-        )
-        defer { unicodeScalarsIndexToUTF8Index.deallocate() }
         for idx in 0..<output.count {
             unicodeScalarsIndexToUTF8Index[idx] = idx
         }
@@ -310,12 +313,9 @@ enum Punycode {
                 let utf8Count = scalar.utf8.count
                 let firstElementFactor = i == 0 ? -1 : 0
 
-                unicodeScalarsIndexToUTF8Index.advanced(by: iInt &+ 1).update(
-                    from: unicodeScalarsIndexToUTF8Index.advanced(by: iInt),
-                    count: unicodeScalarsIndexToUTF8IndexCount - iInt
-                )
                 let toInsert = previousIdxOfScalarInBytes &+ utf8Count &+ firstElementFactor
-                unicodeScalarsIndexToUTF8Index[iInt] = toInsert
+                unicodeScalarsIndexToUTF8Index.removeLast()
+                unicodeScalarsIndexToUTF8Index.insert(toInsert, at: iInt)
 
                 unicodeScalarsIndexToUTF8IndexCount &+= 1
                 let currentCount = unicodeScalarsIndexToUTF8IndexCount

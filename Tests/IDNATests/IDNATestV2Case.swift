@@ -97,7 +97,13 @@ struct IDNATestV2Case {
 
 extension IDNATestV2Case: CustomStringConvertible {
     var description: String {
-        "IDNATestV2Case(source: \(source.debugDescription), toUnicode: \(toUnicode?.debugDescription ?? "nil"), toUnicodeStatus: \(toUnicodeStatus.debugDescription), toAsciiN: \(toAsciiN?.debugDescription ?? "nil"), toAsciiNStatus: \(toAsciiNStatus.debugDescription))"
+        let sourceDebug = source.debugDescription
+        let toUnicodeDebug = toUnicode?.debugDescription ?? "nil"
+        let toUnicodeStatusDebug = toUnicodeStatus.debugDescription
+        let toAsciiNDebug = toAsciiN?.debugDescription ?? "nil"
+        let toAsciiNStatusDebug = toAsciiNStatus.debugDescription
+        return
+            "IDNATestV2Case(source: \(sourceDebug), toUnicode: \(toUnicodeDebug), toUnicodeStatus: \(toUnicodeStatusDebug), toAsciiN: \(toAsciiNDebug), toAsciiNStatus: \(toAsciiNStatusDebug))"
     }
 }
 

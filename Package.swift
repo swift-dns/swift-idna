@@ -7,11 +7,15 @@ let package = Package(
     products: [
         .library(name: "SwiftIDNA", targets: ["SwiftIDNA"])
     ],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-collections.git", from: "1.3.0")
+    ],
     targets: [
         .target(
             name: "SwiftIDNA",
             dependencies: [
-                "CSwiftIDNA"
+                "CSwiftIDNA",
+                .product(name: "BasicContainers", package: "swift-collections"),
             ],
             swiftSettings: settings
         ),

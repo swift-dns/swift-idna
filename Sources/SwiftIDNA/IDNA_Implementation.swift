@@ -1,3 +1,5 @@
+public import BasicContainers
+
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNA {
     /// `ToASCII` IDNA implementation.
@@ -258,7 +260,33 @@ extension IDNA {
         newBytes.withUnsafeBufferPointer { newBytesBuffer in
             let newBytesSpan = newBytesBuffer.span
 
+            var maxRequiredCapacityForAllLabels = 0
             var startIndex = 0
+            for idx in newBytesSpan.indices {
+                /// Unchecked because idx comes right from `newBytesSpan.indices`
+                guard newBytesSpan[unchecked: idx] == .asciiDot else {
+                    continue
+                }
+
+                maxRequiredCapacityForAllLabels = max(
+                    maxRequiredCapacityForAllLabels,
+                    idx - startIndex
+                )
+                startIndex = idx &+ 1
+            }
+            maxRequiredCapacityForAllLabels = max(
+                maxRequiredCapacityForAllLabels,
+                newBytesSpan.count - startIndex
+            )
+
+            var scalarsIndexToUTF8IndexForReuse = RigidArray<Int>(
+                capacity: maxRequiredCapacityForAllLabels
+            )
+            for _ in 0..<maxRequiredCapacityForAllLabels {
+                scalarsIndexToUTF8IndexForReuse.append(0)
+            }
+
+            startIndex = 0
             for idx in newBytesSpan.indices {
                 /// Unchecked because idx comes right from `newBytesSpan.indices`
                 guard newBytesSpan[unchecked: idx] == .asciiDot else {
@@ -267,9 +295,11 @@ extension IDNA {
 
                 let range = Range<Int>(uncheckedBounds: (startIndex, idx))
                 let chunk = newBytesSpan.extracting(unchecked: range)
+
                 /// TODO: can we pass newerBytes to convertAndValidateLabel instead of it returning a new buffer?!
                 switchStatement: switch convertAndValidateLabel(
                     chunk,
+                    scalarsIndexToUTF8IndexForReuse: &scalarsIndexToUTF8IndexForReuse,
                     outputBufferForReuse: &outputBufferForReuse,
                     errors: &errors
                 ) {
@@ -290,6 +320,7 @@ extension IDNA {
             let chunk = newBytesSpan.extracting(unchecked: range)
             switchStatement: switch convertAndValidateLabel(
                 chunk,
+                scalarsIndexToUTF8IndexForReuse: &scalarsIndexToUTF8IndexForReuse,
                 outputBufferForReuse: &outputBufferForReuse,
                 errors: &errors
             ) {
@@ -317,6 +348,7 @@ extension IDNA {
     @_lifetime(copy span)
     func convertAndValidateLabel(
         _ span: Span<UInt8>,
+        scalarsIndexToUTF8IndexForReuse: inout RigidArray<Int>,
         outputBufferForReuse: inout [UInt8],
         errors: inout MappingErrors
     ) -> ConvertAndValidateResult {
@@ -346,6 +378,7 @@ extension IDNA {
         let noXNRange = Range<Int>(uncheckedBounds: (4, span.count))
         if Punycode.decode(
             _uncheckedAssumingValidUTF8: span.extracting(unchecked: noXNRange),
+            scalarsIndexToUTF8IndexForReuse: &scalarsIndexToUTF8IndexForReuse,
             outputBufferForReuse: &outputBufferForReuse
         ) {
             outputBufferForReuse.withSpan_Compatibility { conversionSpan in
