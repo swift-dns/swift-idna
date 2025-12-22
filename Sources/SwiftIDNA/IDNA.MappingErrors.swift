@@ -1,3 +1,5 @@
+public import BasicContainers
+
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNA {
     public struct CollectedMappingErrors: Error {
@@ -5,20 +7,20 @@ extension IDNA {
         public let errors: [MappingError]
 
         @inlinable
-        init(mappingErrors: MappingErrors) {
+        init(mappingErrors: consuming MappingErrors) {
             self.domainName = String(
                 _uncheckedAssumingValidUTF8: mappingErrors.domainNameSpan
             )
-            self.errors = mappingErrors.errors
+            self.errors = [MappingError](copying: mappingErrors.errors.span)
         }
     }
 
     @usableFromInline
-    struct MappingErrors: ~Escapable {
+    struct MappingErrors: ~Copyable, ~Escapable {
         @usableFromInline
         let domainNameSpan: Span<UInt8>
         @usableFromInline
-        var errors: [MappingError]
+        var errors: UniqueArray<MappingError>
 
         @inlinable
         var isEmpty: Bool {
@@ -29,7 +31,7 @@ extension IDNA {
         @_lifetime(copy domainNameSpan)
         init(domainNameSpan: Span<UInt8>) {
             self.domainNameSpan = domainNameSpan
-            self.errors = []
+            self.errors = UniqueArray<MappingError>(capacity: 0)
         }
 
         @inlinable
