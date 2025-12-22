@@ -279,12 +279,9 @@ extension IDNA {
                 newBytesSpan.count - startIndex
             )
 
-            var scalarsIndexToUTF8IndexForReuse = RigidArray<Int>(
+            var scalarsIndexToUTF8IndexForReuse = LazyRigidArrayOfInt(
                 capacity: maxRequiredCapacityForAllLabels
             )
-            for _ in 0..<maxRequiredCapacityForAllLabels {
-                scalarsIndexToUTF8IndexForReuse.append(0)
-            }
 
             startIndex = 0
             for idx in newBytesSpan.indices {
@@ -348,7 +345,7 @@ extension IDNA {
     @_lifetime(copy span)
     func convertAndValidateLabel(
         _ span: Span<UInt8>,
-        scalarsIndexToUTF8IndexForReuse: inout RigidArray<Int>,
+        scalarsIndexToUTF8IndexForReuse: inout LazyRigidArrayOfInt,
         outputBufferForReuse: inout [UInt8],
         errors: inout MappingErrors
     ) -> ConvertAndValidateResult {
