@@ -2,9 +2,9 @@ public import BasicContainers
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
-struct LazyRigidArrayOfInt: ~Copyable {
+struct LazyRigidArray<Integer: FixedWidthInteger>: ~Copyable {
     @usableFromInline
-    var array: RigidArray<Int>?
+    var array: RigidArray<Integer>?
     @usableFromInline
     let capacityToReserve: Int
 
@@ -15,11 +15,11 @@ struct LazyRigidArrayOfInt: ~Copyable {
     }
 
     @inlinable
-    mutating func withRigidArray<T>(_ body: (inout RigidArray<Int>) -> T) -> T {
+    mutating func withRigidArray<T>(_ body: (inout RigidArray<Integer>) -> T) -> T {
         if array != nil {
             return body(&self.array!)
         } else {
-            var array = RigidArray<Int>(capacity: capacityToReserve)
+            var array = RigidArray<Integer>(capacity: capacityToReserve)
             for _ in 0..<capacityToReserve {
                 array.append(0)
             }

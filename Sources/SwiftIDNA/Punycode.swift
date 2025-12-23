@@ -86,9 +86,7 @@ enum Punycode {
         var delta: UInt32 = 0
         var bias = Constants.initialBias
         output.removeAll(keepingCapacity: true)
-        /// ``input.count <= output.count`` is guaranteed when using unicode scalars.
-        /// We're using utf8 bytes but we'll reserve the capacity anyway.
-        output.reserveCapacity(inputBytesSpan.count)
+
         for idx in inputBytesSpan.indices {
             let byte = inputBytesSpan[unchecked: idx]
             if byte.isASCII {
@@ -210,7 +208,7 @@ enum Punycode {
     @_lifetime(&unicodeScalarsIndexToUTF8Index)
     static func decode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
-        scalarsIndexToUTF8IndexForReuse unicodeScalarsIndexToUTF8Index: inout LazyRigidArrayOfInt,
+        scalarsIndexToUTF8IndexForReuse unicodeScalarsIndexToUTF8Index: inout LazyRigidArray<Int>,
         outputBuffer output: inout UniqueArraySubSequence<UInt8>
     ) -> Bool {
         var inputBytesSpan = inputBytesSpan
@@ -238,8 +236,7 @@ enum Punycode {
 
         var unicodeScalarsIterator = inputBytesSpan.makeUnicodeScalarIterator_Compatibility()
 
-        return unicodeScalarsIndexToUTF8Index.withRigidArray {
-            unicodeScalarsIndexToUTF8Index -> Bool in
+        return unicodeScalarsIndexToUTF8Index.withRigidArray { unicodeScalarsIndexToUTF8Index in
 
             for idx in 0..<output.count {
                 unicodeScalarsIndexToUTF8Index[idx] = idx

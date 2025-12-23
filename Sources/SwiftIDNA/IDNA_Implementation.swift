@@ -30,14 +30,17 @@ extension IDNA {
         )
 
         // 2., 3.
+        var outputBufferForReuse = LazyUniqueArray<UInt8>(
+            capacity: convertedBytes.count
+        )
 
         /// TODO: Use a tiny-array here?
         convertedBytes.removeAll(keepingCapacity: true)
         convertedBytes.reserveCapacity(convertedBytes.count + span.count)
 
-        var startIndex = 0
         let bytesSpan = utf8Bytes.span
-        var outputBufferForReuse = UniqueArray<UInt8>()
+
+        var startIndex = 0
 
         for idx in bytesSpan.indices {
             /// If this is not a label separator, then continue
@@ -123,7 +126,7 @@ extension IDNA {
         endIndex: Int,
         appendDot: Bool,
         convertedBytes: inout UniqueArray<UInt8>,
-        outputBufferForReuse: inout UniqueArray<UInt8>,
+        outputBufferForReuse: inout LazyUniqueArray<UInt8>,
         errors: inout MappingErrors
     ) {
         let range = Range<Int>(uncheckedBounds: (startIndex, endIndex))
@@ -140,18 +143,21 @@ extension IDNA {
             }
         } else {
             /// TODO: can we pass convertedBytes to Punycode.encode instead of it returning a new array?
-            Punycode.encode(
-                _uncheckedAssumingValidUTF8: labelSpan,
-                outputBufferForReuse: &outputBufferForReuse
-            )
-            convertedBytes.reserveCapacity(
-                convertedBytes.count + 4 + outputBufferForReuse.count + 1
-            )
-            convertedBytes.append(copying: "xn--".utf8)
-            convertedBytes.append(copying: outputBufferForReuse.span)
-            labelByteLength = 4 + outputBufferForReuse.count
-            if appendDot {
-                convertedBytes.append(.asciiDot)
+            outputBufferForReuse.withUniqueArray { outputBufferForReuse in
+                Punycode.encode(
+                    _uncheckedAssumingValidUTF8: labelSpan,
+                    outputBufferForReuse: &outputBufferForReuse
+                )
+
+                convertedBytes.reserveCapacity(
+                    convertedBytes.count + 4 + outputBufferForReuse.count + 1
+                )
+                convertedBytes.append(copying: "xn--".utf8)
+                convertedBytes.append(copying: outputBufferForReuse.span)
+                labelByteLength = 4 + outputBufferForReuse.count
+                if appendDot {
+                    convertedBytes.append(.asciiDot)
+                }
             }
         }
 
@@ -223,28 +229,11 @@ extension IDNA {
         reuseBuffer newBytes: inout UniqueArray<UInt8>,
         errors: inout MappingErrors
     ) -> UniqueArray<UInt8> {
-        assert(newBytes.isEmpty)
-        newBytes.reserveCapacity(span.count * 12 / 10)
-
-        var unicodeScalarsIterator = span.makeUnicodeScalarIterator_Compatibility()
-
         /// 1. Map
-        while let scalar = unicodeScalarsIterator.next() {
-            switch IDNAMapping.for(scalar: scalar) {
-            case .valid(_):
-                newBytes.append(copying: scalar.utf8)
-            case .mapped(let mappedScalars):
-                for mappedScalar in mappedScalars {
-                    newBytes.append(copying: mappedScalar.utf8)
-                }
-            case .deviation(_):
-                newBytes.append(copying: scalar.utf8)
-            case .disallowed:
-                newBytes.append(copying: scalar.utf8)
-            case .ignored:
-                break
-            }
-        }
+        self.idnaMapBytes(
+            _uncheckedAssumingValidUTF8: span,
+            into: &newBytes
+        )
 
         /// 2. Normalize
 
@@ -258,7 +247,7 @@ extension IDNA {
             let newBytesSpan = newBytesBuffer.span
 
             let maxRequiredCapacityForAllLabels = self.maxLabelLength(span: newBytesSpan)
-            var scalarsIndexToUTF8IndexForReuse = LazyRigidArrayOfInt(
+            var scalarsIndexToUTF8IndexForReuse = LazyRigidArray<Int>(
                 capacity: maxRequiredCapacityForAllLabels
             )
 
@@ -298,6 +287,63 @@ extension IDNA {
     }
 
     @inlinable
+    func idnaMapBytes(
+        _uncheckedAssumingValidUTF8 span: Span<UInt8>,
+        into newBytes: inout UniqueArray<UInt8>
+    ) {
+        /// I'm expecting this to be empty, nothing special.
+        /// Tests will immediately crash if this is not the case.
+        assert(newBytes.isEmpty)
+
+        var requiredCapacity = 0
+
+        var unicodeScalarsIterator = span.makeUnicodeScalarIterator_Compatibility()
+
+        while let scalar = unicodeScalarsIterator.next() {
+            switch IDNAMapping.for(scalar: scalar) {
+            case .valid(_):
+                requiredCapacity &+= scalar.utf8.count
+            case .mapped(let mappedScalars):
+                for mappedScalar in mappedScalars {
+                    requiredCapacity &+= mappedScalar.utf8.count
+                }
+            case .deviation(_):
+                requiredCapacity &+= scalar.utf8.count
+            case .disallowed:
+                requiredCapacity &+= scalar.utf8.count
+            case .ignored:
+                break
+            }
+        }
+
+        /// Use the underlying RigidArray to skip capacity checks because
+        /// we're guaranteed to have enough capacity.
+        var rigidArray = RigidArray(consuming: newBytes)
+        rigidArray.reserveCapacity(requiredCapacity)
+
+        unicodeScalarsIterator = span.makeUnicodeScalarIterator_Compatibility()
+
+        while let scalar = unicodeScalarsIterator.next() {
+            switch IDNAMapping.for(scalar: scalar) {
+            case .valid(_):
+                rigidArray.append(copying: scalar.utf8)
+            case .mapped(let mappedScalars):
+                for mappedScalar in mappedScalars {
+                    rigidArray.append(copying: mappedScalar.utf8)
+                }
+            case .deviation(_):
+                rigidArray.append(copying: scalar.utf8)
+            case .disallowed:
+                rigidArray.append(copying: scalar.utf8)
+            case .ignored:
+                break
+            }
+        }
+
+        newBytes = UniqueArray(consuming: rigidArray)
+    }
+
+    @inlinable
     func maxLabelLength(span: Span<UInt8>) -> Int {
         var maxLabelLength = 0
         var startIndex = 0
@@ -329,7 +375,7 @@ extension IDNA {
     @_lifetime(copy span)
     func convertAndValidateLabel(
         _ span: Span<UInt8>,
-        scalarsIndexToUTF8IndexForReuse: inout LazyRigidArrayOfInt,
+        scalarsIndexToUTF8IndexForReuse: inout LazyRigidArray<Int>,
         newerBytes: inout UniqueArray<UInt8>,
         errors: inout MappingErrors
     ) -> Bool {
