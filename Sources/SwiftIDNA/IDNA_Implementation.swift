@@ -34,7 +34,7 @@ extension IDNA {
 
         /// TODO: Use a tiny-array here?
         convertedBytes.removeAll(keepingCapacity: true)
-        convertedBytes.reserveCapacity(span.count)
+        convertedBytes.reserveCapacity(convertedBytes.count + span.count)
 
         var startIndex = 0
         let bytesSpan = utf8Bytes.span
@@ -135,7 +135,7 @@ extension IDNA {
         var labelByteLength = 0
         if labelSpan.isASCII {
             if !labelSpan.isEmpty {
-                convertedBytes.reserveCapacity(labelSpan.count + 1)
+                convertedBytes.reserveCapacity(convertedBytes.count + labelSpan.count + 1)
                 convertedBytes.append(copying: labelSpan)
                 labelByteLength = labelSpan.count
             }
@@ -148,7 +148,9 @@ extension IDNA {
                 _uncheckedAssumingValidUTF8: labelSpan,
                 outputBufferForReuse: &outputBufferForReuse
             )
-            convertedBytes.reserveCapacity(4 + outputBufferForReuse.count + 1)
+            convertedBytes.reserveCapacity(
+                convertedBytes.count + 4 + outputBufferForReuse.count + 1
+            )
             convertedBytes.append(copying: "xn--".utf8)
             convertedBytes.append(copying: outputBufferForReuse.span)
             labelByteLength = 4 + outputBufferForReuse.count

@@ -217,7 +217,7 @@ enum Punycode {
         var n = Constants.initialN
         var i: UInt32 = 0
         var bias = Constants.initialBias
-        output.reserveCapacity(max(inputBytesSpan.count, 4))
+        output.reserveCapacity(output.count + max(inputBytesSpan.count, 4))
 
         if let utf8Idx = inputBytesSpan.lastIndex(of: .asciiHyphenMinus) {
             let afterDelimiterIdx = utf8Idx &+ 1
