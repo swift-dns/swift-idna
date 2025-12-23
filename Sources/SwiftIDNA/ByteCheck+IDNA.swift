@@ -71,23 +71,20 @@ extension IDNA {
         /// Assert all values are non-negative.
         assert(span.allSatisfy { $0.signum() != -1 })
 
-        var containsUppercased = false
+        guard span.isASCII else {
+            return .mightChangeAfterIDNAConversion
+        }
 
         for idx in span.indices {
             let byte = span[unchecked: idx]
             /// Based on IDNA, all ASCII characters other than uppercased letters are 'valid'
             /// Uppercased letters are each 'mapped' to their lowercased equivalent.
             if byte.isUppercasedASCIILetter {
-                containsUppercased = true
-            } else if byte.isASCII {
-                continue
-            } else {
-                return .mightChangeAfterIDNAConversion
+                return .onlyNeedsLowercasingOfUppercasedASCIILetters
             }
         }
 
-        return containsUppercased
-            ? .onlyNeedsLowercasingOfUppercasedASCIILetters : .containsOnlyIDNANoOpCharacters
+        return .containsOnlyIDNANoOpCharacters
     }
 
     /// Checks the bytes to foresee if an IDNA conversion will modify the string.
