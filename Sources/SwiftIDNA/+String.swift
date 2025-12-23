@@ -1,21 +1,5 @@
 public import BasicContainers
 
-#if os(Windows)
-public import func ucrt.memcmp
-#elseif canImport(Darwin)
-public import func Darwin.memcmp
-#elseif canImport(Glibc)
-@preconcurrency public import func Glibc.memcmp
-#elseif canImport(Musl)
-@preconcurrency public import func Musl.memcmp
-#elseif canImport(Bionic)
-@preconcurrency public import func Bionic.memcmp
-#elseif canImport(WASILibc)
-@preconcurrency public import func WASILibc.memcmp
-#else
-#error("The SwiftIDNA.+String module was unable to identify your C library.")
-#endif
-
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension String {
     @inlinable
@@ -27,30 +11,26 @@ extension String {
         return codePoints
     }
 
-    /// Faster way is to use `utf8Span.checkForNFC(quickCheck: false)`
     @inlinable
-    var isInNFC_slow: Bool {
-        mutating get {
-            if self.isEmpty || Self.isASCII(self.utf8) { return true }
+    func isEqualToNFCCodePointsOfSelf() -> Bool {
+        var copy = self
+        return copy.withSpan_Compatibility { span -> Bool in
+            var idx = 0
+            var isInNFC = true
+            let currentCount = span.count
 
-            let nfcCodePoints = self.nfcCodePoints
-            let count = nfcCodePoints.count
-            if count != self.utf8.count {
-                return false
-            }
-            return nfcCodePoints.span.withUnsafeBytes { nfcPtr in
-                self.withSpan_Compatibility { selfSpan in
-                    selfSpan.withUnsafeBytes { selfPtr in
-                        let nfcPtrBase: UnsafeRawPointer? = nfcPtr.baseAddress
-                        let selfPtrBase: UnsafeRawPointer? = selfPtr.baseAddress
-                        return memcmp(
-                            nfcPtrBase.unsafelyUnwrapped,
-                            selfPtrBase.unsafelyUnwrapped,
-                            count
-                        ) == 0
-                    }
+            self._withNFCCodeUnits { utf8Byte in
+                if !isInNFC { return }
+
+                if currentCount <= idx || utf8Byte != span[unchecked: idx] {
+                    isInNFC = false
+                    return
                 }
+
+                idx &+= 1
             }
+
+            return isInNFC
         }
     }
 

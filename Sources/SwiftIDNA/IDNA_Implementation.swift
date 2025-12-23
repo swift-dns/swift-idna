@@ -439,8 +439,6 @@ extension IDNA {
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
         errors: inout MappingErrors
     ) {
-        var spanString: String?
-
         if !configuration.ignoreInvalidPunycode,
             !span.isInNFC
         {

@@ -11,12 +11,9 @@ extension Span<UInt8> {
 
     @usableFromInline
     var isInNFC: Bool {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            var utf8Span = UTF8Span(unchecked: self)
-            return utf8Span.checkForNFC(quickCheck: false)
-        }
-        var string = String(_uncheckedAssumingValidUTF8: self)
-        return string.isInNFC_slow
+        if self.isEmpty || self.isASCII { return true }
+        let string = String(_uncheckedAssumingValidUTF8: self)
+        return string.isEqualToNFCCodePointsOfSelf()
     }
 
     @usableFromInline
