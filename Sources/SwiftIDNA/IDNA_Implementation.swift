@@ -23,7 +23,6 @@ extension IDNA {
 
         // 1.
         var convertedBytes = UniqueArray<UInt8>()
-        var convertedBytesAsArray: [UInt8]?
         let utf8Bytes = self.mainProcessing(
             _uncheckedAssumingValidUTF8: span,
             reuseBuffer: &convertedBytes,
@@ -73,7 +72,6 @@ extension IDNA {
                 endIndex: endIndex,
                 appendDot: true,
                 convertedBytes: &convertedBytes,
-                convertedBytesAsArray: &convertedBytesAsArray,
                 outputBufferForReuse: &outputBufferForReuse,
                 errors: &errors
             )
@@ -88,7 +86,6 @@ extension IDNA {
             endIndex: bytesSpan.count,
             appendDot: false,
             convertedBytes: &convertedBytes,
-            convertedBytesAsArray: &convertedBytesAsArray,
             outputBufferForReuse: &outputBufferForReuse,
             errors: &errors
         )
@@ -98,14 +95,14 @@ extension IDNA {
                 errors.append(
                     .trueVerifyDNSLengthArgumentRequiresDomainNameToBe254BytesOrLess(
                         length: convertedBytes.count,
-                        labels: self.getAsArray(&convertedBytesAsArray, span: convertedBytes.span)
+                        labels: [UInt8](copying: convertedBytes.span)
                     )
                 )
             }
             if convertedBytes.isEmpty {
                 errors.append(
                     .trueVerifyDNSLengthArgumentDisallowsEmptyDomainName(
-                        labels: self.getAsArray(&convertedBytesAsArray, span: convertedBytes.span)
+                        labels: [UInt8](copying: convertedBytes.span)
                     )
                 )
             }
@@ -126,7 +123,6 @@ extension IDNA {
         endIndex: Int,
         appendDot: Bool,
         convertedBytes: inout UniqueArray<UInt8>,
-        convertedBytesAsArray: inout [UInt8]?,
         outputBufferForReuse: inout UniqueArray<UInt8>,
         errors: inout MappingErrors
     ) {
@@ -164,7 +160,7 @@ extension IDNA {
                 errors.append(
                     .trueVerifyDNSLengthArgumentRequiresLabelToBe63BytesOrLess(
                         length: labelByteLength,
-                        labels: self.getAsArray(&convertedBytesAsArray, span: convertedBytes.span)
+                        labels: [UInt8](copying: convertedBytes.span)
                     )
                 )
             }
@@ -172,7 +168,7 @@ extension IDNA {
             if labelByteLength == 0 {
                 errors.append(
                     .trueVerifyDNSLengthArgumentDisallowsEmptyLabel(
-                        labels: self.getAsArray(&convertedBytesAsArray, span: convertedBytes.span)
+                        labels: [UInt8](copying: convertedBytes.span)
                     )
                 )
             }
@@ -450,7 +446,7 @@ extension IDNA {
         {
             errors.append(
                 .labelIsNotInNormalizationFormC(
-                    label: getSpanString(&spanString, span: span)
+                    label: String(_uncheckedAssumingValidUTF8: span)
                 )
             )
         }
@@ -464,7 +460,7 @@ extension IDNA {
             {
                 errors.append(
                     .trueCheckHyphensArgumentRequiresLabelToNotContainHyphenMinusAtPostion3and4(
-                        label: getSpanString(&spanString, span: span)
+                        label: String(_uncheckedAssumingValidUTF8: span)
                     )
                 )
             }
@@ -474,7 +470,7 @@ extension IDNA {
             {
                 errors.append(
                     .trueCheckHyphensArgumentRequiresLabelToNotStartOrEndWithHyphenMinus(
-                        label: getSpanString(&spanString, span: span)
+                        label: String(_uncheckedAssumingValidUTF8: span)
                     )
                 )
             }
@@ -484,7 +480,7 @@ extension IDNA {
             {
                 errors.append(
                     .falseCheckHyphensArgumentRequiresLabelToNotStartWithXNHyphenMinusHyphenMinus(
-                        label: getSpanString(&spanString, span: span)
+                        label: String(_uncheckedAssumingValidUTF8: span)
                     )
                 )
             }
@@ -497,7 +493,7 @@ extension IDNA {
         {
             errors.append(
                 .labelStartsWithCombiningMark(
-                    label: getSpanString(&spanString, span: span)
+                    label: String(_uncheckedAssumingValidUTF8: span)
                 )
             )
         }
@@ -514,7 +510,7 @@ extension IDNA {
                         errors.append(
                             .labelContainsInvalidUnicode(
                                 codePoint,
-                                label: getSpanString(&spanString, span: span)
+                                label: String(_uncheckedAssumingValidUTF8: span)
                             )
                         )
                     }
@@ -526,7 +522,7 @@ extension IDNA {
                     {
                         errors.append(
                             .trueUseSTD3ASCIIRulesArgumentRequiresLabelToOnlyContainCertainASCIICharacters(
-                                label: getSpanString(&spanString, span: span)
+                                label: String(_uncheckedAssumingValidUTF8: span)
                             )
                         )
                     }
@@ -541,24 +537,6 @@ extension IDNA {
         // if configuration.checkBidi {
         // TODO: implement
         // }
-    }
-
-    @inlinable
-    func getSpanString(_ spanString: inout String?, span: Span<UInt8>) -> String {
-        if let spanString {
-            return spanString
-        }
-        spanString = String(_uncheckedAssumingValidUTF8: span)
-        return spanString!
-    }
-
-    @inlinable
-    func getAsArray(_ array: inout [UInt8]?, span: Span<UInt8>) -> [UInt8] {
-        if let array {
-            return array
-        }
-        array = [UInt8](copying: span)
-        return array!
     }
 
     @usableFromInline
