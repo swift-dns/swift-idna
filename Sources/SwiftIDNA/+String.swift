@@ -1,9 +1,10 @@
+public import BasicContainers
+
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension String {
     @inlinable
-    var nfcCodePoints: [UInt8] {
-        var codePoints = [UInt8]()
-        codePoints.reserveCapacity(self.utf8.count)
+    var nfcCodePoints: UniqueArray<UInt8> {
+        var codePoints = UniqueArray<UInt8>(capacity: self.utf8.count)
         self._withNFCCodeUnits {
             codePoints.append($0)
         }
@@ -11,22 +12,26 @@ extension String {
     }
 
     @inlinable
-    var asNFC: String {
-        String(unsafeUninitializedCapacity_Compatibility: self.utf8.count) { buffer in
+    func isEqualToNFCCodePointsOfSelf() -> Bool {
+        var copy = self
+        return copy.withSpan_Compatibility { span -> Bool in
             var idx = 0
-            self._withNFCCodeUnits {
-                buffer[idx] = $0
+            var isInNFC = true
+            let currentCount = span.count
+
+            self._withNFCCodeUnits { utf8Byte in
+                if !isInNFC { return }
+
+                if currentCount <= idx || utf8Byte != span[unchecked: idx] {
+                    isInNFC = false
+                    return
+                }
+
                 idx &+= 1
             }
-            return idx
-        }
-    }
 
-    /// Faster way is to use `utf8Span.checkForNFC(quickCheck: false)`
-    @inlinable
-    var isInNFC_slow: Bool {
-        Self.isASCII(self.utf8)
-            || self.utf8.elementsEqual(self.nfcCodePoints)
+            return isInNFC
+        }
     }
 
     @inlinable

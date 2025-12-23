@@ -1,3 +1,5 @@
+public import BasicContainers
+
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNA {
     public struct CollectedMappingErrors: Error {
@@ -5,20 +7,18 @@ extension IDNA {
         public let errors: [MappingError]
 
         @inlinable
-        init(mappingErrors: MappingErrors) {
-            self.domainName = String(
-                _uncheckedAssumingValidUTF8: mappingErrors.domainNameSpan
-            )
-            self.errors = mappingErrors.errors
+        init(domainName: String, errors: [MappingError]) {
+            self.domainName = domainName
+            self.errors = errors
         }
     }
 
     @usableFromInline
-    struct MappingErrors: ~Escapable {
+    struct MappingErrors: ~Copyable, ~Escapable {
         @usableFromInline
         let domainNameSpan: Span<UInt8>
         @usableFromInline
-        var errors: [MappingError]
+        var errors: UniqueArray<MappingError>
 
         @inlinable
         var isEmpty: Bool {
@@ -29,13 +29,29 @@ extension IDNA {
         @_lifetime(copy domainNameSpan)
         init(domainNameSpan: Span<UInt8>) {
             self.domainNameSpan = domainNameSpan
-            self.errors = []
+            self.errors = UniqueArray<MappingError>(capacity: 0)
         }
 
         @inlinable
         @_lifetime(&self)
         mutating func append(_ error: MappingError) {
             self.errors.append(error)
+        }
+
+        @inlinable
+        consuming func collect() -> CollectedMappingErrors? {
+            if self.isEmpty {
+                return nil
+            }
+            var errors = [MappingError]()
+            errors.reserveCapacity(self.errors.count)
+            self.errors.span.withUnsafeBufferPointer { spanPtr in
+                errors.append(contentsOf: spanPtr)
+            }
+            return CollectedMappingErrors(
+                domainName: String(_uncheckedAssumingValidUTF8: self.domainNameSpan),
+                errors: errors
+            )
         }
     }
 

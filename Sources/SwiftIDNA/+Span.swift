@@ -2,7 +2,9 @@
 extension Span<UInt8> {
     @inlinable
     var isASCII: Bool {
-        var result: UInt8 = 0
+        var result: Element = 0
+        /// The compiler will use SIMD instructions to perform the bitwise operations below,
+        /// which will speed up the process.
         for idx in self.indices {
             result |= self[unchecked: idx]
         }
@@ -11,11 +13,9 @@ extension Span<UInt8> {
 
     @usableFromInline
     var isInNFC: Bool {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            var utf8Span = UTF8Span(unchecked: self)
-            return utf8Span.checkForNFC(quickCheck: false)
-        }
-        return String(_uncheckedAssumingValidUTF8: self).isInNFC_slow
+        if self.isEmpty || self.isASCII { return true }
+        let string = String(_uncheckedAssumingValidUTF8: self)
+        return string.isEqualToNFCCodePointsOfSelf()
     }
 
     @usableFromInline
@@ -147,16 +147,6 @@ extension Span<UInt8> {
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension Span {
-    @inlinable
-    func contains(where predicate: (Element) -> Bool) -> Bool {
-        for idx in self.indices {
-            if predicate(self[unchecked: idx]) {
-                return true
-            }
-        }
-        return false
-    }
-
     @inlinable
     func allSatisfy(_ predicate: (Element) -> Bool) -> Bool {
         for idx in self.indices {
