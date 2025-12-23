@@ -1,5 +1,14 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension Span<UInt8> {
+    @inlinable
+    var isASCII: Bool {
+        var result: Element = 0
+        for idx in self.indices {
+            result |= self[unchecked: idx]
+        }
+        return result <= 0x7F
+    }
+
     @usableFromInline
     var isInNFC: Bool {
         if self.isEmpty || self.isASCII { return true }
@@ -156,17 +165,5 @@ extension Span {
             }
         }
         return nil
-    }
-}
-
-@available(swiftIDNAApplePlatforms 10.15, *)
-extension Span where Element: BinaryInteger {
-    @inlinable
-    var isASCII: Bool {
-        var result: Element = 0
-        for idx in self.indices {
-            result |= self[unchecked: idx]
-        }
-        return result <= 0x7F
     }
 }

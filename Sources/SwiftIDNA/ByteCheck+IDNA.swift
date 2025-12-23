@@ -65,14 +65,34 @@ extension IDNA {
     ///
     /// No negative values are allowed.
     @inlinable
-    public static func performByteCheck(
-        on span: Span<some BinaryInteger>
+    public static func performByteCheck<BI: BinaryInteger>(
+        on span: Span<BI>
     ) -> CharacterCheckResult {
         /// Assert all values are non-negative.
         assert(span.allSatisfy { $0.signum() != -1 })
 
-        guard span.isASCII else {
+        var isASCII_Number: BI = 0
+        var forSureDoesNotContainUppercased_Number: BI = 0
+        for idx in span.indices {
+            let byte = span[unchecked: idx]
+            isASCII_Number |= byte
+            forSureDoesNotContainUppercased_Number &= byte
+        }
+        let isASCII = isASCII_Number <= 0x7F
+
+        guard isASCII else {
             return .mightChangeAfterIDNAConversion
+        }
+
+        /// If the sixth bit is set then this for sure doesn't contain an uppercased letter because
+        /// those all have the sixth bit turned off.
+        /// a-z and 0-9 have the sixth bit turned on, so if a string only consists of a-b and 0-9, which
+        /// should be most of the cases, then this check will skip the rest of the work below.
+        let forSureDoesNotContainUppercased =
+            forSureDoesNotContainUppercased_Number & 0b100000 == 0b100000
+
+        if forSureDoesNotContainUppercased {
+            return .containsOnlyIDNANoOpCharacters
         }
 
         for idx in span.indices {
