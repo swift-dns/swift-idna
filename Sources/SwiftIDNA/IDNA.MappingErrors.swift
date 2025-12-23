@@ -7,11 +7,9 @@ extension IDNA {
         public let errors: [MappingError]
 
         @inlinable
-        init(mappingErrors: consuming MappingErrors) {
-            self.domainName = String(
-                _uncheckedAssumingValidUTF8: mappingErrors.domainNameSpan
-            )
-            self.errors = [MappingError](copying: mappingErrors.errors.span)
+        init(domainName: String, errors: [MappingError]) {
+            self.domainName = domainName
+            self.errors = errors
         }
     }
 
@@ -38,6 +36,17 @@ extension IDNA {
         @_lifetime(&self)
         mutating func append(_ error: MappingError) {
             self.errors.append(error)
+        }
+
+        @inlinable
+        consuming func collect() -> CollectedMappingErrors? {
+            if self.isEmpty {
+                return nil
+            }
+            return CollectedMappingErrors(
+                domainName: String(_uncheckedAssumingValidUTF8: self.domainNameSpan),
+                errors: [MappingError](copying: self.errors.span)
+            )
         }
     }
 
