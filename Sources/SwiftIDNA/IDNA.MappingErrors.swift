@@ -43,9 +43,14 @@ extension IDNA {
             if self.isEmpty {
                 return nil
             }
+            var errors = [MappingError]()
+            errors.reserveCapacity(self.errors.count)
+            self.errors.span.withUnsafeBufferPointer { spanPtr in
+                errors.append(contentsOf: spanPtr)
+            }
             return CollectedMappingErrors(
                 domainName: String(_uncheckedAssumingValidUTF8: self.domainNameSpan),
-                errors: [MappingError](copying: self.errors.span)
+                errors: errors
             )
         }
     }

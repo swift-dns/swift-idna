@@ -11,16 +11,3 @@ extension [UInt8] {
         }
     }
 }
-
-@available(swiftIDNAApplePlatforms 10.15, *)
-extension Array {
-    @inlinable
-    init(copying span: Span<Element>) {
-        self.init(unsafeUninitializedCapacity: span.count) { buffer, initializedCount in
-            for idx in 0..<span.count {
-                buffer[idx] = span[unchecked: idx]
-            }
-            initializedCount = span.count
-        }
-    }
-}
