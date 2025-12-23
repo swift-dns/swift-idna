@@ -20,6 +20,12 @@ struct UniqueArraySubSequence<Element>: ~Copyable {
     }
 
     @inlinable
+    var span: Span<Element> {
+        let range = Range<Int>(uncheckedBounds: (self.startIndex, self.base.count))
+        return self.base.span.extracting(unchecked: range)
+    }
+
+    @inlinable
     mutating func append(_ element: Element) {
         self.base.append(element)
     }
@@ -54,11 +60,6 @@ struct UniqueArraySubSequence<Element>: ~Copyable {
 extension UniqueArraySubSequence<UInt8> {
     @inlinable
     var isASCII: Bool {
-        var result: UInt8 = 0
-        for idx in self.startIndex..<self.base.count {
-            let byte = self.base[idx]
-            result |= byte
-        }
-        return result <= 0x7F
+        self.span.isASCII
     }
 }

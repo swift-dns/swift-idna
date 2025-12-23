@@ -71,6 +71,8 @@ extension IDNA {
         /// Assert all values are non-negative.
         assert(span.allSatisfy { $0.signum() != -1 })
 
+        /// The compiler will use SIMD instructions to perform the bitwise operations below,
+        /// which will speed up the process.
         var isASCII_Number: BI = 0
         var forSureDoesNotContainUppercased_Number: BI = 0
         for idx in span.indices {
