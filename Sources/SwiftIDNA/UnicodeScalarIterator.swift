@@ -25,7 +25,7 @@ struct UnicodeScalarIterator: ~Copyable {
 
         let scalarLength = (~firstByte).leadingZeroBitCount
 
-        var encodedScalar = Unicode.UTF8.EncodedScalar()
+        var encodedScalar = UTF8.EncodedScalar()
         for idx in 0..<scalarLength {
             encodedScalar.append(bytes[unchecked: self.currentCodeUnitOffset &+ idx])
         }

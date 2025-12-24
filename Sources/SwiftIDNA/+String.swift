@@ -3,8 +3,8 @@ public import BasicContainers
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension String {
     @inlinable
-    var nfcCodePoints: UniqueArray<UInt8> {
-        var codePoints = UniqueArray<UInt8>(capacity: self.utf8.count)
+    var nfcCodePoints: RigidArray<UInt8> {
+        var codePoints = RigidArray<UInt8>(capacity: self.utf8.count)
         self._withNFCCodeUnits {
             codePoints.append($0)
         }
