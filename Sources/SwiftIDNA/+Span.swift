@@ -18,12 +18,6 @@ extension Span<UInt8> {
         return string.isEqualToNFCCodePointsOfSelf()
     }
 
-    @inlinable
-    @_lifetime(borrow self)
-    func _uncheckedAssumingValidUTF8_decodeUnicodeScalars() -> DecodedUnicodeScalars {
-        DecodedUnicodeScalars(utf8Bytes: self)
-    }
-
     /// Checks if contains any labels that start with “xn--”
     @inlinable
     var containsIDNADomainNameMarkerLabelPrefix: Bool {

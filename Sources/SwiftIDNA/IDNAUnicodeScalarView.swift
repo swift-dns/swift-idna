@@ -174,7 +174,7 @@ extension IDNAUnicodeScalarView: CustomStringConvertible {
         var result = "IDNAUnicodeScalarView(["
         let elementsCount = self.count
         result.reserveCapacity(result.count + elementsCount * 6 + 2)
-        let lastIdx = elementsCount - 1
+        let lastIdx = elementsCount &- 1
         for idx in self.indices {
             /// If the count is non-zero then the `UnsafeBufferPointer` guarantees there is a non-nil pointer.
             let value = self.pointer.baseAddress.unsafelyUnwrapped.advanced(by: idx).pointee
@@ -196,7 +196,7 @@ extension IDNAUnicodeScalarView: CustomDebugStringConvertible {
             "IDNAUnicodeScalarView(pointer: \(self.pointer.debugDescription), count: \(self.count), elements: ["
         let elementsCount = self.count
         result.reserveCapacity(result.count + elementsCount * 6 + 2)
-        let lastIdx = elementsCount - 1
+        let lastIdx = elementsCount &- 1
         for idx in self.indices {
             /// If the count is non-zero then the `UnsafeBufferPointer` guarantees there is a non-nil pointer.
             let value = self.pointer.baseAddress.unsafelyUnwrapped.advanced(by: idx).pointee

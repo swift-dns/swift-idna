@@ -368,7 +368,7 @@ extension IDNA {
 
             maxLabelLength = max(
                 maxLabelLength,
-                idx - startIndex
+                idx &- startIndex
             )
             startIndex = idx &+ 1
         }
