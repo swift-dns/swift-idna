@@ -39,6 +39,9 @@ extension IDNA {
         convertedBytes.reserveCapacity(convertedBytes.count + span.count)
 
         let bytesSpan = utf8Bytes.span
+        var decodedUnicodeScalars = DecodedUnicodeScalars.Subsequence(
+            base: DecodedUnicodeScalars(utf8Bytes: bytesSpan)
+        )
 
         var startIndex = 0
 
@@ -76,6 +79,7 @@ extension IDNA {
                 appendDot: true,
                 convertedBytes: &convertedBytes,
                 outputBufferForReuse: &outputBufferForReuse,
+                decodedUnicodeScalars: &decodedUnicodeScalars,
                 errors: &errors
             )
 
@@ -90,6 +94,7 @@ extension IDNA {
             appendDot: false,
             convertedBytes: &convertedBytes,
             outputBufferForReuse: &outputBufferForReuse,
+            decodedUnicodeScalars: &decodedUnicodeScalars,
             errors: &errors
         )
 
@@ -127,6 +132,7 @@ extension IDNA {
         appendDot: Bool,
         convertedBytes: inout UniqueArray<UInt8>,
         outputBufferForReuse: inout LazyUniqueArray<UInt8>,
+        decodedUnicodeScalars: inout DecodedUnicodeScalars.Subsequence,
         errors: inout MappingErrors
     ) {
         let range = Range<Int>(uncheckedBounds: (startIndex, endIndex))
@@ -143,10 +149,15 @@ extension IDNA {
             }
         } else {
             /// TODO: can we pass convertedBytes to Punycode.encode instead of it returning a new array?
-            outputBufferForReuse.withUniqueArray { outputBufferForReuse in
+            outputBufferForReuse.withUniqueArray {
+                (outputBufferForReuse: inout UniqueArray<UInt8>) -> Void in
+
+                decodedUnicodeScalars.set(range: range)
+
                 Punycode.encode(
                     _uncheckedAssumingValidUTF8: labelSpan,
-                    outputBufferForReuse: &outputBufferForReuse
+                    outputBufferForReuse: &outputBufferForReuse,
+                    decodedUnicodeScalars: &decodedUnicodeScalars
                 )
 
                 convertedBytes.reserveCapacity(

@@ -1,7 +1,7 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
-extension [UInt8] {
+extension Array where Element: BitwiseCopyable {
     @inlinable
-    init(copying span: Span<UInt8>) {
+    init(copying span: Span<Element>) {
         self.init(unsafeUninitializedCapacity: span.count) { buffer, initializedCount in
             span.withUnsafeBytes { spanPtr in
                 let rawBuffer = UnsafeMutableRawBufferPointer(buffer)
