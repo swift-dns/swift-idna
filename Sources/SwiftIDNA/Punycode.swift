@@ -78,7 +78,6 @@ enum Punycode {
     /// reset and reuse the buffer.
     /// You can use use the `outputBufferForReuse` after the function returns.
     @inlinable
-    @_lifetime(copy decodedUnicodeScalars)
     static func encode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
         outputBufferForReuse output: inout UniqueArray<UInt8>,

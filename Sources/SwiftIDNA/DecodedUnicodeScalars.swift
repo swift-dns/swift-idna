@@ -2,48 +2,35 @@ public import BasicContainers
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
-struct DecodedUnicodeScalars: ~Copyable, ~Escapable {
-    @usableFromInline
-    var utf8Bytes: Span<UInt8>
+struct DecodedUnicodeScalars: ~Copyable {
     /// [index in unicodeScalars] -> [index in utf8]
     @usableFromInline
-    var utf8Indices: RigidArray<Int>
+    var scalars: RigidArray<Unicode.Scalar>
 
     @inlinable
     var count: Int {
-        self.utf8Indices.count
+        self.scalars.count
     }
 
     @inlinable
     @_lifetime(borrow utf8Bytes)
     init(utf8Bytes: Span<UInt8>) {
-        self.utf8Bytes = utf8Bytes
-        self.utf8Indices = RigidArray<Int>(capacity: utf8Bytes.count)
-        self.decode()
+        self.scalars = RigidArray<Unicode.Scalar>(capacity: utf8Bytes.count)
+        self.decode(utf8Bytes: utf8Bytes)
     }
 
     /// Decodes and returns the unicode scalar at the given index.
     @usableFromInline
     subscript(index: Int) -> Unicode.Scalar {
-        let endIndex = self.utf8Indices[index]
-        let startIndex = index == 0 ? 0 : self.utf8Indices[index &- 1]
-        let range = Range<Int>(uncheckedBounds: (startIndex, endIndex))
-
-        var encodedScalar = Unicode.UTF8.EncodedScalar()
-        for idx in range {
-            encodedScalar.append(self.utf8Bytes[unchecked: idx])
-        }
-
-        return UTF8.decode(encodedScalar)
+        self.scalars[index]
     }
 
     @usableFromInline
-    mutating func decode() {
+    @_lifetime(borrow utf8Bytes)
+    mutating func decode(utf8Bytes: Span<UInt8>) {
         var unicodeScalarsIterator = UnicodeScalarIterator()
-        var idx = 0
-        while let utf8Count = unicodeScalarsIterator.nextScalarLength(in: self.utf8Bytes) {
-            idx &+= utf8Count
-            self.utf8Indices.append(idx)
+        while let scalar = unicodeScalarsIterator.next(in: utf8Bytes) {
+            self.scalars.append(scalar)
         }
     }
 }
@@ -51,13 +38,15 @@ struct DecodedUnicodeScalars: ~Copyable, ~Escapable {
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension DecodedUnicodeScalars {
     @usableFromInline
-    struct Subsequence: ~Copyable, ~Escapable {
+    struct Subsequence: ~Copyable {
         @usableFromInline
         var base: DecodedUnicodeScalars
         @usableFromInline
         var startIndex: Int
         @usableFromInline
         var endIndex: Int
+        @usableFromInline
+        var endIndexByteOffset: Int
 
         @inlinable
         var count: Int {
@@ -66,11 +55,11 @@ extension DecodedUnicodeScalars {
 
         /// Before using the subsequence, you need to set the starting byte using `set(startingByte:)`.
         @inlinable
-        @_lifetime(copy base)
         init(base: consuming DecodedUnicodeScalars) {
             self.base = base
             self.startIndex = 0
             self.endIndex = 0
+            self.endIndexByteOffset = 0
         }
 
         /// As an optimization, this function assumes the new range is after the last range it was set to.
@@ -78,23 +67,28 @@ extension DecodedUnicodeScalars {
         @inlinable
         @_lifetime(&self)
         mutating func set(range: Range<Int>) {
-            let utf8IndicesCount = self.base.utf8Indices.count
+            let scalarsCount = self.base.count
+            var byteOffset = self.endIndexByteOffset
 
             if range.lowerBound == 0 {
                 self.startIndex = 0
             } else {
-                let minStartIndex = self.endIndex
-                for idx in minStartIndex..<utf8IndicesCount {
-                    if self.base.utf8Indices[idx] == range.lowerBound {
+                for idx in self.endIndex..<scalarsCount {
+                    let scalar = self.base.scalars[idx]
+                    byteOffset &+= scalar.utf8.count
+                    if byteOffset == range.lowerBound {
                         self.startIndex = idx &+ 1
                         break
                     }
                 }
             }
 
-            for idx in self.startIndex..<utf8IndicesCount {
-                if self.base.utf8Indices[idx] == range.upperBound {
+            for idx in self.startIndex..<scalarsCount {
+                let scalar = self.base.scalars[idx]
+                byteOffset &+= scalar.utf8.count
+                if byteOffset == range.upperBound {
                     self.endIndex = idx &+ 1
+                    self.endIndexByteOffset = byteOffset
                     break
                 }
             }

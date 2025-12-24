@@ -35,23 +35,4 @@ struct UnicodeScalarIterator: ~Copyable {
 
         return scalar
     }
-
-    /// Only pass the span to any single instance of this iterator.
-    /// As always, tests will fail if this is not the case.
-    @inlinable
-    @_lifetime(borrow bytes)
-    mutating func nextScalarLength(in bytes: Span<UInt8>) -> Int? {
-        guard self.currentCodeUnitOffset < bytes.count else { return nil }
-
-        let firstByte = bytes[unchecked: self.currentCodeUnitOffset]
-
-        if firstByte.isASCII {
-            self.currentCodeUnitOffset &+= 1
-            return 1
-        }
-
-        let scalarLength = (~firstByte).leadingZeroBitCount
-        self.currentCodeUnitOffset &+= scalarLength
-        return scalarLength
-    }
 }
