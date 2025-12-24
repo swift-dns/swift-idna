@@ -16,7 +16,7 @@ struct UnicodeScalarIterator: ~Copyable {
     mutating func next(in bytes: Span<UInt8>) -> Unicode.Scalar? {
         guard self.currentCodeUnitOffset < bytes.count else { return nil }
 
-        let firstByte = bytes[self.currentCodeUnitOffset]
+        let firstByte = bytes[unchecked: self.currentCodeUnitOffset]
 
         if firstByte.isASCII {
             self.currentCodeUnitOffset &+= 1
@@ -27,7 +27,7 @@ struct UnicodeScalarIterator: ~Copyable {
 
         var encodedScalar = Unicode.UTF8.EncodedScalar()
         for idx in 0..<scalarLength {
-            encodedScalar.append(bytes[self.currentCodeUnitOffset &+ idx])
+            encodedScalar.append(bytes[unchecked: self.currentCodeUnitOffset &+ idx])
         }
 
         let scalar = UTF8.decode(encodedScalar)
@@ -43,7 +43,7 @@ struct UnicodeScalarIterator: ~Copyable {
     mutating func nextScalarLength(in bytes: Span<UInt8>) -> Int? {
         guard self.currentCodeUnitOffset < bytes.count else { return nil }
 
-        let firstByte = bytes[self.currentCodeUnitOffset]
+        let firstByte = bytes[unchecked: self.currentCodeUnitOffset]
 
         if firstByte.isASCII {
             self.currentCodeUnitOffset &+= 1

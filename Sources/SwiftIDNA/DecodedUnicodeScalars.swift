@@ -31,7 +31,7 @@ struct DecodedUnicodeScalars: ~Copyable, ~Escapable {
 
         var encodedScalar = Unicode.UTF8.EncodedScalar()
         for idx in range {
-            encodedScalar.append(self.utf8Bytes[idx])
+            encodedScalar.append(self.utf8Bytes[unchecked: idx])
         }
 
         return UTF8.decode(encodedScalar)
@@ -69,8 +69,8 @@ extension DecodedUnicodeScalars {
         @_lifetime(copy base)
         init(base: consuming DecodedUnicodeScalars) {
             self.base = base
-            self.startIndex = -1
-            self.endIndex = -1
+            self.startIndex = 0
+            self.endIndex = 0
         }
 
         /// As an optimization, this function assumes the new range is after the last range it was set to.
@@ -83,7 +83,7 @@ extension DecodedUnicodeScalars {
             if range.lowerBound == 0 {
                 self.startIndex = 0
             } else {
-                let minStartIndex = max(self.endIndex, 0)
+                let minStartIndex = self.endIndex
                 for idx in minStartIndex..<utf8IndicesCount {
                     if self.base.utf8Indices[idx] == range.lowerBound {
                         self.startIndex = idx &+ 1
