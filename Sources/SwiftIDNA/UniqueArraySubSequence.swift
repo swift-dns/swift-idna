@@ -16,7 +16,7 @@ struct UniqueArraySubSequence<Element>: ~Copyable {
 
     @inlinable
     var count: Int {
-        self.base.count - self.startIndex
+        self.base.count &- self.startIndex
     }
 
     @inlinable

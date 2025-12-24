@@ -80,7 +80,8 @@ enum Punycode {
     @inlinable
     static func encode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
-        outputBufferForReuse output: inout UniqueArray<UInt8>
+        outputBufferForReuse output: inout UniqueArray<UInt8>,
+        decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
     ) {
         var n = Constants.initialN
         var delta: UInt32 = 0
@@ -96,29 +97,18 @@ enum Punycode {
         let b = UInt32(output.count)
         var h = b
 
-        var unicodeScalarsIterator = inputBytesSpan.makeUnicodeScalarIterator_Compatibility()
-        /// Mark h-amount of Unicode Scalars, as already-read.
-        for _ in 0..<h {
-            _ = unicodeScalarsIterator.skipForward()
-        }
-
         if !output.isEmpty {
             output.append(UInt8.asciiHyphenMinus)
         }
 
-        /// FIXME: it's probably more efficient to collect all unicode scalars, considering the
-        /// calculations needed for `m`
-        /// We can have a "DecodedUnicodeScalars" type that has already decoded all the scalars
-        /// and keeps a mapping of scalar-index to utf8-index es, but that would require macOS26
-        /// because we'll need to use `UTF8Span.UnicodeScalarIterator` to be able to decode the
-        /// scalars from utf8 bytes, unless we implement that ourselves which is possible but is not
-        /// trivial.
-
-        while unicodeScalarsIterator.currentCodeUnitOffset != inputBytesSpan.count {
+        /// Mark h-amount of Unicode Scalars, as already-read.
+        var loopIdx = h
+        let scalarsCount = decodedUnicodeScalars.count
+        while loopIdx < scalarsCount {
             var m: UInt32 = .max
-            var unicodeScalarsIteratorForM =
-                inputBytesSpan.makeUnicodeScalarIterator_Compatibility()
-            while let codePoint = unicodeScalarsIteratorForM.next() {
+
+            for idx in 0..<scalarsCount {
+                let codePoint = decodedUnicodeScalars[idx]
                 if !codePoint.isASCII, codePoint.value >= n {
                     m = min(m, codePoint.value)
                 }
@@ -127,9 +117,8 @@ enum Punycode {
             delta &+= ((m &- n) &* (h &+ 1))
 
             n = m
-            var originalUnicodeScalarsIterator =
-                inputBytesSpan.makeUnicodeScalarIterator_Compatibility()
-            while let codePoint = originalUnicodeScalarsIterator.next() {
+            for idx in 0..<scalarsCount {
+                let codePoint = decodedUnicodeScalars[idx]
                 if codePoint.value < n || codePoint.isASCII {
                     delta &+= 1
                 }
@@ -164,7 +153,8 @@ enum Punycode {
                     bias = adapt(delta: delta, codePointCount: h &+ 1, isFirstTime: h == b)
                     delta = 0
                     h &+= 1
-                    _ = unicodeScalarsIterator.skipForward()
+                    /// Skip one unicode scalar
+                    loopIdx &+= 1
                 }
             }
             delta &+= 1
@@ -200,10 +190,7 @@ enum Punycode {
     /// labels.
     /// ```
     ///
-    /// `outputBufferForReuse` is used as a performance optimization.
-    /// You should pass 1 shared `outputBufferForReuse` for all labels, so this function can
-    /// reset and reuse the buffer.
-    /// Returns true if successful, in which case you should use the `outputBufferForReuse`.
+    /// Returns true if successful, in which case `outputBuffer` will have been populated.
     @inlinable
     @_lifetime(&unicodeScalarsIndexToUTF8Index)
     static func decode(
@@ -234,8 +221,6 @@ enum Punycode {
             inputBytesSpan = inputBytesSpan.extracting(unchecked: inputBytesRange)
         }
 
-        var unicodeScalarsIterator = inputBytesSpan.makeUnicodeScalarIterator_Compatibility()
-
         return unicodeScalarsIndexToUTF8Index.withRigidArray { unicodeScalarsIndexToUTF8Index in
 
             for idx in 0..<output.count {
@@ -243,6 +228,7 @@ enum Punycode {
             }
             var unicodeScalarsIndexToUTF8IndexCount = output.count
 
+            var unicodeScalarsIterator = UnicodeScalarIterator()
             while unicodeScalarsIterator.currentCodeUnitOffset != inputBytesSpan.count {
                 let oldi = i
                 var w: UInt32 = 1
@@ -250,7 +236,7 @@ enum Punycode {
                     /// Above we check that input is not empty, so this is safe.
                     /// There are also extensive tests for this in the IDNATests.swift.
                     guard
-                        let codePoint = unicodeScalarsIterator.next(),
+                        let codePoint = unicodeScalarsIterator.next(in: inputBytesSpan),
                         let digit = Punycode.mapUnicodeScalarToDigit(codePoint)
                     else {
                         output.removeAll()

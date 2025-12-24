@@ -18,23 +18,6 @@ extension Span<UInt8> {
         return string.isEqualToNFCCodePointsOfSelf()
     }
 
-    @usableFromInline
-    @inline(__always)
-    @_lifetime(copy self)
-    func makeUnicodeScalarIterator_Compatibility() -> (
-        any UnicodeScalarsIteratorProtocol & ~Escapable
-    ) {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            let utf8Span = UTF8Span(unchecked: self)
-            return utf8Span.makeUnicodeScalarIterator()
-        }
-        let iterator = String(_uncheckedAssumingValidUTF8: self).unicodeScalars.makeIterator()
-        return UnicodeScalarViewCompatibilityIterator(
-            underlyingIterator: iterator,
-            currentCodeUnitOffset: 0
-        )
-    }
-
     /// Checks if contains any labels that start with “xn--”
     @inlinable
     var containsIDNADomainNameMarkerLabelPrefix: Bool {
