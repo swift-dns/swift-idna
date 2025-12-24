@@ -3,7 +3,6 @@ public import BasicContainers
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
 struct DecodedUnicodeScalars: ~Copyable {
-    /// [index in unicodeScalars] -> [index in utf8]
     @usableFromInline
     var scalars: RigidArray<Unicode.Scalar>
 
@@ -19,7 +18,6 @@ struct DecodedUnicodeScalars: ~Copyable {
         self.decode(utf8Bytes: utf8Bytes)
     }
 
-    /// Decodes and returns the unicode scalar at the given index.
     @usableFromInline
     subscript(index: Int) -> Unicode.Scalar {
         self.scalars[index]
@@ -97,6 +95,8 @@ extension DecodedUnicodeScalars {
         /// Decodes and returns the unicode scalar at the given index.
         @inlinable
         subscript(index: Int) -> Unicode.Scalar {
+            /// This assert is to trap in tests for the most part.
+            /// That's why it's not a precondition.
             assert(self.endIndex > index, "Index out of bounds")
             return self.base[self.startIndex &+ index]
         }

@@ -3,8 +3,8 @@ public import BasicContainers
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension String {
     @inlinable
-    var nfcCodePoints: UniqueArray<UInt8> {
-        var codePoints = UniqueArray<UInt8>(capacity: self.utf8.count)
+    var nfcCodePoints: RigidArray<UInt8> {
+        var codePoints = RigidArray<UInt8>(capacity: self.utf8.count)
         self._withNFCCodeUnits {
             codePoints.append($0)
         }
@@ -43,15 +43,30 @@ extension String {
         return result <= 0x7F
     }
 
-    @inlinable
+    @usableFromInline
     init(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
-        let count = span.count
-        self.init(unsafeUninitializedCapacity_Compatibility: count) { buffer in
-            span.withUnsafeBytes { spanPtr in
-                let rawBuffer = UnsafeMutableRawBufferPointer(buffer)
-                rawBuffer.copyMemory(from: spanPtr)
+        if #available(swiftIDNAApplePlatforms 26, *) {
+            let utf8Span = UTF8Span(unchecked: span)
+            self.init(copying: utf8Span)
+        } else if #available(swiftIDNAApplePlatforms 11, *) {
+            self.init(unsafeUninitializedCapacity: span.count) { buffer in
+                span.withUnsafeBytes { spanPtr in
+                    let rawBuffer = UnsafeMutableRawBufferPointer(buffer)
+                    rawBuffer.copyMemory(from: spanPtr)
+                }
+                return span.count
             }
-            return count
+        } else {
+            let array = [UInt8].init(
+                unsafeUninitializedCapacity: span.count
+            ) { buffer, initializedCount in
+                span.withUnsafeBytes { spanPtr in
+                    let rawBuffer = UnsafeMutableRawBufferPointer(buffer)
+                    rawBuffer.copyMemory(from: spanPtr)
+                }
+                initializedCount = span.count
+            }
+            self.init(decoding: array, as: UTF8.self)
         }
     }
 
