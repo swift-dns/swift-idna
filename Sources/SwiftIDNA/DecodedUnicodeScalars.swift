@@ -41,8 +41,7 @@ struct DecodedUnicodeScalars: ~Copyable, ~Escapable {
     mutating func decode() {
         var unicodeScalarsIterator = UnicodeScalarIterator()
         var idx = 0
-        while let codePoint = unicodeScalarsIterator.next(in: self.utf8Bytes) {
-            let utf8Count = codePoint.utf8.count
+        while let utf8Count = unicodeScalarsIterator.nextScalarLength(in: self.utf8Bytes) {
             idx &+= utf8Count
             self.utf8Indices.append(idx)
         }
