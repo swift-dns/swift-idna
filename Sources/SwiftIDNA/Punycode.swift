@@ -81,7 +81,7 @@ enum Punycode {
     static func encode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
         outputBufferForReuse output: inout UniqueArray<UInt8>,
-        decodedUnicodeScalars: inout DecodedUnicodeScalars.Subsequence
+        decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
     ) {
         var n = Constants.initialN
         var delta: UInt32 = 0
@@ -221,8 +221,6 @@ enum Punycode {
             inputBytesSpan = inputBytesSpan.extracting(unchecked: inputBytesRange)
         }
 
-        var unicodeScalarsIterator = UnicodeScalarIterator()
-
         return unicodeScalarsIndexToUTF8Index.withRigidArray { unicodeScalarsIndexToUTF8Index in
 
             for idx in 0..<output.count {
@@ -230,6 +228,7 @@ enum Punycode {
             }
             var unicodeScalarsIndexToUTF8IndexCount = output.count
 
+            var unicodeScalarsIterator = UnicodeScalarIterator()
             while unicodeScalarsIterator.currentCodeUnitOffset != inputBytesSpan.count {
                 let oldi = i
                 var w: UInt32 = 1

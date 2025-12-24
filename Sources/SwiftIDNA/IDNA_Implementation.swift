@@ -159,7 +159,7 @@ extension IDNA {
                 Punycode.encode(
                     _uncheckedAssumingValidUTF8: labelSpan,
                     outputBufferForReuse: &outputBufferForReuse,
-                    decodedUnicodeScalars: &decodedUnicodeScalars
+                    decodedUnicodeScalars: decodedUnicodeScalars
                 )
 
                 convertedBytes.reserveCapacity(
