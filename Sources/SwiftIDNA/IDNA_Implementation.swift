@@ -255,45 +255,43 @@ extension IDNA {
 
         var newerBytes = UniqueArray<UInt8>(capacity: newBytes.count)
 
-        newBytes.span.withUnsafeBufferPointer { newBytesBuffer in
-            let newBytesSpan = newBytesBuffer.span
+        let newBytesSpan = newBytes.span
 
-            let maxRequiredCapacityForAllLabels = self.maxLabelLength(span: newBytesSpan)
-            var scalarsIndexToUTF8IndexForReuse = LazyRigidArray<Int>(
-                capacity: maxRequiredCapacityForAllLabels
-            )
+        let maxRequiredCapacityForAllLabels = self.maxLabelLength(span: newBytesSpan)
+        var scalarsIndexToUTF8IndexForReuse = LazyRigidArray<Int>(
+            capacity: maxRequiredCapacityForAllLabels
+        )
 
-            var startIndex = 0
-            for idx in newBytesSpan.indices {
-                /// Unchecked because idx comes right from `newBytesSpan.indices`
-                guard newBytesSpan[unchecked: idx] == .asciiDot else {
-                    continue
-                }
-
-                let range = Range<Int>(uncheckedBounds: (startIndex, idx))
-                let chunk = newBytesSpan.extracting(unchecked: range)
-
-                if convertAndValidateLabel(
-                    chunk,
-                    scalarsIndexToUTF8IndexForReuse: &scalarsIndexToUTF8IndexForReuse,
-                    newerBytes: &newerBytes,
-                    errors: &errors
-                ) {
-                    newerBytes.append(.asciiDot)
-                }
-
-                startIndex = idx &+ 1
+        var startIndex = 0
+        for idx in newBytesSpan.indices {
+            /// Unchecked because idx comes right from `newBytesSpan.indices`
+            guard newBytesSpan[unchecked: idx] == .asciiDot else {
+                continue
             }
 
-            let range = Range<Int>(uncheckedBounds: (startIndex, newBytesSpan.count))
+            let range = Range<Int>(uncheckedBounds: (startIndex, idx))
             let chunk = newBytesSpan.extracting(unchecked: range)
-            _ = convertAndValidateLabel(
+
+            if convertAndValidateLabel(
                 chunk,
                 scalarsIndexToUTF8IndexForReuse: &scalarsIndexToUTF8IndexForReuse,
                 newerBytes: &newerBytes,
                 errors: &errors
-            )
+            ) {
+                newerBytes.append(.asciiDot)
+            }
+
+            startIndex = idx &+ 1
         }
+
+        let range = Range<Int>(uncheckedBounds: (startIndex, newBytesSpan.count))
+        let chunk = newBytesSpan.extracting(unchecked: range)
+        _ = convertAndValidateLabel(
+            chunk,
+            scalarsIndexToUTF8IndexForReuse: &scalarsIndexToUTF8IndexForReuse,
+            newerBytes: &newerBytes,
+            errors: &errors
+        )
 
         return newerBytes
     }
