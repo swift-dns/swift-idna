@@ -222,7 +222,7 @@ enum Punycode {
             inputBytesSpan = inputBytesSpan.extracting(unchecked: inputBytesRange)
         }
 
-        var unicodeScalarsIterator = inputBytesSpan.makeUnicodeScalarIterator_Compatibility()
+        var unicodeScalarsIterator = UnicodeScalarIterator()
 
         return unicodeScalarsIndexToUTF8Index.withRigidArray { unicodeScalarsIndexToUTF8Index in
 
@@ -238,7 +238,7 @@ enum Punycode {
                     /// Above we check that input is not empty, so this is safe.
                     /// There are also extensive tests for this in the IDNATests.swift.
                     guard
-                        let codePoint = unicodeScalarsIterator.next(),
+                        let codePoint = unicodeScalarsIterator.next(in: inputBytesSpan),
                         let digit = Punycode.mapUnicodeScalarToDigit(codePoint)
                     else {
                         output.removeAll()

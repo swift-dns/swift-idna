@@ -309,9 +309,9 @@ extension IDNA {
 
         var requiredCapacity = 0
 
-        var unicodeScalarsIterator = span.makeUnicodeScalarIterator_Compatibility()
+        var unicodeScalarsIterator = UnicodeScalarIterator()
 
-        while let scalar = unicodeScalarsIterator.next() {
+        while let scalar = unicodeScalarsIterator.next(in: span) {
             switch IDNAMapping.for(scalar: scalar) {
             case .valid(_):
                 requiredCapacity &+= scalar.utf8.count
@@ -333,9 +333,9 @@ extension IDNA {
         var rigidArray = RigidArray(consuming: newBytes)
         rigidArray.reserveCapacity(requiredCapacity)
 
-        unicodeScalarsIterator = span.makeUnicodeScalarIterator_Compatibility()
+        unicodeScalarsIterator = UnicodeScalarIterator()
 
-        while let scalar = unicodeScalarsIterator.next() {
+        while let scalar = unicodeScalarsIterator.next(in: span) {
             switch IDNAMapping.for(scalar: scalar) {
             case .valid(_):
                 rigidArray.append(copying: scalar.utf8)
@@ -542,9 +542,9 @@ extension IDNA {
             }
         }
 
-        var unicodeScalarsIterator = span.makeUnicodeScalarIterator_Compatibility()
+        var unicodeScalarsIterator = UnicodeScalarIterator()
         if !configuration.ignoreInvalidPunycode,
-            let firstScalar = unicodeScalarsIterator.next(),
+            let firstScalar = unicodeScalarsIterator.next(in: span),
             firstScalar.properties.generalCategory.isMark == true
         {
             errors.append(
@@ -555,9 +555,9 @@ extension IDNA {
         }
 
         if !configuration.ignoreInvalidPunycode || configuration.useSTD3ASCIIRules {
-            var unicodeScalarsIterator = span.makeUnicodeScalarIterator_Compatibility()
+            var unicodeScalarsIterator = UnicodeScalarIterator()
 
-            while let codePoint = unicodeScalarsIterator.next() {
+            while let codePoint = unicodeScalarsIterator.next(in: span) {
                 if !configuration.ignoreInvalidPunycode {
                     switch IDNAMapping.for(scalar: codePoint) {
                     case .valid, .deviation:

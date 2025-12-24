@@ -39,33 +39,9 @@ struct DecodedUnicodeScalars: ~Copyable, ~Escapable {
 
     @usableFromInline
     mutating func decode() {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            self.decode_macOS26()
-        } else {
-            self.decode_macOSUnder26()
-        }
-    }
-
-    @inlinable
-    @available(swiftIDNAApplePlatforms 26, *)
-    mutating func decode_macOS26() {
-        let utf8Span = UTF8Span(unchecked: self.utf8Bytes)
-        var unicodeScalarsIterator = utf8Span.makeUnicodeScalarIterator()
-
+        var unicodeScalarsIterator = UnicodeScalarIterator()
         var idx = 0
-        while let codePoint = unicodeScalarsIterator.next() {
-            let utf8Count = codePoint.utf8.count
-            idx &+= utf8Count
-            self.utf8Indices.append(idx)
-        }
-    }
-
-    @inlinable
-    mutating func decode_macOSUnder26() {
-        let string = String(_uncheckedAssumingValidUTF8: self.utf8Bytes)
-
-        var idx = 0
-        for codePoint in string.unicodeScalars {
+        while let codePoint = unicodeScalarsIterator.next(in: self.utf8Bytes) {
             let utf8Count = codePoint.utf8.count
             idx &+= utf8Count
             self.utf8Indices.append(idx)
