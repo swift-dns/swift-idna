@@ -28,19 +28,13 @@ struct DecodedUnicodeScalars: ~Copyable, ~Escapable {
         let endIndex = self.utf8Indices[index]
         let startIndex = index == 0 ? 0 : self.utf8Indices[index &- 1]
         let range = Range<Int>(uncheckedBounds: (startIndex, endIndex))
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            var iterator = UTF8Span(
-                unchecked: self.utf8Bytes.extracting(
-                    unchecked: range
-                )
-            ).makeUnicodeScalarIterator()
-            return iterator.next().unsafelyUnwrapped
-        } else {
-            return String(_uncheckedAssumingValidUTF8: self.utf8Bytes)
-                .unicodeScalars
-                .first
-                .unsafelyUnwrapped
+
+        var encodedScalar = Unicode.UTF8.EncodedScalar()
+        for idx in range {
+            encodedScalar.append(self.utf8Bytes[idx])
         }
+
+        return UTF8.decode(encodedScalar)
     }
 
     @usableFromInline

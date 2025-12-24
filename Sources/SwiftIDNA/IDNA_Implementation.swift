@@ -23,7 +23,7 @@ extension IDNA {
 
         // 1.
         var convertedBytes = UniqueArray<UInt8>()
-        let utf8Bytes = self.mainProcessing(
+        let processedBytes = self.mainProcessing(
             _uncheckedAssumingValidUTF8: span,
             reuseBuffer: &convertedBytes,
             errors: &errors
@@ -38,26 +38,28 @@ extension IDNA {
         convertedBytes.removeAll(keepingCapacity: true)
         convertedBytes.reserveCapacity(convertedBytes.count + span.count)
 
-        let bytesSpan = utf8Bytes.span
+        let processedBytesSpan = processedBytes.span
         var decodedUnicodeScalars = DecodedUnicodeScalars.Subsequence(
-            base: DecodedUnicodeScalars(utf8Bytes: bytesSpan)
+            base: DecodedUnicodeScalars(
+                utf8Bytes: processedBytesSpan
+            )
         )
 
         var startIndex = 0
 
-        for idx in bytesSpan.indices {
+        for idx in processedBytesSpan.indices {
             /// If this is not a label separator, then continue
             var endIndex = idx
             let countBehindX = idx
             switch countBehindX {
             case 0, 1, 2:
-                guard bytesSpan[unchecked: idx] == .asciiDot else {
+                guard processedBytesSpan[unchecked: idx] == .asciiDot else {
                     continue
                 }
             case 3...:
-                let third = bytesSpan[unchecked: idx]
-                let second = bytesSpan[unchecked: idx &- 1]
-                let first = bytesSpan[unchecked: idx &- 2]
+                let third = processedBytesSpan[unchecked: idx]
+                let second = processedBytesSpan[unchecked: idx &- 1]
+                let first = processedBytesSpan[unchecked: idx &- 2]
                 if !Span<UInt8>.isIDNALabelSeparator(first, second, third),
                     third != .asciiDot
                 {
@@ -73,7 +75,7 @@ extension IDNA {
             }
 
             appendLabel(
-                domainNameSpan: bytesSpan,
+                domainNameSpan: processedBytesSpan,
                 startIndex: startIndex,
                 endIndex: endIndex,
                 appendDot: true,
@@ -88,9 +90,9 @@ extension IDNA {
 
         /// Last label
         appendLabel(
-            domainNameSpan: bytesSpan,
+            domainNameSpan: processedBytesSpan,
             startIndex: startIndex,
-            endIndex: bytesSpan.count,
+            endIndex: processedBytesSpan.count,
             appendDot: false,
             convertedBytes: &convertedBytes,
             outputBufferForReuse: &outputBufferForReuse,
@@ -251,8 +253,7 @@ extension IDNA {
         /// Make `newBytes` NFC, if not already NFC
         newBytes._uncheckedAssumingValidUTF8_ensureNFC()
 
-        var newerBytes = UniqueArray<UInt8>()
-        newerBytes.reserveCapacity(newBytes.count)
+        var newerBytes = UniqueArray<UInt8>(capacity: newBytes.count)
 
         newBytes.span.withUnsafeBufferPointer { newBytesBuffer in
             let newBytesSpan = newBytesBuffer.span
