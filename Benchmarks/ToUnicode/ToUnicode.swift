@@ -139,14 +139,14 @@ let benchmarks: @Sendable () -> Void = {
         /// Grabbed from Cloudflare top 1M domains
 
         Benchmark(
-            "To_Unicode_\(namePrefix)_öob_dot_se_CPU_200K",
+            "To_Unicode_\(namePrefix)_öob_dot_se_CPU_300K",
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 5,
                 maxIterations: 1000,
             )
         ) { benchmark in
-            for _ in 0..<200_000 {
+            for _ in 0..<300_000 {
                 var domainName = "xn--ob-eka.se"
                 domainName = try! idnaConfig.toUnicode(domainName: domainName)
                 blackHole(domainName)
@@ -170,14 +170,14 @@ let benchmarks: @Sendable () -> Void = {
         /// Grabbed from Cloudflare top 100K domains
 
         Benchmark(
-            "To_Unicode_\(namePrefix)_生命之花_dot_中国_CPU_100K",
+            "To_Unicode_\(namePrefix)_生命之花_dot_中国_CPU_200K",
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 5,
                 maxIterations: 1000,
             )
         ) { benchmark in
-            for _ in 0..<100_000 {
+            for _ in 0..<200_000 {
                 var domainName = "xn--9iqv4mb85adml.xn--fiqs8s"
                 domainName = try! idnaConfig.toUnicode(domainName: domainName)
                 blackHole(domainName)
