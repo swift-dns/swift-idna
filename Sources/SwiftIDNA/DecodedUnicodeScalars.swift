@@ -19,11 +19,6 @@ struct DecodedUnicodeScalars: ~Copyable {
     }
 
     @usableFromInline
-    subscript(index: Int) -> Unicode.Scalar {
-        self.scalars[index]
-    }
-
-    @usableFromInline
     @_lifetime(borrow utf8Bytes)
     mutating func decode(utf8Bytes: Span<UInt8>) {
         self.scalars.edit { output in
@@ -38,9 +33,9 @@ struct DecodedUnicodeScalars: ~Copyable {
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension DecodedUnicodeScalars {
     @usableFromInline
-    struct Subsequence: ~Copyable {
+    struct Subsequence: ~Copyable, ~Escapable {
         @usableFromInline
-        var base: DecodedUnicodeScalars
+        var scalars: Span<Unicode.Scalar>
         @usableFromInline
         var startIndex: Int
         @usableFromInline
@@ -54,9 +49,12 @@ extension DecodedUnicodeScalars {
         }
 
         /// Before using the subsequence, you need to set the starting byte using `set(startingByte:)`.
+        ///
+        /// We're using `inout` to ensure exclusive access.
         @inlinable
-        init(base: consuming DecodedUnicodeScalars) {
-            self.base = base
+        @_lifetime(&base)
+        init(base: inout DecodedUnicodeScalars) {
+            self.scalars = base.scalars.span
             self.startIndex = 0
             self.endIndex = 0
             self.endIndexByteOffset = 0
@@ -67,14 +65,14 @@ extension DecodedUnicodeScalars {
         @inlinable
         @_lifetime(&self)
         mutating func set(range: Range<Int>) {
-            let scalarsCount = self.base.count
+            let scalarsCount = self.scalars.count
             var byteOffset = self.endIndexByteOffset
 
             if range.lowerBound == 0 {
                 self.startIndex = 0
             } else {
                 for idx in self.endIndex..<scalarsCount {
-                    let scalar = self.base.scalars[idx]
+                    let scalar = self.scalars[unchecked: idx]
                     byteOffset &+= scalar.utf8.count
                     if byteOffset == range.lowerBound {
                         self.startIndex = idx &+ 1
@@ -84,7 +82,7 @@ extension DecodedUnicodeScalars {
             }
 
             for idx in self.startIndex..<scalarsCount {
-                let scalar = self.base.scalars[idx]
+                let scalar = self.scalars[unchecked: idx]
                 byteOffset &+= scalar.utf8.count
                 if byteOffset == range.upperBound {
                     self.endIndex = idx &+ 1
@@ -100,7 +98,7 @@ extension DecodedUnicodeScalars {
             /// This assert is to trap in tests for the most part.
             /// That's why it's not a precondition.
             assert(self.endIndex > index, "Index out of bounds")
-            return self.base[self.startIndex &+ index]
+            return self.scalars[unchecked: self.startIndex &+ index]
         }
     }
 }

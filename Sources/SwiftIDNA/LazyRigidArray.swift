@@ -22,9 +22,9 @@ struct LazyRigidArray<Integer: FixedWidthInteger>: ~Copyable {
             }
         } else {
             var array = RigidArray<Integer>(capacity: capacityToReserve)
-            /// FIXME: This capacity reserve here like this looks weird.
-            /// Is there a better way to do this without filling the array with zeros?
             let result = array.edit { output in
+                /// The implementation relies on all indices being available to modify,
+                /// so we fill the array with zeros
                 output.append(repeating: 0, count: capacityToReserve)
                 return body(&output)
             }

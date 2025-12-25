@@ -225,7 +225,7 @@ enum Punycode {
             unicodeScalarsIndexToUTF8Index in
 
             for idx in 0..<output.count {
-                unicodeScalarsIndexToUTF8Index[idx] = idx
+                unicodeScalarsIndexToUTF8Index[unchecked: idx] = idx
             }
             var unicodeScalarsIndexToUTF8IndexCount = output.count
 
@@ -279,7 +279,7 @@ enum Punycode {
 
                 if i == unicodeScalarsIndexToUTF8IndexCount {
                     output.append(copying: scalar.utf8)
-                    unicodeScalarsIndexToUTF8Index[unicodeScalarsIndexToUTF8IndexCount] =
+                    unicodeScalarsIndexToUTF8Index[unchecked: unicodeScalarsIndexToUTF8IndexCount] =
                         output.count &- 1
                     unicodeScalarsIndexToUTF8IndexCount &+= 1
                 } else {
@@ -287,7 +287,7 @@ enum Punycode {
                     let previousIdxOfScalarInBytes =
                         iInt == 0
                         ? 0
-                        : unicodeScalarsIndexToUTF8Index[iInt &- 1]
+                        : unicodeScalarsIndexToUTF8Index[unchecked: iInt &- 1]
                     let insertIndex =
                         iInt == 0
                         ? 0
@@ -303,7 +303,7 @@ enum Punycode {
                     unicodeScalarsIndexToUTF8IndexCount &+= 1
 
                     for idx in (iInt &+ 1)..<unicodeScalarsIndexToUTF8IndexCount {
-                        unicodeScalarsIndexToUTF8Index[idx] &+= utf8Count
+                        unicodeScalarsIndexToUTF8Index[unchecked: idx] &+= utf8Count
                     }
                 }
 
