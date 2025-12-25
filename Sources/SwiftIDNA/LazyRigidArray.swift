@@ -15,20 +15,22 @@ struct LazyRigidArray<Integer: FixedWidthInteger>: ~Copyable {
     }
 
     @inlinable
-    mutating func withRigidArray<T>(_ body: (inout RigidArray<Integer>) -> T) -> T {
+    mutating func withRigidArrayOutputSpan<T>(_ body: (inout OutputSpan<Integer>) -> T) -> T {
         if array != nil {
-            return body(&self.array!)
+            return self.array!.edit { output in
+                body(&output)
+            }
         } else {
             var array = RigidArray<Integer>(capacity: capacityToReserve)
             /// FIXME: This capacity reserve here like this looks weird.
             /// Is there a better way to do this without filling the array with zeros?
-            array.edit { output in
+            let result = array.edit { output in
                 output.withUnsafeMutableBufferPointer { buffer, initializedCount in
                     buffer.initialize(repeating: 0)
                     initializedCount = capacityToReserve
                 }
+                return body(&output)
             }
-            let result = body(&array)
             self.array = .some(array)
             return result
         }
