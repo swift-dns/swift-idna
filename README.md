@@ -27,7 +27,7 @@ The only dependency of `swift-idna` is `swift-collections`, and it does not depe
 
 ## Usage
 
-Initialize `IDNA` with your preffered configuration, then use `toASCII(domainName:)` and `toUnicode(domainName:)`:
+Initialize `IDNA` with your preferred configuration, then use `toASCII(domainName:)` and `toUnicode(domainName:)`:
 
 ```swift
 import SwiftIDNA
