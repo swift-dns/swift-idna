@@ -21,11 +21,13 @@
 
 # swift-idna
 
-A multiplatform implementation of Punycode and IDNA (Internationalized Domain Names in Applications) as per [RFC 5891](https://datatracker.ietf.org/doc/html/rfc5891) and friends.
+A high-perfomance, multiplatform implementation of Punycode and IDNA (Internationalized Domain Names in Applications) as per [RFC 5891](https://datatracker.ietf.org/doc/html/rfc5891) and friends.
+
+The only dependency of `swift-idna` is `swift-collections`, and it does not depend on `Foundation`.
 
 ## Usage
 
-Initialize `IDNA` with your preffered configuration, then use `toASCII(domainName:)` and `toUnicode(domainName:)`:
+Initialize `IDNA` with your preferred configuration, then use `toASCII(domainName:)` and `toUnicode(domainName:)`:
 
 ```swift
 import SwiftIDNA
@@ -95,6 +97,10 @@ case .mightChangeAfterIDNAConversion:
 This package uses Unicode 17's [IDNA test v2 suite](https://www.unicode.org/Public/idna/latest/IdnaTestV2.txt) with ~6400 test cases to ensure full compatibility.
 
 Runs each test case extensively so each test case might even result in 2-3-4-5 test runs.
+
+This testing facility enables the implementation to be highly optimized.   
+For example this packages uses `unchecked` element accessors everywhere, which do not do bounds checks.   
+This is only made possible thanks to the massive test suite: We expect the tests to reveal any implementation issues and incorrect element accesses.
 
 The C code is all automatically generated using the 2 scripts in `utils/`:
 
