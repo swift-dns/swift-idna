@@ -20,8 +20,13 @@ struct LazyRigidArray<Integer: FixedWidthInteger>: ~Copyable {
             return body(&self.array!)
         } else {
             var array = RigidArray<Integer>(capacity: capacityToReserve)
-            for _ in 0..<capacityToReserve {
-                array.append(0)
+            /// FIXME: This capacity reserve here like this looks weird.
+            /// Is there a better way to do this without filling the array with zeros?
+            array.edit { output in
+                output.withUnsafeMutableBufferPointer { buffer, initializedCount in
+                    buffer.initialize(repeating: 0)
+                    initializedCount = capacityToReserve
+                }
             }
             let result = body(&array)
             self.array = .some(array)
