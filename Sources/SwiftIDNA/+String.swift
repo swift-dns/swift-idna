@@ -4,9 +4,12 @@ public import BasicContainers
 extension String {
     @inlinable
     var nfcCodePoints: RigidArray<UInt8> {
-        var codePoints = RigidArray<UInt8>(capacity: self.utf8.count)
-        self._withNFCCodeUnits {
-            codePoints.append($0)
+        let capacity = self.utf8.count
+        var codePoints = RigidArray<UInt8>(capacity: capacity)
+        codePoints.edit { output in
+            self._withNFCCodeUnits { utf8Byte in
+                output.append(utf8Byte)
+            }
         }
         return codePoints
     }

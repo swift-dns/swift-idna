@@ -221,7 +221,8 @@ enum Punycode {
             inputBytesSpan = inputBytesSpan.extracting(unchecked: inputBytesRange)
         }
 
-        return unicodeScalarsIndexToUTF8Index.withRigidArray { unicodeScalarsIndexToUTF8Index in
+        return unicodeScalarsIndexToUTF8Index.withRigidArrayOutputSpan {
+            unicodeScalarsIndexToUTF8Index in
 
             for idx in 0..<output.count {
                 unicodeScalarsIndexToUTF8Index[idx] = idx
@@ -297,8 +298,8 @@ enum Punycode {
 
                     let toInsert = previousIdxOfScalarInBytes &+ utf8Count &+ firstElementFactor
 
-                    unicodeScalarsIndexToUTF8Index.removeLast()
-                    unicodeScalarsIndexToUTF8Index.insert(toInsert, at: iInt)
+                    _ = unicodeScalarsIndexToUTF8Index.removeLast()
+                    unicodeScalarsIndexToUTF8Index.swift_idna_insert(toInsert, at: iInt)
                     unicodeScalarsIndexToUTF8IndexCount &+= 1
 
                     for idx in (iInt &+ 1)..<unicodeScalarsIndexToUTF8IndexCount {

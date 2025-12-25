@@ -141,13 +141,12 @@ extension IDNA {
         let labelSpan = bytesSpan.extracting(unchecked: range)
         var labelByteLength = 0
         if labelSpan.isASCII {
-            if !labelSpan.isEmpty {
-                convertedBytes.reserveCapacity(convertedBytes.count + labelSpan.count + 1)
-                convertedBytes.append(copying: labelSpan)
-                labelByteLength = labelSpan.count
-            }
-            if appendDot {
-                convertedBytes.append(.asciiDot)
+            labelByteLength = labelSpan.count
+            convertedBytes.append(count: labelSpan.count + 1) { output in
+                output.swift_idna_append(copying: labelSpan)
+                if appendDot {
+                    output.append(.asciiDot)
+                }
             }
         } else {
             /// TODO: can we pass convertedBytes to Punycode.encode instead of it returning a new array?
@@ -162,14 +161,16 @@ extension IDNA {
                     decodedUnicodeScalars: decodedUnicodeScalars
                 )
 
-                convertedBytes.reserveCapacity(
-                    convertedBytes.count + 4 + outputBufferForReuse.count + 1
-                )
-                convertedBytes.append(copying: "xn--".utf8)
-                convertedBytes.append(copying: outputBufferForReuse.span)
                 labelByteLength = 4 + outputBufferForReuse.count
-                if appendDot {
-                    convertedBytes.append(.asciiDot)
+                convertedBytes.append(count: 4 + outputBufferForReuse.count + 1) { output in
+                    output.append(.asciiLowercasedX)
+                    output.append(.asciiLowercasedN)
+                    output.append(.asciiHyphenMinus)
+                    output.append(.asciiHyphenMinus)
+                    output.swift_idna_append(copying: outputBufferForReuse.span)
+                    if appendDot {
+                        output.append(.asciiDot)
+                    }
                 }
             }
         }
@@ -311,18 +312,14 @@ extension IDNA {
 
         while let scalar = unicodeScalarsIterator.next(in: span) {
             switch IDNAMapping.for(scalar: scalar) {
-            case .valid(_):
+            case .valid(_), .deviation(_), .disallowed:
                 requiredCapacity &+= scalar.utf8.count
             case .mapped(let mappedScalars):
                 for mappedScalar in mappedScalars {
                     requiredCapacity &+= mappedScalar.utf8.count
                 }
-            case .deviation(_):
-                requiredCapacity &+= scalar.utf8.count
-            case .disallowed:
-                requiredCapacity &+= scalar.utf8.count
             case .ignored:
-                break
+                ()
             }
         }
 
@@ -333,20 +330,18 @@ extension IDNA {
 
         unicodeScalarsIterator = UnicodeScalarIterator()
 
-        while let scalar = unicodeScalarsIterator.next(in: span) {
-            switch IDNAMapping.for(scalar: scalar) {
-            case .valid(_):
-                rigidArray.append(copying: scalar.utf8)
-            case .mapped(let mappedScalars):
-                for mappedScalar in mappedScalars {
-                    rigidArray.append(copying: mappedScalar.utf8)
+        rigidArray.edit { output in
+            while let scalar = unicodeScalarsIterator.next(in: span) {
+                switch IDNAMapping.for(scalar: scalar) {
+                case .valid(_), .deviation(_), .disallowed:
+                    output.swift_idna_append(copying: scalar)
+                case .mapped(let mappedScalars):
+                    for mappedScalar in mappedScalars {
+                        output.swift_idna_append(copying: mappedScalar)
+                    }
+                case .ignored:
+                    ()
                 }
-            case .deviation(_):
-                rigidArray.append(copying: scalar.utf8)
-            case .disallowed:
-                rigidArray.append(copying: scalar.utf8)
-            case .ignored:
-                break
             }
         }
 

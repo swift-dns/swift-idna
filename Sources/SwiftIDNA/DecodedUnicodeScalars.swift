@@ -26,9 +26,11 @@ struct DecodedUnicodeScalars: ~Copyable {
     @usableFromInline
     @_lifetime(borrow utf8Bytes)
     mutating func decode(utf8Bytes: Span<UInt8>) {
-        var unicodeScalarsIterator = UnicodeScalarIterator()
-        while let scalar = unicodeScalarsIterator.next(in: utf8Bytes) {
-            self.scalars.append(scalar)
+        self.scalars.edit { output in
+            var unicodeScalarsIterator = UnicodeScalarIterator()
+            while let scalar = unicodeScalarsIterator.next(in: utf8Bytes) {
+                output.append(scalar)
+            }
         }
     }
 }
