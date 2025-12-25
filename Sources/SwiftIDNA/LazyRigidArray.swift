@@ -25,10 +25,7 @@ struct LazyRigidArray<Integer: FixedWidthInteger>: ~Copyable {
             /// FIXME: This capacity reserve here like this looks weird.
             /// Is there a better way to do this without filling the array with zeros?
             let result = array.edit { output in
-                output.withUnsafeMutableBufferPointer { buffer, initializedCount in
-                    buffer.initialize(repeating: 0)
-                    initializedCount = capacityToReserve
-                }
+                output.append(repeating: 0, count: capacityToReserve)
                 return body(&output)
             }
             self.array = .some(array)
