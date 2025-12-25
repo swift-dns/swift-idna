@@ -39,10 +39,11 @@ extension IDNA {
         convertedBytes.reserveCapacity(convertedBytes.count + span.count)
 
         let processedBytesSpan = processedBytes.span
+        var baseDecodedUnicodeScalars = DecodedUnicodeScalars(
+            utf8Bytes: processedBytesSpan
+        )
         var decodedUnicodeScalars = DecodedUnicodeScalars.Subsequence(
-            base: DecodedUnicodeScalars(
-                utf8Bytes: processedBytesSpan
-            )
+            base: &baseDecodedUnicodeScalars
         )
 
         var startIndex = 0
