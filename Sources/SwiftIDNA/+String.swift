@@ -77,17 +77,30 @@ extension String {
     mutating func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            return try body(self.utf8Span.span)
-        }
         do {
-            return try self.withUTF8 { buffer in
-                try body(buffer.span)
+            if let fastResult = try self.utf8.withContiguousStorageIfAvailable({
+                try body($0.span)
+            }) {
+                return fastResult
             }
         } catch let error as E {
             throw error
         } catch {
-            fatalError("Unexpected error: \(String(reflecting: error))")
+            fatalError("Unreachable code path")
+        }
+
+        if #available(swiftIDNAApplePlatforms 26, *) {
+            return try body(self.utf8Span.span)
+        }
+
+        do {
+            return try self.withUTF8 {
+                try body($0.span)
+            }
+        } catch let error as E {
+            throw error
+        } catch {
+            fatalError("Unreachable code path")
         }
     }
 
@@ -136,17 +149,30 @@ extension Substring {
     mutating func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
-        if #available(swiftIDNAApplePlatforms 26, *) {
-            return try body(self.utf8Span.span)
-        }
         do {
-            return try self.withUTF8 { buffer in
-                try body(buffer.span)
+            if let fastResult = try self.utf8.withContiguousStorageIfAvailable({
+                try body($0.span)
+            }) {
+                return fastResult
             }
         } catch let error as E {
             throw error
         } catch {
-            fatalError("Unexpected error: \(String(reflecting: error))")
+            fatalError("Unreachable code path")
+        }
+
+        if #available(swiftIDNAApplePlatforms 26, *) {
+            return try body(self.utf8Span.span)
+        }
+
+        do {
+            return try self.withUTF8 {
+                try body($0.span)
+            }
+        } catch let error as E {
+            throw error
+        } catch {
+            fatalError("Unreachable code path")
         }
     }
 }
