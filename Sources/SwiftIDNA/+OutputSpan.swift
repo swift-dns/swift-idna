@@ -16,14 +16,6 @@ extension OutputSpan<UInt8> {
             initializedCount = usedCapacity &+ appendCount
         }
     }
-
-    @inlinable
-    @_lifetime(&self)
-    mutating func swift_idna_append(copying scalar: Unicode.Scalar) {
-        for byte in scalar.utf8 {
-            self.append(byte)
-        }
-    }
 }
 
 @available(swiftIDNAApplePlatforms 10.15, *)
