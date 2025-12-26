@@ -73,6 +73,7 @@ extension String {
         }
     }
 
+    #if canImport(Darwin)
     @usableFromInline
     mutating func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
@@ -103,6 +104,15 @@ extension String {
             fatalError("Unreachable code path")
         }
     }
+    #else
+    @_transparent
+    @inlinable
+    mutating func withSpan_Compatibility<T, E: Error>(
+        _ body: (Span<UInt8>) throws(E) -> T
+    ) throws(E) -> T {
+        try body(self.utf8Span.span)
+    }
+    #endif
 
     #if canImport(Darwin)
     @usableFromInline
@@ -145,6 +155,7 @@ extension String {
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension Substring {
+    #if canImport(Darwin)
     @usableFromInline
     mutating func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
@@ -175,4 +186,13 @@ extension Substring {
             fatalError("Unreachable code path")
         }
     }
+    #else
+    @_transparent
+    @inlinable
+    mutating func withSpan_Compatibility<T, E: Error>(
+        _ body: (Span<UInt8>) throws(E) -> T
+    ) throws(E) -> T {
+        try body(self.utf8Span.span)
+    }
+    #endif
 }
