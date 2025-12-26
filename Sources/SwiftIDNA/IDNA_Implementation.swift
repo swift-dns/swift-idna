@@ -245,7 +245,7 @@ extension IDNA {
         errors: inout MappingErrors
     ) -> UniqueArray<UInt8> {
         /// 1. Map
-        self.idnaMapBytes(
+        self.mapToIDNAMappings(
             _uncheckedAssumingValidUTF8: span,
             into: &newBytes
         )
@@ -299,7 +299,7 @@ extension IDNA {
     }
 
     @inlinable
-    func idnaMapBytes(
+    func mapToIDNAMappings(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
         into newBytes: inout UniqueArray<UInt8>
     ) {
@@ -311,14 +311,12 @@ extension IDNA {
 
         var unicodeScalarsIterator = UnicodeScalarIterator()
 
-        while let scalar = unicodeScalarsIterator.next(in: span) {
+        while let (scalar, range) = unicodeScalarsIterator.nextWithRange(in: span) {
             switch IDNAMapping.for(scalar: scalar) {
             case .valid(_), .deviation(_), .disallowed:
-                requiredCapacity &+= scalar.utf8.count
+                requiredCapacity &+= range.count
             case .mapped(let mappedScalars):
-                for mappedScalar in mappedScalars {
-                    requiredCapacity &+= mappedScalar.utf8.count
-                }
+                requiredCapacity &+= mappedScalars.utf8BytesCount
             case .ignored:
                 ()
             }
@@ -332,14 +330,13 @@ extension IDNA {
         unicodeScalarsIterator = UnicodeScalarIterator()
 
         rigidArray.edit { output in
-            while let scalar = unicodeScalarsIterator.next(in: span) {
+            while let (scalar, range) = unicodeScalarsIterator.nextWithRange(in: span) {
                 switch IDNAMapping.for(scalar: scalar) {
                 case .valid(_), .deviation(_), .disallowed:
-                    output.swift_idna_append(copying: scalar)
+                    let scalarBytesSpan = span.extracting(unchecked: range)
+                    output.swift_idna_append(copying: scalarBytesSpan)
                 case .mapped(let mappedScalars):
-                    for mappedScalar in mappedScalars {
-                        output.swift_idna_append(copying: mappedScalar)
-                    }
+                    output.swift_idna_append(copying: mappedScalars.utf8BytesSpan)
                 case .ignored:
                     ()
                 }

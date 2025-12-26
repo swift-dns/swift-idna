@@ -180,10 +180,16 @@ func generate() -> String {
             let mappings = mappingParts.map {
                 UInt32($0.trimmingWhitespaces(), radix: 16)!
             }
-            let mappingArray = mappings.map { "\($0)U" }.joined(separator: ", ")
-            let mappingString = mappings.isEmpty ? "NULL" : "(const uint32_t[]){ \(mappingArray) }"
+            // Convert UInt32 code points to UTF-8 bytes
+            var utf8Bytes: [UInt8] = []
+            for codePoint in mappings {
+                let scalar = Unicode.Scalar(codePoint)!
+                utf8Bytes.append(contentsOf: scalar.utf8)
+            }
+            let mappingArray = utf8Bytes.map { "\($0)U" }.joined(separator: ", ")
+            let mappingString = utf8Bytes.isEmpty ? "NULL" : "(const uint8_t[]){ \(mappingArray) }"
             generatedCode +=
-                "    { IDNA_RESULT_MAPPED, IDNA_STATUS_NONE, \(mappingString), \(mappings.count) },\n"
+                "    { IDNA_RESULT_MAPPED, IDNA_STATUS_NONE, \(mappingString), \(utf8Bytes.count) },\n"
         case "deviation":
             var mappings: [UInt32] = []
             if parts.count > 2 {
@@ -192,10 +198,16 @@ func generate() -> String {
                     UInt32($0.trimmingWhitespaces(), radix: 16)!
                 }
             }
-            let mappingArray = mappings.map { "\($0)U" }.joined(separator: ", ")
-            let mappingString = mappings.isEmpty ? "NULL" : "(const uint32_t[]){ \(mappingArray) }"
+            // Convert UInt32 code points to UTF-8 bytes
+            var utf8Bytes: [UInt8] = []
+            for codePoint in mappings {
+                let scalar = Unicode.Scalar(codePoint)!
+                utf8Bytes.append(contentsOf: scalar.utf8)
+            }
+            let mappingArray = utf8Bytes.map { "\($0)U" }.joined(separator: ", ")
+            let mappingString = utf8Bytes.isEmpty ? "NULL" : "(const uint8_t[]){ \(mappingArray) }"
             generatedCode +=
-                "    { IDNA_RESULT_DEVIATION, IDNA_STATUS_NONE, \(mappingString), \(mappings.count) },\n"
+                "    { IDNA_RESULT_DEVIATION, IDNA_STATUS_NONE, \(mappingString), \(utf8Bytes.count) },\n"
         case "disallowed":
             guard parts.count == 2 else {
                 fatalError(

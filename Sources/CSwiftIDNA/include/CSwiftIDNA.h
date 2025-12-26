@@ -28,8 +28,8 @@ typedef enum {
 typedef struct {
     uint8_t type;
     uint8_t status; // Only used for valid results
-    const uint32_t* mapped_unicode_scalars; // Array of mapped Unicode scalars (for mapped/deviation)
-    uint8_t mapped_count; // Number of mapped Unicode scalars
+    const uint8_t* mapped_utf8_bytes; // Array of UTF-8 bytes representing mapped Unicode scalars (for mapped/deviation)
+    uint8_t mapped_byte_count; // Number of UTF-8 bytes
 } CSwiftIDNAMappingResult;
 
 // Look up IDNA mapping for a given Unicode code point

@@ -1,6 +1,7 @@
 public import CSwiftIDNA
 
 @nonexhaustive
+@available(swiftIDNAApplePlatforms 10.15, *)
 public enum IDNAMapping: Equatable {
     @nonexhaustive
     public enum IDNA2008Status {
@@ -16,6 +17,7 @@ public enum IDNAMapping: Equatable {
     case ignored
 }
 
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNAMapping {
     /// Look up IDNA mapping for a given Unicode scalar
     /// - Parameter scalar: The Unicode scalar to look up
@@ -44,8 +46,8 @@ extension IDNAMapping {
             /// allocations while having a way to guarantee they are valid Unicode scalars to users.
             let scalars = IDNAUnicodeScalarView(
                 staticPointer: UnsafeBufferPointer(
-                    start: result.mapped_unicode_scalars,
-                    count: Int(result.mapped_count)
+                    start: result.mapped_utf8_bytes,
+                    count: Int(result.mapped_byte_count)
                 )
             )
             return .mapped(scalars)
@@ -55,8 +57,8 @@ extension IDNAMapping {
             /// allocations while having a way to guarantee they are valid Unicode scalars to users.
             let scalars = IDNAUnicodeScalarView(
                 staticPointer: UnsafeBufferPointer(
-                    start: result.mapped_unicode_scalars,
-                    count: Int(result.mapped_count)
+                    start: result.mapped_utf8_bytes,
+                    count: Int(result.mapped_byte_count)
                 )
             )
             return .deviation(scalars)
