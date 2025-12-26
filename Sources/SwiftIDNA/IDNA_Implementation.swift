@@ -316,9 +316,7 @@ extension IDNA {
             case .valid(_), .deviation(_), .disallowed:
                 requiredCapacity &+= scalar.utf8.count
             case .mapped(let mappedScalars):
-                for mappedScalar in mappedScalars {
-                    requiredCapacity &+= mappedScalar.utf8.count
-                }
+                requiredCapacity &+= mappedScalars.utf8BytesCount
             case .ignored:
                 ()
             }
@@ -337,8 +335,9 @@ extension IDNA {
                 case .valid(_), .deviation(_), .disallowed:
                     output.swift_idna_append(copying: scalar)
                 case .mapped(let mappedScalars):
-                    for mappedScalar in mappedScalars {
-                        output.swift_idna_append(copying: mappedScalar)
+                    var iterator = mappedScalars.makeUTF8ByteIterator()
+                    while let byte = iterator.next() {
+                        output.append(byte)
                     }
                 case .ignored:
                     ()

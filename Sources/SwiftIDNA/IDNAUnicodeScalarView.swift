@@ -14,35 +14,38 @@ import Darwin
 #error("The SwiftIDNA.IDNAUnicodeScalarView module was unable to identify your C library.")
 #endif
 
-/// A type that wraps some `UInt32`s that this library can guarantee to be valid Unicode scalars.
+/// A type that wraps some `UInt8`s that this library can guarantee to be valid Unicode scalars.
 ///
 /// Unchecked `Sendable` because the pointer is guaranteed to be valid for the duration of the program execution.
 /// That's also why we don't try to deallocate.
+@available(swiftIDNAApplePlatforms 10.15, *)
 public struct IDNAUnicodeScalarView: SendableMetatype, @unchecked Sendable {
     @usableFromInline
-    let pointer: UnsafeBufferPointer<UInt32>
+    let pointer: UnsafeBufferPointer<UInt8>
 
     @inlinable
-    init(staticPointer: UnsafeBufferPointer<UInt32>) {
+    init(staticPointer: UnsafeBufferPointer<UInt8>) {
         self.pointer = staticPointer
     }
 }
 
 /// MARK: +Equatable
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNAUnicodeScalarView: Equatable {
     public static func == (lhs: IDNAUnicodeScalarView, rhs: IDNAUnicodeScalarView) -> Bool {
-        lhs.count == rhs.count
-            && lhs.count != 0
-            && memcmp(
-                /// If the count is non-zero then the `UnsafeBufferPointer` guarantees there is a non-nil pointer.
-                lhs.pointer.baseAddress.unsafelyUnwrapped,
-                rhs.pointer.baseAddress.unsafelyUnwrapped,
-                lhs.count * 4
-            ) == 0
+        if lhs.pointer.count != rhs.pointer.count { return false }
+        if lhs.pointer.count == 0 { return true }
+        return memcmp(
+            /// If the count is non-zero then the `UnsafeBufferPointer` guarantees there is a non-nil pointer.
+            lhs.pointer.baseAddress.unsafelyUnwrapped,
+            rhs.pointer.baseAddress.unsafelyUnwrapped,
+            lhs.pointer.count
+        ) == 0
     }
 }
 
 /// MARK: +Sequence
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNAUnicodeScalarView: Sequence {
     public typealias Element = Unicode.Scalar
 
@@ -52,61 +55,32 @@ extension IDNAUnicodeScalarView: Sequence {
     }
 
     @inlinable
-    public func makeIterator() -> Iterator {
-        Iterator(base: self)
-    }
-
-    public struct Iterator: SendableMetatype, IteratorProtocol {
-        @usableFromInline
-        var base: IDNAUnicodeScalarView
-        @usableFromInline
-        var index: Int
-
-        @inlinable
-        init(base: IDNAUnicodeScalarView) {
-            self.base = base
-            self.index = 0
+    public var count: Int {
+        var iterator = UnicodeScalarIterator()
+        var scalarsCount = 0
+        while iterator.next(in: self.pointer.span) != nil {
+            scalarsCount &+= 1
         }
-
-        @inlinable
-        public mutating func next() -> Unicode.Scalar? {
-            guard self.index < self.base.count else { return nil }
-            defer { self.index += 1 }
-            let value = self.base.pointer.baseAddress.unsafelyUnwrapped
-                .advanced(by: self.index).pointee
-            /// `unsafelyUnwrapped` because the value is guaranteed to be a valid Unicode scalar.
-            /// That's the whole point of the `IDNAUnicodeScalarView` type.
-            return Unicode.Scalar(value).unsafelyUnwrapped
-        }
+        return scalarsCount
     }
-}
-
-/// MARK: +Collection
-extension IDNAUnicodeScalarView: Collection {
-    public typealias Index = Int
-    public typealias Indices = Range<Int>
 
     @inlinable
-    public var count: Int {
+    public var utf8BytesCount: Int {
         self.pointer.count
     }
 
     @inlinable
     public var isEmpty: Bool {
-        self.count == 0
+        self.pointer.count == 0
     }
 
     @inlinable
     public var first: Unicode.Scalar? {
-        guard self.count > 0 else {
+        guard self.pointer.count > 0 else {
             return nil
         }
-        return Unicode.Scalar(
-            /// If the count is non-zero then the `UnsafeBufferPointer` guarantees there is a non-nil pointer.
-            self.pointer.baseAddress.unsafelyUnwrapped.pointee
-                /// `unsafelyUnwrapped` down there because the value is guaranteed to be a valid Unicode scalar.
-                /// That's the whole point of the `IDNAUnicodeScalarView` type.
-        ).unsafelyUnwrapped
+        var iterator = UnicodeScalarIterator()
+        return iterator.next(in: self.pointer.span)
     }
 
     @inlinable
@@ -124,50 +98,36 @@ extension IDNAUnicodeScalarView: Collection {
         0..<self.count
     }
 
-    @inlinable
-    public func index(after i: Int) -> Int {
-        let next = i + 1
-        precondition(
-            next >= 0 && next < self.count,
-            "Index out of bounds: '\(next)', count: '\(self.count)'"
-        )
-        return next
+    public func makeUTF8ByteIterator() -> UnsafeBufferPointer<UInt8>.Iterator {
+        self.pointer.makeIterator()
     }
 
     @inlinable
-    public func index(before i: Int) -> Int {
-        let previous = i - 1
-        precondition(
-            previous >= 0 && previous < self.count,
-            "Index out of bounds: '\(previous)', count: '\(self.count)'"
-        )
-        return previous
+    public func makeIterator() -> Iterator {
+        Iterator(base: self)
     }
 
-    @inlinable
-    public subscript(position: Int) -> Unicode.Scalar {
-        _read {
-            precondition(
-                position >= 0 && position < self.count,
-                "Index out of bounds: '\(position)', count: '\(self.count)'"
-            )
-            yield Unicode.Scalar(
-                self.pointer.baseAddress.unsafelyUnwrapped.advanced(by: position).pointee
-            ).unsafelyUnwrapped
+    public struct Iterator: SendableMetatype, IteratorProtocol {
+        @usableFromInline
+        var base: IDNAUnicodeScalarView
+        @usableFromInline
+        var iterator: UnicodeScalarIterator
+
+        @inlinable
+        init(base: IDNAUnicodeScalarView) {
+            self.base = base
+            self.iterator = UnicodeScalarIterator()
         }
-    }
 
-    @inlinable
-    public subscript(unchecked position: Int) -> Unicode.Scalar {
-        _read {
-            yield Unicode.Scalar(
-                self.pointer.baseAddress.unsafelyUnwrapped.advanced(by: position).pointee
-            ).unsafelyUnwrapped
+        @inlinable
+        public mutating func next() -> Unicode.Scalar? {
+            self.iterator.next(in: self.base.pointer.span)
         }
     }
 }
 
 /// MARK: +CustomStringConvertible
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNAUnicodeScalarView: CustomStringConvertible {
     @inlinable
     public var description: String {
@@ -189,6 +149,7 @@ extension IDNAUnicodeScalarView: CustomStringConvertible {
 }
 
 /// MARK: +CustomDebugStringConvertible
+@available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNAUnicodeScalarView: CustomDebugStringConvertible {
     @inlinable
     public var debugDescription: String {

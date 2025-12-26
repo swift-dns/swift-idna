@@ -1,6 +1,6 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
-struct UnicodeScalarIterator: ~Copyable {
+struct UnicodeScalarIterator {
     @usableFromInline
     var currentCodeUnitOffset: Int
 
