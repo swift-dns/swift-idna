@@ -92,7 +92,7 @@ extension DecodedUnicodeScalars {
             }
         }
 
-        /// Decodes and returns the unicode scalar at the given index.
+        /// Returns the unicode scalar at the given index.
         @inlinable
         subscript(index: Int) -> Unicode.Scalar {
             /// This assert is to trap in tests for the most part.

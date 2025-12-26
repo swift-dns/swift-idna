@@ -2,7 +2,7 @@ import Benchmark
 import SwiftIDNA
 
 let benchmarks: @Sendable () -> Void = {
-    Benchmark.defaultConfiguration.maxDuration = .seconds(5)
+    Benchmark.defaultConfiguration.maxDuration = .seconds(6)
 
     let strictConfig = IDNA(configuration: .mostStrict)
     let laxConfig = IDNA(configuration: .mostLax)
@@ -20,7 +20,7 @@ let benchmarks: @Sendable () -> Void = {
         "To_Unicode_Lowercased_google_dot_com_CPU_8M",
         configuration: .init(
             metrics: [.cpuUser],
-            warmupIterations: 5,
+            warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
@@ -50,7 +50,7 @@ let benchmarks: @Sendable () -> Void = {
         "To_Unicode_Uppercased_google_dot_com_CPU_8M",
         configuration: .init(
             metrics: [.cpuUser],
-            warmupIterations: 5,
+            warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
@@ -80,7 +80,7 @@ let benchmarks: @Sendable () -> Void = {
         "To_Unicode_Lowercased_app-analytics-services_dot_com_CPU_4M",
         configuration: .init(
             metrics: [.cpuUser],
-            warmupIterations: 5,
+            warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
@@ -110,7 +110,7 @@ let benchmarks: @Sendable () -> Void = {
         "To_Unicode_Uppercased_app-analytics-services_dot_com_CPU_4M",
         configuration: .init(
             metrics: [.cpuUser],
-            warmupIterations: 5,
+            warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
@@ -142,7 +142,7 @@ let benchmarks: @Sendable () -> Void = {
             "To_Unicode_\(namePrefix)_öob_dot_se_CPU_300K",
             configuration: .init(
                 metrics: [.cpuUser],
-                warmupIterations: 5,
+                warmupIterations: 15,
                 maxIterations: 1000,
             )
         ) { benchmark in
@@ -173,7 +173,7 @@ let benchmarks: @Sendable () -> Void = {
             "To_Unicode_\(namePrefix)_生命之花_dot_中国_CPU_200K",
             configuration: .init(
                 metrics: [.cpuUser],
-                warmupIterations: 5,
+                warmupIterations: 15,
                 maxIterations: 1000,
             )
         ) { benchmark in
