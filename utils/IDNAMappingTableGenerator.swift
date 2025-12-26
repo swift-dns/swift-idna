@@ -184,7 +184,7 @@ func generate() -> String {
             var utf8Bytes: [UInt8] = []
             for codePoint in mappings {
                 let scalar = Unicode.Scalar(codePoint)!
-                utf8Bytes.append(contentsOf: String(scalar).utf8)
+                utf8Bytes.append(contentsOf: scalar.utf8)
             }
             let mappingArray = utf8Bytes.map { "\($0)U" }.joined(separator: ", ")
             let mappingString = utf8Bytes.isEmpty ? "NULL" : "(const uint8_t[]){ \(mappingArray) }"
@@ -202,7 +202,7 @@ func generate() -> String {
             var utf8Bytes: [UInt8] = []
             for codePoint in mappings {
                 let scalar = Unicode.Scalar(codePoint)!
-                utf8Bytes.append(contentsOf: String(scalar).utf8)
+                utf8Bytes.append(contentsOf: scalar.utf8)
             }
             let mappingArray = utf8Bytes.map { "\($0)U" }.joined(separator: ", ")
             let mappingString = utf8Bytes.isEmpty ? "NULL" : "(const uint8_t[]){ \(mappingArray) }"
