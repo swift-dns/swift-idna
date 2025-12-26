@@ -3,16 +3,15 @@ extension OutputSpan<UInt8> {
     @inlinable
     @_lifetime(&self)
     mutating func swift_idna_append(copying span: Span<UInt8>) {
-        let usedCapacity = self.count
         let appendCount = span.count
         if appendCount == 0 { return }
+        let usedCapacity = self.count
+        let capacity = self.capacity
         self.withUnsafeMutableBufferPointer { buffer, initializedCount in
             span.withUnsafeBytes { spanPtr in
-                let rawBuffer = UnsafeMutableRawBufferPointer(buffer)
-                rawBuffer.baseAddress.unsafelyUnwrapped.advanced(by: usedCapacity).copyMemory(
-                    from: spanPtr.baseAddress.unsafelyUnwrapped,
-                    byteCount: appendCount
-                )
+                let range = Range<Int>(uncheckedBounds: (usedCapacity, capacity))
+                let target = buffer.extracting(range)
+                _ = target.initialize(fromContentsOf: spanPtr)
             }
             initializedCount = usedCapacity &+ appendCount
         }

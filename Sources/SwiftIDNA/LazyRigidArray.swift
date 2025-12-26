@@ -23,7 +23,7 @@ struct LazyRigidArray<Integer: FixedWidthInteger>: ~Copyable {
         } else {
             var array = RigidArray<Integer>(capacity: capacityToReserve)
             let result = array.edit { output in
-                /// The implementation relies on all indices being available to modify,
+                /// The implementation relies on all indices being available to modify out of order,
                 /// so we fill the array with zeros
                 output.append(repeating: 0, count: capacityToReserve)
                 return body(&output)
