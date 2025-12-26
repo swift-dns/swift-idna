@@ -23,7 +23,11 @@
 
 A high-perfomance, multiplatform implementation of Punycode and IDNA (Internationalized Domain Names in Applications) as per [RFC 5891](https://datatracker.ietf.org/doc/html/rfc5891) and friends.
 
-The only dependency of `swift-idna` is `swift-collections`, and it does not depend on `Foundation`.
+## Notes
+
+* The only dependency of `swift-idna` is `swift-collections`, and it does not depend on `Foundation`.
+* Unit tests extensively run against 6400+ Unicode 17 test cases.
+* The C code is all auto-generated from some Unicode files.
 
 ## Usage
 
