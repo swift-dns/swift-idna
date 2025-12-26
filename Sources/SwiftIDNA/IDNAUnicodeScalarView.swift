@@ -98,8 +98,9 @@ extension IDNAUnicodeScalarView: Sequence {
         0..<self.count
     }
 
-    public func makeUTF8ByteIterator() -> UnsafeBufferPointer<UInt8>.Iterator {
-        self.pointer.makeIterator()
+    @inlinable
+    public var utf8BytesSpan: Span<UInt8> {
+        self.pointer.span
     }
 
     @inlinable

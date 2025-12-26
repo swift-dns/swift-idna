@@ -336,10 +336,7 @@ extension IDNA {
                     let scalarBytesSpan = span.extracting(unchecked: range)
                     output.swift_idna_append(copying: scalarBytesSpan)
                 case .mapped(let mappedScalars):
-                    var iterator = mappedScalars.makeUTF8ByteIterator()
-                    while let byte = iterator.next() {
-                        output.append(byte)
-                    }
+                    output.swift_idna_append(copying: mappedScalars.utf8BytesSpan)
                 case .ignored:
                     ()
                 }
