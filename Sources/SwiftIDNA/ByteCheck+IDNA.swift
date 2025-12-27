@@ -74,11 +74,11 @@ extension IDNA {
         /// The compiler will use SIMD instructions to perform the bitwise operations below,
         /// which will speed up the process.
         var isASCII_Number: BI = 0
-        var forSureDoesNotContainUppercased_Number: BI = 0
+        var forSureContainsLowercasedOnly_Number: BI = 0
         for idx in span.indices {
             let byte = span[unchecked: idx]
             isASCII_Number |= byte
-            forSureDoesNotContainUppercased_Number &= byte
+            forSureContainsLowercasedOnly_Number &= byte
         }
         let isASCII = isASCII_Number <= 0x7F
 
@@ -90,10 +90,10 @@ extension IDNA {
         /// those all have the sixth bit turned off.
         /// a-z and 0-9 have the sixth bit turned on, so if a string only consists of a-b and 0-9, which
         /// should be most of the cases, then this check will skip the rest of the work below.
-        let forSureDoesNotContainUppercased =
-            forSureDoesNotContainUppercased_Number & 0b100000 == 0b100000
+        let forSureContainsLowercasedOnly =
+            forSureContainsLowercasedOnly_Number & 0b100000 == 0b100000
 
-        if forSureDoesNotContainUppercased {
+        if forSureContainsLowercasedOnly {
             return .containsOnlyIDNANoOpCharacters
         }
 

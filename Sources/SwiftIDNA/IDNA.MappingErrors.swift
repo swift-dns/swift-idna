@@ -33,7 +33,9 @@ extension IDNA {
         }
 
         @inlinable
+        #if swift(<6.3)
         @_lifetime(&self)
+        #endif
         mutating func append(_ error: MappingError) {
             self.errors.append(error)
         }

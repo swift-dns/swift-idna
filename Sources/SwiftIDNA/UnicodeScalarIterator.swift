@@ -12,7 +12,6 @@ struct UnicodeScalarIterator {
     /// Only pass the span to any single instance of this iterator.
     /// As always, tests will fail if this is not the case.
     @inlinable
-    @_lifetime(borrow bytes)
     mutating func nextWithRange(
         in bytes: Span<UInt8>
     ) -> (codePoint: Unicode.Scalar, range: Range<Int>)? {
@@ -49,7 +48,6 @@ struct UnicodeScalarIterator {
     /// Only pass the span to any single instance of this iterator.
     /// As always, tests will fail if this is not the case.
     @inlinable
-    @_lifetime(borrow bytes)
     mutating func next(in bytes: Span<UInt8>) -> Unicode.Scalar? {
         self.nextWithRange(in: bytes)?.codePoint
     }

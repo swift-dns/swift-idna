@@ -192,7 +192,9 @@ enum Punycode {
     ///
     /// Returns true if successful, in which case `outputBuffer` will have been populated.
     @inlinable
+    #if swift(<6.3)
     @_lifetime(&unicodeScalarsIndexToUTF8Index)
+    #endif
     static func decode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
         scalarsIndexToUTF8IndexForReuse unicodeScalarsIndexToUTF8Index: inout LazyRigidArray<Int>,
