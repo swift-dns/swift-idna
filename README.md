@@ -11,6 +11,12 @@
             alt="Benchmarks CI"
         >
     </a>
+    <a href="https://codecov.io/gh/swift-dns/swift-idna"> 
+        <img 
+            src="https://codecov.io/gh/swift-dns/swift-idna/graph/badge.svg?token=KW7Y46RYYD"
+            alt="Codecov Tests Code Coverage"
+        > 
+    </a>
     <a href="https://swift.org">
         <img
             src="https://design.vapor.codes/images/swift623up.svg"
