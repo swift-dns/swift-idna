@@ -1,8 +1,8 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
-struct LazyTinyArray: ~Copyable {
+struct LazyTinyBuffer: ~Copyable {
     @usableFromInline
-    var array: TinyArray?
+    var array: TinyBuffer?
     @usableFromInline
     let capacityToReserve: Int
 
@@ -13,11 +13,11 @@ struct LazyTinyArray: ~Copyable {
     }
 
     @inlinable
-    mutating func withTinyArray<T>(_ body: (inout TinyArray) -> T) -> T {
+    mutating func withTinyBuffer<T>(_ body: (inout TinyBuffer) -> T) -> T {
         if array != nil {
             return body(&self.array!)
         } else {
-            var array = TinyArray(preferredCapacity: capacityToReserve)
+            var array = TinyBuffer(preferredCapacity: capacityToReserve)
             let result = body(&array)
             self.array = .some(array)
             return result

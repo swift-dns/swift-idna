@@ -1,13 +1,13 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
-struct TinyArraySubSequence: ~Copyable {
+struct TinyBufferSubSequence: ~Copyable {
     @usableFromInline
-    var base: TinyArray
+    var base: TinyBuffer
     @usableFromInline
     var startIndex: Int
 
     @inlinable
-    init(base: consuming TinyArray, startIndex: Int) {
+    init(base: consuming TinyBuffer, startIndex: Int) {
         self.base = base
         self.startIndex = startIndex
     }
@@ -58,7 +58,7 @@ struct TinyArraySubSequence: ~Copyable {
 }
 
 @available(swiftIDNAApplePlatforms 10.15, *)
-extension TinyArraySubSequence {
+extension TinyBufferSubSequence {
     @inlinable
     var isASCII: Bool {
         self.withSpan { $0.isASCII }

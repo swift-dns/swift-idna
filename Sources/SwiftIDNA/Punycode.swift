@@ -78,7 +78,7 @@ enum Punycode {
     @inlinable
     static func encode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
-        outputBufferForReuse output: inout TinyArray,
+        outputBufferForReuse output: inout TinyBuffer,
         decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
     ) {
         var n = Constants.initialN
@@ -196,7 +196,7 @@ enum Punycode {
     static func decode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
         scalarsIndexToUTF8IndexForReuse unicodeScalarsIndexToUTF8Index: inout LazyRigidArray<Int>,
-        outputBuffer output: inout TinyArraySubSequence
+        outputBuffer output: inout TinyBufferSubSequence
     ) -> Bool {
         var inputBytesSpan = inputBytesSpan
         var n = Constants.initialN

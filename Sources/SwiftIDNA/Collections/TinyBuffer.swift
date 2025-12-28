@@ -7,7 +7,7 @@ package var TINY_ARRAY__UNIQUE_ARRAY_ALLOCATION_THRESHOLD: Int {
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
-enum TinyArray: ~Copyable {
+enum TinyBuffer: ~Copyable {
     case inline(InlineElements)
     case heap(UniqueArray<UInt8>)
 
@@ -256,7 +256,7 @@ enum TinyArray: ~Copyable {
 }
 
 @available(swiftIDNAApplePlatforms 10.15, *)
-extension TinyArray {
+extension TinyBuffer {
     @usableFromInline
     struct InlineElements: ~Copyable {
         @usableFromInline
@@ -419,10 +419,10 @@ extension TinyArray {
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension String {
     @inlinable
-    init(copying elements: borrowing TinyArray.InlineElements) {
+    init(copying elements: borrowing TinyBuffer.InlineElements) {
         /// `elements` can only contain 15 bytes. String also holds 15 bytes inline so
         /// we can freely just pass the bytes to the string initializer.
-        assert(elements.count <= TinyArray.InlineElements.maximumCapacity)
+        assert(elements.count <= TinyBuffer.InlineElements.maximumCapacity)
 
         self = elements.withSpan { String(_uncheckedAssumingValidUTF8: $0) }
     }
@@ -431,8 +431,8 @@ extension String {
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension UniqueArray<UInt8> {
     @inlinable
-    init(copying elements: borrowing TinyArray.InlineElements, capacity: Int) {
-        assert(capacity > TinyArray.InlineElements.maximumCapacity)
+    init(copying elements: borrowing TinyBuffer.InlineElements, capacity: Int) {
+        assert(capacity > TinyBuffer.InlineElements.maximumCapacity)
 
         self.init(capacity: capacity) { output in
             output.withUnsafeMutableBufferPointer { outputPtr, initializedCount in
@@ -453,12 +453,12 @@ extension UniqueArray<UInt8> {
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension [UInt8] {
     @inlinable
-    init(copying elements: borrowing TinyArray.InlineElements) {
+    init(copying elements: borrowing TinyBuffer.InlineElements) {
         self = elements.withSpan { [UInt8](copying: $0) }
     }
 
     @inlinable
-    init(copying array: borrowing TinyArray) {
+    init(copying array: borrowing TinyBuffer) {
         switch array {
         case .inline(let elements):
             self = [UInt8](copying: elements)
@@ -471,7 +471,7 @@ extension [UInt8] {
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNA.ConversionResult {
     @inlinable
-    init(consuming array: consuming TinyArray) {
+    init(consuming array: consuming TinyBuffer) {
         switch consume array {
         case .inline(let elements):
             self = .string(String(copying: elements))

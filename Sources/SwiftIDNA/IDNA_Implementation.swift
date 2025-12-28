@@ -22,7 +22,7 @@ extension IDNA {
         var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
-        var convertedBytes = TinyArray()
+        var convertedBytes = TinyBuffer()
         let processedBytes = self.mainProcessing(
             _uncheckedAssumingValidUTF8: span,
             reuseBuffer: &convertedBytes,
@@ -30,12 +30,11 @@ extension IDNA {
         )
 
         // 2., 3.
-        var outputBufferForReuse = LazyTinyArray(
+        var outputBufferForReuse = LazyTinyBuffer(
             capacity: convertedBytes.count
         )
 
         convertedBytes.removeAll(keepingCapacity: true)
-        // convertedBytes.reserveCapacity(convertedBytes.count + span.count)
 
         processedBytes.withSpan { processedBytesSpan in
             var baseDecodedUnicodeScalars = DecodedUnicodeScalars(
@@ -135,8 +134,8 @@ extension IDNA {
         startIndex: Int,
         endIndex: Int,
         appendDot: Bool,
-        convertedBytes: inout TinyArray,
-        outputBufferForReuse: inout LazyTinyArray,
+        convertedBytes: inout TinyBuffer,
+        outputBufferForReuse: inout LazyTinyBuffer,
         decodedUnicodeScalars: inout DecodedUnicodeScalars.Subsequence,
         errors: inout MappingErrors
     ) {
@@ -155,8 +154,8 @@ extension IDNA {
             }
         } else {
             /// TODO: can we pass convertedBytes to Punycode.encode instead of it returning a new array?
-            outputBufferForReuse.withTinyArray {
-                (outputBufferForReuse: inout TinyArray) -> Void in
+            outputBufferForReuse.withTinyBuffer {
+                (outputBufferForReuse: inout TinyBuffer) -> Void in
 
                 decodedUnicodeScalars.set(range: range)
 
@@ -228,7 +227,7 @@ extension IDNA {
         var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
-        var reuseBuffer = TinyArray()
+        var reuseBuffer = TinyBuffer()
         let utf8Bytes = self.mainProcessing(
             _uncheckedAssumingValidUTF8: span,
             reuseBuffer: &reuseBuffer,
@@ -251,9 +250,9 @@ extension IDNA {
     #endif
     func mainProcessing(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
-        reuseBuffer newBytes: inout TinyArray,
+        reuseBuffer newBytes: inout TinyBuffer,
         errors: inout MappingErrors
-    ) -> TinyArray {
+    ) -> TinyBuffer {
         /// 1. Map
         self.mapToIDNAMappings(
             _uncheckedAssumingValidUTF8: span,
@@ -265,7 +264,7 @@ extension IDNA {
         /// Make `newBytes` NFC, if not already NFC
         newBytes._uncheckedAssumingValidUTF8_ensureNFC()
 
-        var newerBytes = TinyArray(preferredCapacity: newBytes.count)
+        var newerBytes = TinyBuffer(preferredCapacity: newBytes.count)
 
         newBytes.withSpan { newBytesSpan in
             let maxRequiredCapacityForAllLabels = self.maxLabelLength(span: newBytesSpan)
@@ -311,7 +310,7 @@ extension IDNA {
     @inlinable
     func mapToIDNAMappings(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
-        into newBytes: inout TinyArray
+        into newBytes: inout TinyBuffer
     ) {
         var requiredCapacity = 0
 
@@ -330,11 +329,11 @@ extension IDNA {
 
         /// Use the underlying RigidArray to skip capacity checks because
         /// we're guaranteed to have enough capacity.
-        var tinyArray = TinyArray(requiredCapacity: requiredCapacity)
+        var tinyBuffer = TinyBuffer(requiredCapacity: requiredCapacity)
 
         unicodeScalarsIterator = UnicodeScalarIterator()
 
-        tinyArray.edit { output in
+        tinyBuffer.edit { output in
             while let (scalar, range) = unicodeScalarsIterator.nextWithRange(in: span) {
                 switch IDNAMapping.for(scalar: scalar) {
                 case .valid(_), .deviation(_), .disallowed:
@@ -352,7 +351,7 @@ extension IDNA {
         /// Tests will immediately crash if this is not the case.
         assert(newBytes.isEmpty)
 
-        newBytes = tinyArray
+        newBytes = tinyBuffer
     }
 
     @inlinable
@@ -390,7 +389,7 @@ extension IDNA {
     func convertAndValidateLabel(
         _ span: Span<UInt8>,
         scalarsIndexToUTF8IndexForReuse: inout LazyRigidArray<Int>,
-        newerBytes: inout TinyArray,
+        newerBytes: inout TinyBuffer,
         errors: inout MappingErrors
     ) -> Bool {
         /// Checks if the label starts with “xn--”
@@ -420,7 +419,7 @@ extension IDNA {
         let noXNRange = Range<Int>(uncheckedBounds: (4, span.count))
         let currentNewerBytesCount = newerBytes.count
 
-        var outputBuffer = TinyArraySubSequence(
+        var outputBuffer = TinyBufferSubSequence(
             base: newerBytes,
             startIndex: currentNewerBytesCount
         )
