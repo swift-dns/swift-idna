@@ -1,5 +1,10 @@
 public import BasicContainers
 
+@inlinable
+package var TINY_ARRAY__UNIQUE_ARRAY_ALLOCATION_THRESHOLD: Int {
+    23
+}
+
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
 enum TinyArray: ~Copyable {
@@ -15,6 +20,20 @@ enum TinyArray: ~Copyable {
     init(requiredCapacity: Int) {
         if requiredCapacity > InlineElements.maximumCapacity {
             self = .heap(UniqueArray<UInt8>(capacity: requiredCapacity))
+        } else {
+            self = .inline(InlineElements())
+        }
+    }
+
+    @inlinable
+    init(preferredCapacity: Int) {
+        /// We have a test to ensure tha UniqueArray, after having 15 elements and when you want to
+        /// append the 16th element, it will allocate a new buffer with a capacity of 23.
+        ///
+        /// If the preferred capacity is less than 23, we can use the inline elements anyway to begin
+        /// with, because even if we need to allocate a new buffer, we're only allocating once anyway.
+        if preferredCapacity > TINY_ARRAY__UNIQUE_ARRAY_ALLOCATION_THRESHOLD {
+            self = .heap(UniqueArray<UInt8>(capacity: preferredCapacity))
         } else {
             self = .inline(InlineElements())
         }

@@ -32,7 +32,7 @@ extension IDNA {
         )
 
         // 2., 3.
-        var outputBufferForReuse = LazyUniqueArray<UInt8>(
+        var outputBufferForReuse = LazyTinyArray(
             capacity: convertedBytes.count
         )
 
@@ -137,7 +137,7 @@ extension IDNA {
         endIndex: Int,
         appendDot: Bool,
         convertedBytes: inout TinyArray,
-        outputBufferForReuse: inout LazyUniqueArray<UInt8>,
+        outputBufferForReuse: inout LazyTinyArray,
         decodedUnicodeScalars: inout DecodedUnicodeScalars.Subsequence,
         errors: inout MappingErrors
     ) {
@@ -156,8 +156,8 @@ extension IDNA {
             }
         } else {
             /// TODO: can we pass convertedBytes to Punycode.encode instead of it returning a new array?
-            outputBufferForReuse.withUniqueArray {
-                (outputBufferForReuse: inout UniqueArray<UInt8>) -> Void in
+            outputBufferForReuse.withTinyArray {
+                (outputBufferForReuse: inout TinyArray) -> Void in
 
                 decodedUnicodeScalars.set(range: range)
 
@@ -175,7 +175,7 @@ extension IDNA {
                     output.append(.asciiLowercasedN)
                     output.append(.asciiHyphenMinus)
                     output.append(.asciiHyphenMinus)
-                    output.swift_idna_append(copying: outputBufferForReuse.span)
+                    outputBufferForReuse.withSpan { output.swift_idna_append(copying: $0) }
                     if appendDot {
                         output.append(.asciiDot)
                     }

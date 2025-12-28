@@ -1,5 +1,6 @@
 import SwiftIDNA
 import Testing
+import BasicContainers
 
 @Suite
 struct IDNATests {
@@ -14,6 +15,15 @@ struct IDNATests {
 
         let result = IDNA.performByteCheck(onDNSWireFormatSpan: bytes.span)
         #expect(result == .onlyNeedsLowercasingOfUppercasedASCIILetters)
+    }
+
+    @available(swiftIDNAApplePlatforms 26, *)
+    @Test func `UniqueArray allocates as expected`() {
+        var array = UniqueArray<UInt8>(capacity: 15)
+        for _ in 0..<16 {
+            array.append(0)
+        }
+        #expect(array.capacity == TINY_ARRAY__UNIQUE_ARRAY_ALLOCATION_THRESHOLD)
     }
 
     /// For debugging you can choose a specific test case based on its index. For example
