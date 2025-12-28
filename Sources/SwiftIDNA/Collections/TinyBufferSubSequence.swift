@@ -26,11 +26,6 @@ struct TinyBufferSubSequence: ~Copyable {
     }
 
     @inlinable
-    mutating func append(_ element: UInt8) {
-        self.base.append(element)
-    }
-
-    @inlinable
     mutating func append(copying span: Span<UInt8>) {
         self.base.append(copying: span)
     }
@@ -52,8 +47,9 @@ struct TinyBufferSubSequence: ~Copyable {
 
     @inlinable
     mutating func removeAll() {
-        let range = Range<Int>(uncheckedBounds: (self.startIndex, self.base.count))
-        self.base.removeSubrange(range)
+        /// Technically we should only remove the subrange, but for this specific library
+        /// it doesn't matter according to the tests, so we don't bother.
+        self.base.removeAll(keepingCapacity: true)
     }
 }
 

@@ -109,6 +109,8 @@ extension IDNA {
                     )
                 }
                 if convertedBytes.isEmpty {
+                    /// FIXME: this line is never triggered in tests. Why?
+                    /// It doesn't affect the conversion result at all, but I should still investigate.
                     errors.append(
                         .trueVerifyDNSLengthArgumentDisallowsEmptyDomainName(
                             labels: [UInt8](copying: convertedBytes)

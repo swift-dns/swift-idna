@@ -134,18 +134,6 @@ enum TinyBuffer: ~Copyable {
     }
 
     @inlinable
-    mutating func removeSubrange(_ range: Range<Int>) {
-        switch consume self {
-        case .inline(var elements):
-            elements.removeSubrange(range)
-            self = .inline(elements)
-        case .heap(var array):
-            array.removeSubrange(range)
-            self = .heap(array)
-        }
-    }
-
-    @inlinable
     mutating func edit(_ block: (inout OutputSpan<UInt8>) -> Void) {
         switch consume self {
         case .inline(var elements):
@@ -314,14 +302,14 @@ extension TinyBuffer {
         /// Returns `false` if the array is full.
         @inlinable
         mutating func append(_ element: UInt8) -> Bool {
-            withUnsafeMutableBytes(of: &bits) {
-                let count = $0[Self.countByteIndex]
+            withUnsafeMutableBytes(of: &bits) { bitsPtr in
+                let count = bitsPtr[Self.countByteIndex]
                 if count == Self.maximumCapacity {
                     return false
                 }
 
-                $0[Int(count)] = element
-                $0[Self.countByteIndex] = count &+ 1
+                bitsPtr[Int(count)] = element
+                bitsPtr[Self.countByteIndex] = count &+ 1
 
                 return true
             }
@@ -330,28 +318,6 @@ extension TinyBuffer {
         @inlinable
         mutating func removeAll() {
             self.bits = (0, 0, 0)
-        }
-
-        @inlinable
-        mutating func removeSubrange(_ range: Range<Int>) {
-            withUnsafeMutableBytes(of: &self.bits) { bitsPtr in
-                bitsPtr.withMemoryRebound(to: UInt8.self) { bytesPtr in
-                    let count = bitsPtr[Self.countByteIndex]
-                    let newCount = count &- UInt8(range.count)
-
-                    if count > range.upperBound {
-                        let afterRange = Range(uncheckedBounds: (range.upperBound, Int(count)))
-                        let afterBytes = bytesPtr.extracting(afterRange)
-
-                        let mutableRange = Range(uncheckedBounds: (range.lowerBound, Int(count)))
-                        let mutableBytes = bytesPtr.extracting(mutableRange)
-
-                        _ = mutableBytes.initialize(fromContentsOf: afterBytes)
-                    }
-
-                    bitsPtr[Self.countByteIndex] = newCount
-                }
-            }
         }
 
         @inlinable
@@ -448,7 +414,6 @@ extension UniqueArray<UInt8> {
                     bitsPtr.withMemoryRebound(to: UInt8.self) { bitsBytes in
                         let count = Int(bitsPtr[TinyBuffer.InlineElements.countByteIndex])
                         let elements = bitsBytes.extracting(0..<count)
-                        /// Last bit is the counts bit
                         _ = outputPtr.initialize(fromContentsOf: elements)
                         initializedCount = count
                     }
