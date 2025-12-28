@@ -2,7 +2,7 @@ public import BasicContainers
 
 @inlinable
 package var TINY_ARRAY__UNIQUE_ARRAY_ALLOCATION_THRESHOLD: Int {
-    23
+    35
 }
 
 @available(swiftIDNAApplePlatforms 10.15, *)
@@ -27,8 +27,8 @@ enum TinyBuffer: ~Copyable {
 
     @inlinable
     init(preferredCapacity: Int) {
-        /// We have a test to ensure the UniqueArray, after having 15 elements and when you want to
-        /// append the 16th element, it will allocate a new buffer with a capacity of 23.
+        /// We have a test to ensure the UniqueArray, after having 23 elements and when you want to
+        /// append the 24th element, it will allocate a new buffer with a capacity of 24.
         ///
         /// If the preferred capacity is less than 23, we can use the inline elements anyway to begin
         /// with, because even if we need to allocate a new buffer, we're only allocating once anyway.
@@ -63,8 +63,8 @@ enum TinyBuffer: ~Copyable {
     mutating func preferablyReserveCapacity(_ preferredCapacity: Int) {
         switch consume self {
         case .inline(let elements):
-            /// We have a test to ensure the UniqueArray, after having 15 elements and when you want to
-            /// append the 16th element, it will allocate a new buffer with a capacity of 23.
+            /// We have a test to ensure the UniqueArray, after having 23 elements and when you want to
+            /// append the 24th element, it will allocate a new buffer with a capacity of 24.
             ///
             /// If the preferred capacity is less than 23, we can use the inline elements anyway to begin
             /// with, because even if we need to allocate a new buffer, we're only allocating once anyway.
@@ -257,27 +257,34 @@ enum TinyBuffer: ~Copyable {
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension TinyBuffer {
+    /// Some inline bytes, last of which is the count byte.
+    /// Currently 23 bytes + 1 count bytes == 24 bytes == 3 x 8 bytes == 3 x UInt64.
     @usableFromInline
     struct InlineElements: ~Copyable {
         @usableFromInline
-        typealias BitPattern = (UInt64, UInt64)
+        typealias BitPattern = (UInt64, UInt64, UInt64)
 
         @usableFromInline
         var bits: BitPattern
 
         @inlinable
         static var maximumCapacity: Int {
-            15
+            23
+        }
+
+        @inlinable
+        static var countByteIndex: Int {
+            Self.maximumCapacity
         }
 
         @inlinable
         init() {
-            self.bits = (0, 0)
+            self.bits = (0, 0, 0)
         }
 
         @inlinable
         var count: UInt8 {
-            withUnsafeBytes(of: bits.1) {
+            withUnsafeBytes(of: bits.2) {
                 $0[7]
             }
         }
@@ -297,7 +304,7 @@ extension TinyBuffer {
         func withSpan<T>(_ body: (Span<UInt8>) throws -> T) rethrows -> T {
             try withUnsafeBytes(of: bits) { bitsPtr in
                 try bitsPtr.withMemoryRebound(to: UInt8.self) { bitsBytes in
-                    let count = bitsPtr[15]
+                    let count = bitsPtr[Self.countByteIndex]
                     let bytesSpan = bitsBytes.span.extracting(unchecked: 0..<Int(count))
                     return try body(bytesSpan)
                 }
@@ -308,13 +315,13 @@ extension TinyBuffer {
         @inlinable
         mutating func append(_ element: UInt8) -> Bool {
             withUnsafeMutableBytes(of: &bits) {
-                let count = $0[15]
+                let count = $0[Self.countByteIndex]
                 if count == Self.maximumCapacity {
                     return false
                 }
 
                 $0[Int(count)] = element
-                $0[15] = count &+ 1
+                $0[Self.countByteIndex] = count &+ 1
 
                 return true
             }
@@ -322,14 +329,14 @@ extension TinyBuffer {
 
         @inlinable
         mutating func removeAll() {
-            self.bits = (0, 0)
+            self.bits = (0, 0, 0)
         }
 
         @inlinable
         mutating func removeSubrange(_ range: Range<Int>) {
             withUnsafeMutableBytes(of: &self.bits) { bitsPtr in
                 bitsPtr.withMemoryRebound(to: UInt8.self) { bytesPtr in
-                    let count = bitsPtr[15]
+                    let count = bitsPtr[Self.countByteIndex]
                     let newCount = count &- UInt8(range.count)
 
                     if count > range.upperBound {
@@ -342,7 +349,7 @@ extension TinyBuffer {
                         _ = mutableBytes.initialize(fromContentsOf: afterBytes)
                     }
 
-                    bitsPtr[15] = newCount
+                    bitsPtr[Self.countByteIndex] = newCount
                 }
             }
         }
@@ -351,7 +358,7 @@ extension TinyBuffer {
         mutating func edit(_ block: (inout OutputSpan<UInt8>) -> Void) {
             withUnsafeMutableBytes(of: &self.bits) { bitsPtr in
                 bitsPtr.withMemoryRebound(to: UInt8.self) { bytesPtr in
-                    let count = Int(bitsPtr[15])
+                    let count = Int(bitsPtr[Self.countByteIndex])
                     let mutableBytes = bytesPtr.extracting(0..<Self.maximumCapacity)
                     var span = OutputSpan(buffer: mutableBytes, initializedCount: count)
 
@@ -359,7 +366,7 @@ extension TinyBuffer {
 
                     let newCount = span.finalize(for: mutableBytes)
                     span = OutputSpan()
-                    bitsPtr[15] = UInt8(newCount)
+                    bitsPtr[Self.countByteIndex] = UInt8(newCount)
                 }
             }
         }
@@ -368,7 +375,7 @@ extension TinyBuffer {
         mutating func uncheckedInsert(copying utf8View: Unicode.Scalar.UTF8View, at index: Int) {
             withUnsafeMutableBytes(of: &self.bits) { bitsPtr in
                 bitsPtr.withMemoryRebound(to: UInt8.self) { bytesPtr in
-                    let count = bitsPtr[15]
+                    let count = bitsPtr[Self.countByteIndex]
                     let usedCapacity = Int(count)
                     let utf8ViewCount = utf8View.count
                     let newCount = usedCapacity + utf8ViewCount
@@ -384,7 +391,12 @@ extension TinyBuffer {
                     let target = bytesPtr.extracting(targetRange)
 
                     if targetRange.lowerBound <= usedCapacity {
-                        let afterRange = Range(uncheckedBounds: (targetRange.upperBound, 15))
+                        let afterRange = Range(
+                            uncheckedBounds: (
+                                targetRange.upperBound,
+                                Self.countByteIndex
+                            )
+                        )
                         let afterBytes = bytesPtr.extracting(afterRange)
 
                         let moveRange = Range<Int>(uncheckedBounds: (index, usedCapacity))
@@ -395,7 +407,7 @@ extension TinyBuffer {
 
                     _ = target.initialize(fromContentsOf: utf8View)
 
-                    bitsPtr[15] = UInt8(newCount)
+                    bitsPtr[Self.countByteIndex] = UInt8(newCount)
                 }
             }
         }
@@ -420,10 +432,6 @@ extension TinyBuffer {
 extension String {
     @inlinable
     init(copying elements: borrowing TinyBuffer.InlineElements) {
-        /// `elements` can only contain 15 bytes. String also holds 15 bytes inline so
-        /// we can freely just pass the bytes to the string initializer.
-        assert(elements.count <= TinyBuffer.InlineElements.maximumCapacity)
-
         self = elements.withSpan { String(_uncheckedAssumingValidUTF8: $0) }
     }
 }
@@ -438,7 +446,7 @@ extension UniqueArray<UInt8> {
             output.withUnsafeMutableBufferPointer { outputPtr, initializedCount in
                 withUnsafeBytes(of: elements.bits) { bitsPtr in
                     bitsPtr.withMemoryRebound(to: UInt8.self) { bitsBytes in
-                        let count = Int(bitsPtr[15])
+                        let count = Int(bitsPtr[TinyBuffer.InlineElements.countByteIndex])
                         let elements = bitsBytes.extracting(0..<count)
                         /// Last bit is the counts bit
                         _ = outputPtr.initialize(fromContentsOf: elements)
