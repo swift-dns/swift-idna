@@ -1,5 +1,6 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension Span<UInt8> {
+    /// Whether or not the span contains only ASCII bytes.
     @inlinable
     var isASCII: Bool {
         var result: Element = 0
@@ -11,6 +12,7 @@ extension Span<UInt8> {
         return result <= 0x7F
     }
 
+    /// Whether or not the span scalars are all in Normalization Form C (NFC).
     @usableFromInline
     var isInNFC: Bool {
         if self.isEmpty || self.isASCII { return true }
@@ -130,6 +132,7 @@ extension Span<UInt8> {
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension Span {
+    /// Whether or not all the elements in the span satisfy the given predicate.
     @inlinable
     func allSatisfy(_ predicate: (Element) -> Bool) -> Bool {
         for idx in self.indices {
@@ -140,6 +143,7 @@ extension Span {
         return true
     }
 
+    /// Finds the last index of the given element in the span.
     @inlinable
     func lastIndex(of element: Element) -> Int? where Element: Equatable {
         let endIndex = self.count &- 1

@@ -49,11 +49,13 @@ extension IDNAUnicodeScalarView: Equatable {
 extension IDNAUnicodeScalarView: Sequence {
     public typealias Element = Unicode.Scalar
 
+    /// Exact count of the code points in this view.
     @inlinable
     public var underestimatedCount: Int {
         self.count
     }
 
+    /// Count of the code points in this view.
     @inlinable
     public var count: Int {
         var iterator = UnicodeScalarIterator()
@@ -64,6 +66,7 @@ extension IDNAUnicodeScalarView: Sequence {
         return scalarsCount
     }
 
+    /// Count of the bytes in this view.
     @inlinable
     public var utf8BytesCount: Int {
         self.pointer.count
@@ -98,6 +101,7 @@ extension IDNAUnicodeScalarView: Sequence {
         0..<self.count
     }
 
+    /// Span of the raw utf8 bytes in this view.
     @inlinable
     public var utf8BytesSpan: Span<UInt8> {
         self.pointer.span

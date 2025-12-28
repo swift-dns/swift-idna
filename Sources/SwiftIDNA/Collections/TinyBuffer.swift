@@ -5,6 +5,9 @@ package var TINY_ARRAY__UNIQUE_ARRAY_ALLOCATION_THRESHOLD: Int {
     35
 }
 
+/// A collection of bytes.
+/// Holds up to the first 23 elements inline, and then allocates a `UniqueArray` for the rest if needed.
+/// This is useful for skipping allocations if we don't have many bytes to store.
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
 enum TinyBuffer: ~Copyable {
@@ -16,6 +19,7 @@ enum TinyBuffer: ~Copyable {
         self = .inline(InlineElements())
     }
 
+    /// Initializes a `TinyBuffer`, unconditionally reserving the requested capacity.
     @inlinable
     init(requiredCapacity: Int) {
         if requiredCapacity > InlineElements.maximumCapacity {
@@ -25,6 +29,7 @@ enum TinyBuffer: ~Copyable {
         }
     }
 
+    /// Initializes a `TinyBuffer`, reserving the requested capacity if the it sees fit.
     @inlinable
     init(preferredCapacity: Int) {
         /// We have a test to ensure the UniqueArray, after having 23 elements and when you want to
@@ -39,6 +44,7 @@ enum TinyBuffer: ~Copyable {
         }
     }
 
+    /// Count of the bytes in this buffer.
     @inlinable
     var count: Int {
         switch self {
@@ -49,6 +55,7 @@ enum TinyBuffer: ~Copyable {
         }
     }
 
+    /// Whether this buffer is empty.
     @inlinable
     var isEmpty: Bool {
         switch self {
@@ -59,6 +66,7 @@ enum TinyBuffer: ~Copyable {
         }
     }
 
+    /// Reserves the requested capacity upfront, if the the function sees fit.
     @inlinable
     mutating func preferablyReserveCapacity(_ preferredCapacity: Int) {
         switch consume self {
@@ -80,36 +88,33 @@ enum TinyBuffer: ~Copyable {
         }
     }
 
+    /// Appends the given element to the buffer.
+    /// Assumes the buffer has enough capacity to hold the element.
     @inlinable
-    mutating func append(_ element: UInt8) {
+    mutating func append(unchecked element: UInt8) {
         switch consume self {
         case .inline(var elements):
-            if elements.append(element) {
-                self = .inline(elements)
-            } else {
-                var array = UniqueArray(
-                    copying: elements,
-                    capacity: InlineElements.maximumCapacity &+ 1
-                )
-                array.append(element)
-                self = .heap(array)
-            }
+            elements.append(unchecked: element)
+            self = .inline(elements)
         case .heap(var array):
             array.append(element)
             self = .heap(array)
         }
     }
 
+    /// Appends the given span to the buffer.
     @inlinable
     mutating func append(copying span: Span<UInt8>) {
         switch consume self {
         case .inline(var elements):
             let requiredCapacity = span.count + Int(elements.count)
             if requiredCapacity > InlineElements.maximumCapacity {
+                /// We need to grow the buffer to something more than the amount of bytes we can hold inline.
                 var array = UniqueArray(copying: elements, capacity: requiredCapacity)
                 array.append(copying: span)
                 self = .heap(array)
             } else {
+                /// We can hold the bytes inline, so we can just append them directly.
                 elements.edit { output in
                     output.swift_idna_append(copying: span)
                 }
@@ -121,6 +126,7 @@ enum TinyBuffer: ~Copyable {
         }
     }
 
+    /// Removes all the bytes from the buffer.
     @inlinable
     mutating func removeAll(keepingCapacity: Bool) {
         switch consume self {
@@ -133,6 +139,7 @@ enum TinyBuffer: ~Copyable {
         }
     }
 
+    /// Gives access to the underlying buffer as an `OutputSpan<UInt8>`.
     @inlinable
     mutating func edit(_ block: (inout OutputSpan<UInt8>) -> Void) {
         switch consume self {
@@ -149,6 +156,7 @@ enum TinyBuffer: ~Copyable {
         }
     }
 
+    /// Gives access to the underlying buffer as a `Span<UInt8>`.
     @inlinable
     func withSpan<T>(_ block: (Span<UInt8>) -> T) -> T {
         switch self {
@@ -159,6 +167,8 @@ enum TinyBuffer: ~Copyable {
         }
     }
 
+    /// Reserves the given extra capacity to the buffer, and then
+    /// gives access to the underlying buffer as an `OutputSpan<UInt8>`.
     @inlinable
     mutating func append(
         exactExtraRequiredCapacity extraCapacity: Int,
@@ -166,27 +176,22 @@ enum TinyBuffer: ~Copyable {
     ) {
         /// Use heap if the required capacity requires so
         switch consume self {
-        case .inline(let elements):
+        case .inline(var elements):
             let newCapacity = Int(elements.count) &+ extraCapacity
             if newCapacity > InlineElements.maximumCapacity {
-                let array = UniqueArray(copying: elements, capacity: newCapacity)
+                /// We need to grow the buffer to something more than the amount of bytes we can hold inline.
+                var array = UniqueArray(copying: elements, capacity: newCapacity)
+                array.edit { output in
+                    block(&output)
+                }
                 self = .heap(array)
             } else {
+                elements.edit { output in
+                    block(&output)
+                }
                 self = .inline(elements)
             }
-        case .heap(let array):
-            self = .heap(array)
-        }
-
-        /// We know we have enough space, just append now
-        switch consume self {
-        case .inline(var elements):
-            elements.edit { output in
-                block(&output)
-            }
-            self = .inline(elements)
         case .heap(var array):
-            /// TODO: might be able to use `edit` and skip the capacity check
             array.append(count: extraCapacity) { output in
                 block(&output)
             }
@@ -194,6 +199,7 @@ enum TinyBuffer: ~Copyable {
         }
     }
 
+    /// Appends the given UTF-8 view to the buffer.
     @inlinable
     mutating func append(copying utf8View: Unicode.Scalar.UTF8View) {
         self.append(exactExtraRequiredCapacity: utf8View.count) { output in
@@ -203,33 +209,29 @@ enum TinyBuffer: ~Copyable {
         }
     }
 
+    /// Inserts the given UTF-8 view at the given index into the buffer.
     @inlinable
     mutating func insert(copying utf8View: Unicode.Scalar.UTF8View, at index: Int) {
         /// Use heap if the required capacity requires so
         switch consume self {
-        case .inline(let elements):
+        case .inline(var elements):
             let newCapacity = Int(elements.count) &+ utf8View.count
             if newCapacity > InlineElements.maximumCapacity {
-                let array = UniqueArray(copying: elements, capacity: newCapacity)
+                /// We need to grow the buffer to something more than the amount of bytes we can hold inline.
+                var array = UniqueArray(copying: elements, capacity: newCapacity)
+                array.insert(copying: utf8View, at: index)
                 self = .heap(array)
             } else {
+                elements.uncheckedInsert(copying: utf8View, at: index)
                 self = .inline(elements)
             }
-        case .heap(let array):
-            self = .heap(array)
-        }
-
-        /// We know we have enough space, just insert now
-        switch consume self {
-        case .inline(var elements):
-            elements.uncheckedInsert(copying: utf8View, at: index)
-            self = .inline(elements)
         case .heap(var array):
             array.insert(copying: utf8View, at: index)
             self = .heap(array)
         }
     }
 
+    /// Ensures the buffer contains only valid UTF-8 and NFC-normalized bytes.
     @inlinable
     mutating func _uncheckedAssumingValidUTF8_ensureNFC() {
         switch consume self {
@@ -255,11 +257,18 @@ extension TinyBuffer {
         @usableFromInline
         var bits: BitPattern
 
+        /// The maximum number of bytes that can be held inline.
         @inlinable
         static var maximumCapacity: Int {
             23
         }
 
+        /// The index of the count byte in the `bits` tuple.
+        ///
+        /// Meaning that the count of elements in this buffer is the same as the following expression:
+        /// ```swift
+        /// let countOfElements = withUnsafeBytes(of: bits) { $0[Self.countByteIndex] }
+        /// ```
         @inlinable
         static var countByteIndex: Int {
             Self.maximumCapacity
@@ -270,6 +279,7 @@ extension TinyBuffer {
             self.bits = (0, 0, 0)
         }
 
+        /// The count of elements in this buffer.
         @inlinable
         var count: UInt8 {
             withUnsafeBytes(of: bits.2) {
@@ -277,16 +287,19 @@ extension TinyBuffer {
             }
         }
 
+        /// Whether this buffer is empty.
         @inlinable
         var isEmpty: Bool {
             self.count == 0
         }
 
+        /// Whether this buffer contains only ASCII bytes.
         @inlinable
         var isASCII: Bool {
             self.withSpan { $0.isASCII }
         }
 
+        /// Gives access to the underlying buffer as a `Span<UInt8>`.
         @_transparent
         @inlinable
         func withSpan<T>(_ body: (Span<UInt8>) throws -> T) rethrows -> T {
@@ -299,27 +312,24 @@ extension TinyBuffer {
             }
         }
 
-        /// Returns `false` if the array is full.
+        /// Appends the given element to the buffer.
+        /// Assumes the buffer has enough capacity to hold the element.
         @inlinable
-        mutating func append(_ element: UInt8) -> Bool {
+        mutating func append(unchecked element: UInt8) {
             withUnsafeMutableBytes(of: &bits) { bitsPtr in
                 let count = bitsPtr[Self.countByteIndex]
-                if count == Self.maximumCapacity {
-                    return false
-                }
-
                 bitsPtr[Int(count)] = element
                 bitsPtr[Self.countByteIndex] = count &+ 1
-
-                return true
             }
         }
 
+        /// Removes all the elements from the buffer.
         @inlinable
         mutating func removeAll() {
             self.bits = (0, 0, 0)
         }
 
+        /// Gives access to the underlying buffer as an `OutputSpan<UInt8>`.
         @inlinable
         mutating func edit(_ block: (inout OutputSpan<UInt8>) -> Void) {
             withUnsafeMutableBytes(of: &self.bits) { bitsPtr in
@@ -337,6 +347,10 @@ extension TinyBuffer {
             }
         }
 
+        /// Inserts the given UTF-8 view at the given index into the buffer.
+        ///
+        /// This function does not check if these inline elements add up to more than this buffer can hold.
+        /// Hence why it is called `"unchecked"Insert`.
         @inlinable
         mutating func uncheckedInsert(copying utf8View: Unicode.Scalar.UTF8View, at index: Int) {
             withUnsafeMutableBytes(of: &self.bits) { bitsPtr in
@@ -378,6 +392,7 @@ extension TinyBuffer {
             }
         }
 
+        /// Ensures the buffer contains only valid UTF-8 and NFC-normalized bytes.
         @inlinable
         mutating func _uncheckedAssumingValidUTF8_ensureNFC() {
             if self.isEmpty || self.isASCII { return }
@@ -396,6 +411,7 @@ extension TinyBuffer {
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension String {
+    /// Initializes a `String` by copying the given inline elements.
     @inlinable
     init(copying elements: borrowing TinyBuffer.InlineElements) {
         self = elements.withSpan { String(_uncheckedAssumingValidUTF8: $0) }
@@ -404,6 +420,7 @@ extension String {
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension UniqueArray<UInt8> {
+    /// Initializes a `UniqueArray<UInt8>` by copying the given inline elements.
     @inlinable
     init(copying elements: borrowing TinyBuffer.InlineElements, capacity: Int) {
         assert(capacity > TinyBuffer.InlineElements.maximumCapacity)
@@ -425,11 +442,13 @@ extension UniqueArray<UInt8> {
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension [UInt8] {
+    /// Initializes a `[UInt8]` by copying the given inline elements.
     @inlinable
     init(copying elements: borrowing TinyBuffer.InlineElements) {
         self = elements.withSpan { [UInt8](copying: $0) }
     }
 
+    /// Initializes a `[UInt8]` by copying the given `TinyBuffer`.
     @inlinable
     init(copying array: borrowing TinyBuffer) {
         switch array {
@@ -443,10 +462,17 @@ extension [UInt8] {
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension IDNA.ConversionResult {
+    /// Initializes a `IDNA.ConversionResult` by consuming the given `TinyBuffer`.
     @inlinable
     init(consuming array: consuming TinyBuffer) {
         switch consume array {
         case .inline(let elements):
+            /// We can just convert the inline elements to a string directly.
+            ///
+            /// TODO: Just give access to the inline elements instead of converting to a string?
+            /// This is not too bad anyway, because if the inline elements hold 15 or less bytes,
+            /// `String` will just hold the bytes inline as well.
+            /// If there are 16 or more bytes though, an allocation will occur.
             self = .string(String(copying: elements))
         case .heap(let array):
             self = .bytes(array)

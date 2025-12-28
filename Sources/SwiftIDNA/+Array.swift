@@ -1,5 +1,6 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension Array where Element: BitwiseCopyable {
+    /// Initializes an `Array` by copying the given span.
     @inlinable
     init(copying span: Span<Element>) {
         self.init(unsafeUninitializedCapacity: span.count) { buffer, initializedCount in

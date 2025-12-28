@@ -1,3 +1,4 @@
+/// An iterator that decodes Unicode scalars from the same span of UTF-8 bytes.
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
 struct UnicodeScalarIterator {
@@ -9,6 +10,8 @@ struct UnicodeScalarIterator {
         self.currentCodeUnitOffset = 0
     }
 
+    /// Decodes and returns the next Unicode scalar and the range of utf8 bytes it was decoded from.
+    ///
     /// Only pass the span to any single instance of this iterator.
     /// As always, tests will fail if this is not the case.
     @inlinable
@@ -45,6 +48,8 @@ struct UnicodeScalarIterator {
         return (scalar, range)
     }
 
+    /// Decodes and returns the next Unicode scalar.
+    ///
     /// Only pass the span to any single instance of this iterator.
     /// As always, tests will fail if this is not the case.
     @inlinable

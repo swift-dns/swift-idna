@@ -1,6 +1,7 @@
+/// A `TinyBuffer` subsequence that uses elements from `startIndex` and forward.
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
-struct TinyBufferSubSequence: ~Copyable {
+struct TinyBufferSubsequence: ~Copyable {
     @usableFromInline
     var base: TinyBuffer
     @usableFromInline
@@ -47,14 +48,14 @@ struct TinyBufferSubSequence: ~Copyable {
 
     @inlinable
     mutating func removeAll() {
-        /// Technically we should only remove the subrange, but for this specific library
+        /// Technically we should only remove the sub-range, but for this specific library
         /// it doesn't matter according to the tests, so we don't bother.
         self.base.removeAll(keepingCapacity: true)
     }
 }
 
 @available(swiftIDNAApplePlatforms 10.15, *)
-extension TinyBufferSubSequence {
+extension TinyBufferSubsequence {
     @inlinable
     var isASCII: Bool {
         self.withSpan { $0.isASCII }
