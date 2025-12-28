@@ -1,19 +1,5 @@
-public import BasicContainers
-
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension String {
-    @inlinable
-    var nfcCodePoints: RigidArray<UInt8> {
-        let capacity = self.utf8.count
-        var codePoints = RigidArray<UInt8>(capacity: capacity)
-        codePoints.edit { output in
-            self._withNFCCodeUnits { utf8Byte in
-                output.append(utf8Byte)
-            }
-        }
-        return codePoints
-    }
-
     @inlinable
     func isEqualToNFCCodePointsOfSelf() -> Bool {
         var copy = self

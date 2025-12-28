@@ -8,8 +8,11 @@ extension UniqueArray<UInt8> {
 
         let string = String(_uncheckedAssumingValidUTF8: self.span)
 
-        if !string.isEqualToNFCCodePointsOfSelf() {
-            self = UniqueArray<UInt8>(consuming: string.nfcCodePoints)
+        self.removeAll(keepingCapacity: true)
+        self.edit { output in
+            string._withNFCCodeUnits { utf8Byte in
+                output.append(utf8Byte)
+            }
         }
     }
 }
