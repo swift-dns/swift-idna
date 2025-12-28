@@ -1,5 +1,3 @@
-public import BasicContainers
-
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
@@ -80,7 +78,7 @@ enum Punycode {
     @inlinable
     static func encode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
-        outputBufferForReuse output: inout UniqueArray<UInt8>,
+        outputBufferForReuse output: inout TinyBuffer,
         decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
     ) {
         var n = Constants.initialN
@@ -198,13 +196,13 @@ enum Punycode {
     static func decode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
         scalarsIndexToUTF8IndexForReuse unicodeScalarsIndexToUTF8Index: inout LazyRigidArray<Int>,
-        outputBuffer output: inout UniqueArraySubSequence<UInt8>
+        outputBuffer output: inout TinyBufferSubSequence
     ) -> Bool {
         var inputBytesSpan = inputBytesSpan
         var n = Constants.initialN
         var i: UInt32 = 0
         var bias = Constants.initialBias
-        output.reserveCapacity(output.count + max(inputBytesSpan.count, 4))
+        output.preferablyReserveCapacity(output.count + max(inputBytesSpan.count, 4))
 
         if let utf8Idx = inputBytesSpan.lastIndex(of: .asciiHyphenMinus) {
             let afterDelimiterIdx = utf8Idx &+ 1
