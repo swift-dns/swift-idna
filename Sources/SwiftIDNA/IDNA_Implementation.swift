@@ -13,7 +13,7 @@ extension IDNA {
     ) throws(CollectedMappingErrors) -> ConversionResult {
         switch IDNA.performByteCheck(on: span) {
         case .containsOnlyIDNANoOpCharacters:
-            return .noChangedNeeded
+            return .noChangesNeeded
         case .onlyNeedsLowercasingOfUppercasedASCIILetters:
             let string = convertToLowercasedASCII(_uncheckedAssumingValidUTF8: span)
             return .string(string)
@@ -24,7 +24,7 @@ extension IDNA {
         var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
-        var convertedBytes = UniqueArray<UInt8>()
+        var convertedBytes = TinyArray()
         let processedBytes = self.mainProcessing(
             _uncheckedAssumingValidUTF8: span,
             reuseBuffer: &convertedBytes,
@@ -36,9 +36,8 @@ extension IDNA {
             capacity: convertedBytes.count
         )
 
-        /// TODO: Use a tiny-array here?
         convertedBytes.removeAll(keepingCapacity: true)
-        convertedBytes.reserveCapacity(convertedBytes.count + span.count)
+        // convertedBytes.reserveCapacity(convertedBytes.count + span.count)
 
         let processedBytesSpan = processedBytes.span
         var baseDecodedUnicodeScalars = DecodedUnicodeScalars(
@@ -108,14 +107,14 @@ extension IDNA {
                 errors.append(
                     .trueVerifyDNSLengthArgumentRequiresDomainNameToBe254BytesOrLess(
                         length: convertedBytes.count,
-                        labels: [UInt8](copying: convertedBytes.span)
+                        labels: convertedBytes.copyAsNormalArray()
                     )
                 )
             }
             if convertedBytes.isEmpty {
                 errors.append(
                     .trueVerifyDNSLengthArgumentDisallowsEmptyDomainName(
-                        labels: [UInt8](copying: convertedBytes.span)
+                        labels: convertedBytes.copyAsNormalArray()
                     )
                 )
             }
@@ -125,7 +124,7 @@ extension IDNA {
             throw errors
         }
 
-        return .bytes(convertedBytes)
+        return convertedBytes.asConversionResult()
     }
 
     @inlinable
@@ -137,7 +136,7 @@ extension IDNA {
         startIndex: Int,
         endIndex: Int,
         appendDot: Bool,
-        convertedBytes: inout UniqueArray<UInt8>,
+        convertedBytes: inout TinyArray,
         outputBufferForReuse: inout LazyUniqueArray<UInt8>,
         decodedUnicodeScalars: inout DecodedUnicodeScalars.Subsequence,
         errors: inout MappingErrors
@@ -147,7 +146,9 @@ extension IDNA {
         var labelByteLength = 0
         if labelSpan.isASCII {
             labelByteLength = labelSpan.count
-            convertedBytes.append(count: labelSpan.count + 1) { output in
+            convertedBytes.append(
+                exactExtraRequiredCapacity: labelSpan.count &+ 1
+            ) { output in
                 output.swift_idna_append(copying: labelSpan)
                 if appendDot {
                     output.append(.asciiDot)
@@ -166,8 +167,10 @@ extension IDNA {
                     decodedUnicodeScalars: decodedUnicodeScalars
                 )
 
-                labelByteLength = 4 + outputBufferForReuse.count
-                convertedBytes.append(count: 4 + outputBufferForReuse.count + 1) { output in
+                labelByteLength = 4 &+ outputBufferForReuse.count
+                convertedBytes.append(
+                    exactExtraRequiredCapacity: 4 &+ outputBufferForReuse.count &+ 1
+                ) { output in
                     output.append(.asciiLowercasedX)
                     output.append(.asciiLowercasedN)
                     output.append(.asciiHyphenMinus)
@@ -185,7 +188,7 @@ extension IDNA {
                 errors.append(
                     .trueVerifyDNSLengthArgumentRequiresLabelToBe63BytesOrLess(
                         length: labelByteLength,
-                        labels: [UInt8](copying: convertedBytes.span)
+                        labels: convertedBytes.copyAsNormalArray()
                     )
                 )
             }
@@ -193,7 +196,7 @@ extension IDNA {
             if labelByteLength == 0 {
                 errors.append(
                     .trueVerifyDNSLengthArgumentDisallowsEmptyLabel(
-                        labels: [UInt8](copying: convertedBytes.span)
+                        labels: convertedBytes.copyAsNormalArray()
                     )
                 )
             }
@@ -212,7 +215,7 @@ extension IDNA {
         switch IDNA.performByteCheck(on: span) {
         case .containsOnlyIDNANoOpCharacters:
             if !span.containsIDNADomainNameMarkerLabelPrefix {
-                return .noChangedNeeded
+                return .noChangesNeeded
             }
         case .onlyNeedsLowercasingOfUppercasedASCIILetters:
             if !span.containsIDNADomainNameMarkerLabelPrefix {
@@ -226,7 +229,7 @@ extension IDNA {
         var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
-        var reuseBuffer = UniqueArray<UInt8>()
+        var reuseBuffer = TinyArray()
         let utf8Bytes = self.mainProcessing(
             _uncheckedAssumingValidUTF8: span,
             reuseBuffer: &reuseBuffer,
@@ -249,7 +252,7 @@ extension IDNA {
     #endif
     func mainProcessing(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
-        reuseBuffer newBytes: inout UniqueArray<UInt8>,
+        reuseBuffer newBytes: inout TinyArray,
         errors: inout MappingErrors
     ) -> UniqueArray<UInt8> {
         /// 1. Map
@@ -265,43 +268,43 @@ extension IDNA {
 
         var newerBytes = UniqueArray<UInt8>(capacity: newBytes.count)
 
-        let newBytesSpan = newBytes.span
+        newBytes.withSpan { newBytesSpan in
+            let maxRequiredCapacityForAllLabels = self.maxLabelLength(span: newBytesSpan)
+            var scalarsIndexToUTF8IndexForReuse = LazyRigidArray<Int>(
+                capacity: maxRequiredCapacityForAllLabels
+            )
 
-        let maxRequiredCapacityForAllLabels = self.maxLabelLength(span: newBytesSpan)
-        var scalarsIndexToUTF8IndexForReuse = LazyRigidArray<Int>(
-            capacity: maxRequiredCapacityForAllLabels
-        )
+            var startIndex = 0
+            for idx in newBytesSpan.indices {
+                /// Unchecked because idx comes right from `newBytesSpan.indices`
+                guard newBytesSpan[unchecked: idx] == .asciiDot else {
+                    continue
+                }
 
-        var startIndex = 0
-        for idx in newBytesSpan.indices {
-            /// Unchecked because idx comes right from `newBytesSpan.indices`
-            guard newBytesSpan[unchecked: idx] == .asciiDot else {
-                continue
+                let range = Range<Int>(uncheckedBounds: (startIndex, idx))
+                let chunk = newBytesSpan.extracting(unchecked: range)
+
+                if convertAndValidateLabel(
+                    chunk,
+                    scalarsIndexToUTF8IndexForReuse: &scalarsIndexToUTF8IndexForReuse,
+                    newerBytes: &newerBytes,
+                    errors: &errors
+                ) {
+                    newerBytes.append(.asciiDot)
+                }
+
+                startIndex = idx &+ 1
             }
 
-            let range = Range<Int>(uncheckedBounds: (startIndex, idx))
+            let range = Range<Int>(uncheckedBounds: (startIndex, newBytesSpan.count))
             let chunk = newBytesSpan.extracting(unchecked: range)
-
-            if convertAndValidateLabel(
+            _ = convertAndValidateLabel(
                 chunk,
                 scalarsIndexToUTF8IndexForReuse: &scalarsIndexToUTF8IndexForReuse,
                 newerBytes: &newerBytes,
                 errors: &errors
-            ) {
-                newerBytes.append(.asciiDot)
-            }
-
-            startIndex = idx &+ 1
+            )
         }
-
-        let range = Range<Int>(uncheckedBounds: (startIndex, newBytesSpan.count))
-        let chunk = newBytesSpan.extracting(unchecked: range)
-        _ = convertAndValidateLabel(
-            chunk,
-            scalarsIndexToUTF8IndexForReuse: &scalarsIndexToUTF8IndexForReuse,
-            newerBytes: &newerBytes,
-            errors: &errors
-        )
 
         return newerBytes
     }
@@ -309,12 +312,8 @@ extension IDNA {
     @inlinable
     func mapToIDNAMappings(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
-        into newBytes: inout UniqueArray<UInt8>
+        into newBytes: inout TinyArray
     ) {
-        /// I'm expecting this to be empty, nothing special.
-        /// Tests will immediately crash if this is not the case.
-        assert(newBytes.isEmpty)
-
         var requiredCapacity = 0
 
         var unicodeScalarsIterator = UnicodeScalarIterator()
@@ -332,12 +331,11 @@ extension IDNA {
 
         /// Use the underlying RigidArray to skip capacity checks because
         /// we're guaranteed to have enough capacity.
-        var rigidArray = RigidArray(consuming: newBytes)
-        rigidArray.reserveCapacity(requiredCapacity)
+        var tinyArray = TinyArray(requiredCapacity: requiredCapacity)
 
         unicodeScalarsIterator = UnicodeScalarIterator()
 
-        rigidArray.edit { output in
+        tinyArray.edit { output in
             while let (scalar, range) = unicodeScalarsIterator.nextWithRange(in: span) {
                 switch IDNAMapping.for(scalar: scalar) {
                 case .valid(_), .deviation(_), .disallowed:
@@ -351,7 +349,11 @@ extension IDNA {
             }
         }
 
-        newBytes = UniqueArray(consuming: rigidArray)
+        /// I'm expecting this to be empty, nothing special.
+        /// Tests will immediately crash if this is not the case.
+        assert(newBytes.isEmpty)
+
+        newBytes = tinyArray
     }
 
     @inlinable

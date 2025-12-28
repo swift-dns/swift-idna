@@ -4,7 +4,7 @@ public import BasicContainers
 extension IDNA {
     @nonexhaustive
     public enum ConversionResult: ~Copyable {
-        case noChangedNeeded
+        case noChangesNeeded
         case bytes(UniqueArray<UInt8>)
         case string(String)
 
@@ -13,7 +13,7 @@ extension IDNA {
         @inlinable
         public func collect() -> String? {
             switch self {
-            case .noChangedNeeded:
+            case .noChangesNeeded:
                 return nil
             case .bytes(let bytes):
                 return String(_uncheckedAssumingValidUTF8: bytes.span)
@@ -30,7 +30,7 @@ extension IDNA {
             ifNotAvailable: () throws -> T
         ) rethrows -> T {
             switch self {
-            case .noChangedNeeded:
+            case .noChangesNeeded:
                 return try ifNotAvailable()
             case .bytes(let bytes):
                 return try block(bytes.span)
