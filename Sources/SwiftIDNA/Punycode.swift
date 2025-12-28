@@ -196,13 +196,13 @@ enum Punycode {
     static func decode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
         scalarsIndexToUTF8IndexForReuse unicodeScalarsIndexToUTF8Index: inout LazyRigidArray<Int>,
-        outputBuffer output: inout UniqueArraySubSequence<UInt8>
+        outputBuffer output: inout TinyArraySubSequence
     ) -> Bool {
         var inputBytesSpan = inputBytesSpan
         var n = Constants.initialN
         var i: UInt32 = 0
         var bias = Constants.initialBias
-        output.reserveCapacity(output.count + max(inputBytesSpan.count, 4))
+        output.preferablyReserveCapacity(output.count + max(inputBytesSpan.count, 4))
 
         if let utf8Idx = inputBytesSpan.lastIndex(of: .asciiHyphenMinus) {
             let afterDelimiterIdx = utf8Idx &+ 1

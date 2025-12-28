@@ -27,7 +27,7 @@ enum TinyArray: ~Copyable {
 
     @inlinable
     init(preferredCapacity: Int) {
-        /// We have a test to ensure tha UniqueArray, after having 15 elements and when you want to
+        /// We have a test to ensure the UniqueArray, after having 15 elements and when you want to
         /// append the 16th element, it will allocate a new buffer with a capacity of 23.
         ///
         /// If the preferred capacity is less than 23, we can use the inline elements anyway to begin
@@ -60,6 +60,27 @@ enum TinyArray: ~Copyable {
     }
 
     @inlinable
+    mutating func preferablyReserveCapacity(_ preferredCapacity: Int) {
+        switch consume self {
+        case .inline(let elements):
+            /// We have a test to ensure the UniqueArray, after having 15 elements and when you want to
+            /// append the 16th element, it will allocate a new buffer with a capacity of 23.
+            ///
+            /// If the preferred capacity is less than 23, we can use the inline elements anyway to begin
+            /// with, because even if we need to allocate a new buffer, we're only allocating once anyway.
+            if preferredCapacity > TINY_ARRAY__UNIQUE_ARRAY_ALLOCATION_THRESHOLD {
+                let array = elements.collectAsUniqueArray(capacity: preferredCapacity)
+                self = .heap(array)
+            } else {
+                self = .inline(elements)
+            }
+        case .heap(var array):
+            array.reserveCapacity(preferredCapacity)
+            self = .heap(array)
+        }
+    }
+
+    @inlinable
     mutating func append(_ element: UInt8) {
         switch consume self {
         case .inline(var elements):
@@ -79,6 +100,27 @@ enum TinyArray: ~Copyable {
     }
 
     @inlinable
+    mutating func append(copying span: Span<UInt8>) {
+        switch consume self {
+        case .inline(var elements):
+            let requiredCapacity = span.count + Int(elements.count)
+            if requiredCapacity > InlineElements.maximumCapacity {
+                var array = elements.collectAsUniqueArray(capacity: requiredCapacity)
+                array.append(copying: span)
+                self = .heap(array)
+            } else {
+                elements.edit { output in
+                    output.swift_idna_append(copying: span)
+                }
+                self = .inline(elements)
+            }
+        case .heap(var array):
+            array.append(copying: span)
+            self = .heap(array)
+        }
+    }
+
+    @inlinable
     mutating func removeAll(keepingCapacity: Bool) {
         switch consume self {
         case .inline(var elements):
@@ -86,6 +128,18 @@ enum TinyArray: ~Copyable {
             self = .inline(elements)
         case .heap(var array):
             array.removeAll(keepingCapacity: keepingCapacity)
+            self = .heap(array)
+        }
+    }
+
+    @inlinable
+    mutating func removeSubrange(_ range: Range<Int>) {
+        switch consume self {
+        case .inline(var elements):
+            elements.removeSubrange(range)
+            self = .inline(elements)
+        case .heap(var array):
+            array.removeSubrange(range)
             self = .heap(array)
         }
     }
@@ -107,12 +161,12 @@ enum TinyArray: ~Copyable {
     }
 
     @inlinable
-    func withSpan(_ block: (Span<UInt8>) -> Void) {
+    func withSpan<T>(_ block: (Span<UInt8>) -> T) -> T {
         switch self {
         case .inline(let elements):
-            elements.withSpan(block)
+            return elements.withSpan(block)
         case .heap(let array):
-            block(array.span)
+            return block(array.span)
         }
     }
 
@@ -121,6 +175,7 @@ enum TinyArray: ~Copyable {
         exactExtraRequiredCapacity extraCapacity: Int,
         _ block: (inout OutputSpan<UInt8>) -> Void
     ) {
+        /// Use heap if the required capacity requires so
         switch consume self {
         case .inline(let elements):
             let newCapacity = Int(elements.count) &+ extraCapacity
@@ -134,6 +189,7 @@ enum TinyArray: ~Copyable {
             self = .heap(array)
         }
 
+        /// We know we have enough space, just append now
         switch consume self {
         case .inline(var elements):
             elements.edit { output in
@@ -145,6 +201,42 @@ enum TinyArray: ~Copyable {
             array.append(count: extraCapacity) { output in
                 block(&output)
             }
+            self = .heap(array)
+        }
+    }
+
+    @inlinable
+    mutating func append(copying utf8View: Unicode.Scalar.UTF8View) {
+        self.append(exactExtraRequiredCapacity: utf8View.count) { output in
+            for byte in utf8View {
+                output.append(byte)
+            }
+        }
+    }
+
+    @inlinable
+    mutating func insert(copying utf8View: Unicode.Scalar.UTF8View, at index: Int) {
+        /// Use heap if the required capacity requires so
+        switch consume self {
+        case .inline(let elements):
+            let newCapacity = Int(elements.count) &+ utf8View.count
+            if newCapacity > InlineElements.maximumCapacity {
+                let array = elements.collectAsUniqueArray(capacity: newCapacity)
+                self = .heap(array)
+            } else {
+                self = .inline(elements)
+            }
+        case .heap(let array):
+            self = .heap(array)
+        }
+
+        /// We know we have enough space, just insert now
+        switch consume self {
+        case .inline(var elements):
+            elements.uncheckedInsert(copying: utf8View, at: index)
+            self = .inline(elements)
+        case .heap(var array):
+            array.insert(copying: utf8View, at: index)
             self = .heap(array)
         }
     }
@@ -253,17 +345,75 @@ extension TinyArray {
         }
 
         @inlinable
+        mutating func removeSubrange(_ range: Range<Int>) {
+            withUnsafeMutableBytes(of: &self.bits) { bitsPtr in
+                bitsPtr.withMemoryRebound(to: UInt8.self) { bytesPtr in
+                    let count = bitsPtr[15]
+                    let newCount = count &- UInt8(range.count)
+
+                    if count > range.upperBound {
+                        let afterRange = Range(uncheckedBounds: (range.upperBound, Int(count)))
+                        let afterBytes = bytesPtr.extracting(afterRange)
+
+                        let mutableRange = Range(uncheckedBounds: (range.lowerBound, Int(count)))
+                        let mutableBytes = bytesPtr.extracting(mutableRange)
+
+                        _ = mutableBytes.initialize(fromContentsOf: afterBytes)
+                    }
+
+                    bitsPtr[15] = newCount
+                }
+            }
+        }
+
+        @inlinable
         mutating func edit(_ block: (inout OutputSpan<UInt8>) -> Void) {
             withUnsafeMutableBytes(of: &self.bits) { bitsPtr in
-                bitsPtr.withMemoryRebound(to: UInt8.self) { bitsBytes in
+                bitsPtr.withMemoryRebound(to: UInt8.self) { bytesPtr in
                     let count = Int(bitsPtr[15])
-                    let mutableBytes = bitsBytes.extracting(0..<Self.maximumCapacity)
+                    let mutableBytes = bytesPtr.extracting(0..<Self.maximumCapacity)
                     var span = OutputSpan(buffer: mutableBytes, initializedCount: count)
 
                     block(&span)
 
                     let newCount = span.finalize(for: mutableBytes)
                     span = OutputSpan()
+                    bitsPtr[15] = UInt8(newCount)
+                }
+            }
+        }
+
+        @inlinable
+        mutating func uncheckedInsert(copying utf8View: Unicode.Scalar.UTF8View, at index: Int) {
+            withUnsafeMutableBytes(of: &self.bits) { bitsPtr in
+                bitsPtr.withMemoryRebound(to: UInt8.self) { bytesPtr in
+                    let count = bitsPtr[15]
+                    let usedCapacity = Int(count)
+                    let utf8ViewCount = utf8View.count
+                    let newCount = usedCapacity + utf8ViewCount
+
+                    assert(utf8ViewCount != 0)
+                    assert(newCount <= InlineElements.maximumCapacity)
+
+                    /// Move the element that is going to be overwritten, to exactly after the
+                    /// new elements will be.
+                    bitsPtr[newCount] = bitsPtr[index]
+
+                    let targetRange = Range<Int>(uncheckedBounds: (index, index &+ utf8ViewCount))
+                    let target = bytesPtr.extracting(targetRange)
+
+                    if targetRange.lowerBound <= usedCapacity {
+                        let afterRange = Range(uncheckedBounds: (targetRange.upperBound, 15))
+                        let afterBytes = bytesPtr.extracting(afterRange)
+
+                        let moveRange = Range<Int>(uncheckedBounds: (index, usedCapacity))
+                        let moveBytes = bytesPtr.extracting(moveRange)
+
+                        _ = afterBytes.moveInitialize(fromContentsOf: moveBytes)
+                    }
+
+                    _ = target.initialize(fromContentsOf: utf8View)
+
                     bitsPtr[15] = UInt8(newCount)
                 }
             }

@@ -1,6 +1,6 @@
+import BasicContainers
 import SwiftIDNA
 import Testing
-import BasicContainers
 
 @Suite
 struct IDNATests {
