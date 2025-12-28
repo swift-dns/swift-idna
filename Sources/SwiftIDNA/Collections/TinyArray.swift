@@ -69,7 +69,7 @@ enum TinyArray: ~Copyable {
             /// If the preferred capacity is less than 23, we can use the inline elements anyway to begin
             /// with, because even if we need to allocate a new buffer, we're only allocating once anyway.
             if preferredCapacity > TINY_ARRAY__UNIQUE_ARRAY_ALLOCATION_THRESHOLD {
-                let array = elements.collectAsUniqueArray(capacity: preferredCapacity)
+                let array = UniqueArray(copying: elements, capacity: preferredCapacity)
                 self = .heap(array)
             } else {
                 self = .inline(elements)
@@ -87,7 +87,8 @@ enum TinyArray: ~Copyable {
             if elements.append(element) {
                 self = .inline(elements)
             } else {
-                var array = elements.collectAsUniqueArray(
+                var array = UniqueArray(
+                    copying: elements,
                     capacity: InlineElements.maximumCapacity &+ 1
                 )
                 array.append(element)
@@ -105,7 +106,7 @@ enum TinyArray: ~Copyable {
         case .inline(var elements):
             let requiredCapacity = span.count + Int(elements.count)
             if requiredCapacity > InlineElements.maximumCapacity {
-                var array = elements.collectAsUniqueArray(capacity: requiredCapacity)
+                var array = UniqueArray(copying: elements, capacity: requiredCapacity)
                 array.append(copying: span)
                 self = .heap(array)
             } else {
@@ -180,7 +181,7 @@ enum TinyArray: ~Copyable {
         case .inline(let elements):
             let newCapacity = Int(elements.count) &+ extraCapacity
             if newCapacity > InlineElements.maximumCapacity {
-                let array = elements.collectAsUniqueArray(capacity: newCapacity)
+                let array = UniqueArray(copying: elements, capacity: newCapacity)
                 self = .heap(array)
             } else {
                 self = .inline(elements)
@@ -221,7 +222,7 @@ enum TinyArray: ~Copyable {
         case .inline(let elements):
             let newCapacity = Int(elements.count) &+ utf8View.count
             if newCapacity > InlineElements.maximumCapacity {
-                let array = elements.collectAsUniqueArray(capacity: newCapacity)
+                let array = UniqueArray(copying: elements, capacity: newCapacity)
                 self = .heap(array)
             } else {
                 self = .inline(elements)
@@ -250,26 +251,6 @@ enum TinyArray: ~Copyable {
         case .heap(var array):
             array._uncheckedAssumingValidUTF8_ensureNFC()
             self = .heap(array)
-        }
-    }
-
-    @inlinable
-    func copyAsNormalArray() -> [UInt8] {
-        switch self {
-        case .inline(let elements):
-            return elements.copyAsNormalArray()
-        case .heap(let array):
-            return [UInt8](copying: array.span)
-        }
-    }
-
-    @inlinable
-    consuming func asConversionResult() -> IDNA.ConversionResult {
-        switch consume self {
-        case .inline(let elements):
-            return .string(elements.collectAsString())
-        case .heap(let array):
-            return .bytes(array)
         }
     }
 }
@@ -420,47 +401,10 @@ extension TinyArray {
         }
 
         @inlinable
-        func copyAsNormalArray() -> [UInt8] {
-            self.withSpan { [UInt8](copying: $0) }
-        }
-
-        @inlinable
-        func collectAsUniqueArray(capacity: Int) -> UniqueArray<UInt8> {
-            assert(capacity > Self.maximumCapacity)
-
-            var array = UniqueArray<UInt8>(capacity: capacity)
-
-            array.edit { output in
-                output.withUnsafeMutableBufferPointer { outputPtr, initializedCount in
-                    withUnsafeBytes(of: bits) { bitsPtr in
-                        bitsPtr.withMemoryRebound(to: UInt8.self) { bitsBytes in
-                            let count = Int(bitsPtr[15])
-                            let elements = bitsBytes.extracting(0..<count)
-                            /// Last bit is the counts bit
-                            _ = outputPtr.initialize(fromContentsOf: elements)
-                            initializedCount = count
-                        }
-                    }
-                }
-            }
-
-            return array
-        }
-
-        @inlinable
-        func collectAsString() -> String {
-            /// `elements` can only contain 15 bytes. String also holds 15 bytes inline so
-            /// we can freely just pass the bytes to the string initializer.
-            assert(self.count <= Self.maximumCapacity)
-
-            return self.withSpan { String(_uncheckedAssumingValidUTF8: $0) }
-        }
-
-        @inlinable
         mutating func _uncheckedAssumingValidUTF8_ensureNFC() {
             if self.isEmpty || self.isASCII { return }
 
-            let string = self.collectAsString()
+            let string = String(copying: self)
 
             self.removeAll()
             self.edit { output in
@@ -468,6 +412,71 @@ extension TinyArray {
                     output.append(utf8Byte)
                 }
             }
+        }
+    }
+}
+
+@available(swiftIDNAApplePlatforms 10.15, *)
+extension String {
+    @inlinable
+    init(copying elements: borrowing TinyArray.InlineElements) {
+        /// `elements` can only contain 15 bytes. String also holds 15 bytes inline so
+        /// we can freely just pass the bytes to the string initializer.
+        assert(elements.count <= TinyArray.InlineElements.maximumCapacity)
+
+        self = elements.withSpan { String(_uncheckedAssumingValidUTF8: $0) }
+    }
+}
+
+@available(swiftIDNAApplePlatforms 10.15, *)
+extension UniqueArray<UInt8> {
+    @inlinable
+    init(copying elements: borrowing TinyArray.InlineElements, capacity: Int) {
+        assert(capacity > TinyArray.InlineElements.maximumCapacity)
+
+        self.init(capacity: capacity) { output in
+            output.withUnsafeMutableBufferPointer { outputPtr, initializedCount in
+                withUnsafeBytes(of: elements.bits) { bitsPtr in
+                    bitsPtr.withMemoryRebound(to: UInt8.self) { bitsBytes in
+                        let count = Int(bitsPtr[15])
+                        let elements = bitsBytes.extracting(0..<count)
+                        /// Last bit is the counts bit
+                        _ = outputPtr.initialize(fromContentsOf: elements)
+                        initializedCount = count
+                    }
+                }
+            }
+        }
+    }
+}
+
+@available(swiftIDNAApplePlatforms 10.15, *)
+extension [UInt8] {
+    @inlinable
+    init(copying elements: borrowing TinyArray.InlineElements) {
+        self = elements.withSpan { [UInt8](copying: $0) }
+    }
+
+    @inlinable
+    init(copying array: borrowing TinyArray) {
+        switch array {
+        case .inline(let elements):
+            self = [UInt8](copying: elements)
+        case .heap(let array):
+            self = [UInt8](copying: array.span)
+        }
+    }
+}
+
+@available(swiftIDNAApplePlatforms 10.15, *)
+extension IDNA.ConversionResult {
+    @inlinable
+    init(consuming array: consuming TinyArray) {
+        switch consume array {
+        case .inline(let elements):
+            self = .string(String(copying: elements))
+        case .heap(let array):
+            self = .bytes(array)
         }
     }
 }

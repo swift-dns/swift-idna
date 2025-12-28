@@ -105,14 +105,14 @@ extension IDNA {
                     errors.append(
                         .trueVerifyDNSLengthArgumentRequiresDomainNameToBe254BytesOrLess(
                             length: convertedBytes.count,
-                            labels: convertedBytes.copyAsNormalArray()
+                            labels: [UInt8](copying: convertedBytes)
                         )
                     )
                 }
                 if convertedBytes.isEmpty {
                     errors.append(
                         .trueVerifyDNSLengthArgumentDisallowsEmptyDomainName(
-                            labels: convertedBytes.copyAsNormalArray()
+                            labels: [UInt8](copying: convertedBytes)
                         )
                     )
                 }
@@ -123,7 +123,7 @@ extension IDNA {
             throw errors
         }
 
-        return convertedBytes.asConversionResult()
+        return ConversionResult(consuming: convertedBytes)
     }
 
     @inlinable
@@ -187,7 +187,7 @@ extension IDNA {
                 errors.append(
                     .trueVerifyDNSLengthArgumentRequiresLabelToBe63BytesOrLess(
                         length: labelByteLength,
-                        labels: convertedBytes.copyAsNormalArray()
+                        labels: [UInt8](copying: convertedBytes)
                     )
                 )
             }
@@ -195,7 +195,7 @@ extension IDNA {
             if labelByteLength == 0 {
                 errors.append(
                     .trueVerifyDNSLengthArgumentDisallowsEmptyLabel(
-                        labels: convertedBytes.copyAsNormalArray()
+                        labels: [UInt8](copying: convertedBytes)
                     )
                 )
             }
@@ -240,7 +240,7 @@ extension IDNA {
             throw errors
         }
 
-        return utf8Bytes.asConversionResult()
+        return ConversionResult(consuming: utf8Bytes)
     }
 
     /// Main `Processing` IDNA implementation.
