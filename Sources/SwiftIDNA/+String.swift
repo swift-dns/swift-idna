@@ -1,5 +1,8 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension String {
+    /// Whether or not the string's code points are all in Normalization Form C (NFC).
+    /// This function directly checks the string's code points against what we would have if
+    /// we converted the string to NFC, and returns `true` if they are the same.
     @inlinable
     func isEqualToNFCCodePointsOfSelf() -> Bool {
         var copy = self
@@ -23,15 +26,7 @@ extension String {
         }
     }
 
-    @inlinable
-    static func isASCII(_ utf8View: String.UTF8View) -> Bool {
-        var result: UInt8 = 0
-        for byte in utf8View {
-            result |= byte
-        }
-        return result <= 0x7F
-    }
-
+    /// Initializes a `String` by assuming the given span contains valid UTF-8 bytes.
     @usableFromInline
     init(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
         if #available(swiftIDNAApplePlatforms 26, *) {
@@ -59,6 +54,7 @@ extension String {
         }
     }
 
+    /// Gives access to the string's UTF-8 bytes as a `Span<UInt8>`.
     #if canImport(Darwin)
     @usableFromInline
     mutating func withSpan_Compatibility<T, E: Error>(
@@ -141,6 +137,7 @@ extension String {
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension Substring {
+    /// Gives access to the substring's UTF-8 bytes as a `Span<UInt8>`.
     #if canImport(Darwin)
     @usableFromInline
     mutating func withSpan_Compatibility<T, E: Error>(

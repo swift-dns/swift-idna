@@ -159,7 +159,7 @@ extension IDNA {
             outputBufferForReuse.withTinyBuffer {
                 (outputBufferForReuse: inout TinyBuffer) -> Void in
 
-                decodedUnicodeScalars.set(range: range)
+                decodedUnicodeScalars.set(utf8OffsetRange: range)
 
                 Punycode.encode(
                     _uncheckedAssumingValidUTF8: labelSpan,
@@ -290,7 +290,7 @@ extension IDNA {
                     newerBytes: &newerBytes,
                     errors: &errors
                 ) {
-                    newerBytes.append(.asciiDot)
+                    newerBytes.append(unchecked: .asciiDot)
                 }
 
                 startIndex = idx &+ 1
@@ -309,6 +309,7 @@ extension IDNA {
         return newerBytes
     }
 
+    /// Maps the given span to IDNA mappings.
     @inlinable
     func mapToIDNAMappings(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
@@ -349,13 +350,15 @@ extension IDNA {
             }
         }
 
-        /// I'm expecting this to be empty, nothing special.
+        /// I'm expecting this to be empty at this point, nothing special.
         /// Tests will immediately crash if this is not the case.
         assert(newBytes.isEmpty)
 
         newBytes = tinyBuffer
     }
 
+    /// Returns the length of the longest label in the given span.
+    /// Assumes the span does not contain any label separators other than `.`.
     @inlinable
     func maxLabelLength(span: Span<UInt8>) -> Int {
         var maxLabelLength = 0
@@ -421,7 +424,7 @@ extension IDNA {
         let noXNRange = Range<Int>(uncheckedBounds: (4, span.count))
         let currentNewerBytesCount = newerBytes.count
 
-        var outputBuffer = TinyBufferSubSequence(
+        var outputBuffer = TinyBufferSubsequence(
             base: newerBytes,
             startIndex: currentNewerBytesCount
         )
@@ -605,6 +608,7 @@ extension IDNA {
         // }
     }
 
+    /// Converts the given span to lowercase ASCII.
     @usableFromInline
     func convertToLowercasedASCII(_uncheckedAssumingValidUTF8 span: Span<UInt8>) -> String {
         let count = span.count

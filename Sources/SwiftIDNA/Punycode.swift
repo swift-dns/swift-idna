@@ -89,17 +89,16 @@ enum Punycode {
         for idx in inputBytesSpan.indices {
             let byte = inputBytesSpan[unchecked: idx]
             if byte.isASCII {
-                output.append(byte)
+                output.append(unchecked: byte)
             }
         }
         let b = UInt32(output.count)
         var h = b
 
         if !output.isEmpty {
-            output.append(UInt8.asciiHyphenMinus)
+            output.append(unchecked: UInt8.asciiHyphenMinus)
         }
 
-        /// Mark h-amount of Unicode Scalars, as already-read.
         var loopIdx = h
         let scalarsCount = decodedUnicodeScalars.count
         while loopIdx < scalarsCount {
@@ -140,13 +139,13 @@ enum Punycode {
                         let digit = t &+ ((q &- t) % (Constants.base &- t))
                         /// Logically this is safe because we know that digit is in the range 0...35
                         /// There are also extensive tests for this in the IDNATests.swift.
-                        output.append(Punycode.uncheckedMapDigitToUTF8Byte(digit))
+                        output.append(unchecked: Punycode.uncheckedMapDigitToUTF8Byte(digit))
 
                         q = (q &- t) / (Constants.base &- t)
                     }
                     /// Logically this is safe because we know that digit is in the range 0...35
                     /// There are also extensive tests for this in the IDNATests.swift.
-                    output.append(Punycode.uncheckedMapDigitToUTF8Byte(q))
+                    output.append(unchecked: Punycode.uncheckedMapDigitToUTF8Byte(q))
 
                     bias = adapt(delta: delta, codePointCount: h &+ 1, isFirstTime: h == b)
                     delta = 0
@@ -196,7 +195,7 @@ enum Punycode {
     static func decode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
         scalarsIndexToUTF8IndexForReuse unicodeScalarsIndexToUTF8Index: inout LazyRigidArray<Int>,
-        outputBuffer output: inout TinyBufferSubSequence
+        outputBuffer output: inout TinyBufferSubsequence
     ) -> Bool {
         var inputBytesSpan = inputBytesSpan
         var n = Constants.initialN
@@ -351,12 +350,11 @@ enum Punycode {
     static func mapUnicodeScalarToDigit(_ unicodeScalar: Unicode.Scalar) -> UInt32? {
         let value = unicodeScalar.value
 
+        /// An uppercase ASCII letter should not make it through to Punycode conversion.
+        assert(!(value >= 0x41 && value <= 0x5a))
+
         if value >= 0x61, value <= 0x7a {
             return value &- 0x61
-        }
-
-        if value >= 0x41, value <= 0x5a {
-            return value &- 0x41
         }
 
         if value <= 0x39, value >= 0x30 {

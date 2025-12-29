@@ -1,15 +1,11 @@
 public import BasicContainers
 
+/// A container that holds a group of decoded Unicode scalars.
 @available(swiftIDNAApplePlatforms 10.15, *)
 @usableFromInline
 struct DecodedUnicodeScalars: ~Copyable {
     @usableFromInline
     var scalars: RigidArray<Unicode.Scalar>
-
-    @inlinable
-    var count: Int {
-        self.scalars.count
-    }
 
     @inlinable
     #if swift(<6.3)
@@ -20,6 +16,7 @@ struct DecodedUnicodeScalars: ~Copyable {
         self.decode(utf8Bytes: utf8Bytes)
     }
 
+    /// Decodes the given UTF-8 bytes into Unicode scalars.
     @usableFromInline
     #if swift(<6.3)
     @_lifetime(copy utf8Bytes)
@@ -36,6 +33,8 @@ struct DecodedUnicodeScalars: ~Copyable {
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension DecodedUnicodeScalars {
+    /// A subsequence of a `DecodedUnicodeScalars` container.
+    /// This is tuned to this library's needs so it might need some adjustments for other use cases.
     @usableFromInline
     struct Subsequence: ~Copyable, ~Escapable {
         @usableFromInline
@@ -64,13 +63,16 @@ extension DecodedUnicodeScalars {
             self.endIndexByteOffset = 0
         }
 
+        /// Set the range of the subsequence to the given range of bytes.
+        /// This function will translate the `utf8OffsetRange` to the range of scalars.
+        ///
         /// As an optimization, this function assumes the new range is after the last range it was set to.
         /// As always, tests will catch the issue if it's not the case.
         @inlinable
         #if swift(<6.3)
         @_lifetime(&self)
         #endif
-        mutating func set(range: Range<Int>) {
+        mutating func set(utf8OffsetRange range: Range<Int>) {
             let scalarsCount = self.scalars.count
             var byteOffset = self.endIndexByteOffset
 

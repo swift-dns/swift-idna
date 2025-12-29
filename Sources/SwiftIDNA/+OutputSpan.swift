@@ -1,5 +1,6 @@
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension OutputSpan<UInt8> {
+    /// Appends the given span to the output span.
     @inlinable
     #if swift(<6.3)
     @_lifetime(&self)
@@ -22,6 +23,7 @@ extension OutputSpan<UInt8> {
 
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension OutputSpan where Element: BinaryInteger {
+    /// Inserts the given element at the given index into the output span.
     @inlinable
     #if swift(<6.3)
     @_lifetime(&self)

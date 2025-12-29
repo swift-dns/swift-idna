@@ -27,7 +27,7 @@
 
 # swift-idna
 
-A high-perfomance, multiplatform implementation of Punycode and IDNA (Internationalized Domain Names in Applications) as per [RFC 5891](https://datatracker.ietf.org/doc/html/rfc5891) and friends.
+A high performance, highly optimized multi-platform implementation of Punycode and IDNA (Internationalized Domain Names in Applications) as per [RFC 5891](https://datatracker.ietf.org/doc/html/rfc5891) and friends.
 
 ## Notes
 

@@ -1,5 +1,5 @@
 extension BinaryInteger {
-    /// Turns the character into a lowercased ASCII letter only if it's an uppercased ASCII letter.
+    /// Turns the byte into a lowercased ASCII letter only if it's an uppercased ASCII letter.
     @inlinable
     public func toLowercasedASCIILetter() -> Self {
         if self.isUppercasedASCIILetter {
