@@ -5,19 +5,6 @@ import Testing
 @Suite
 struct IDNATests {
     @available(swiftIDNAApplePlatforms 26, *)
-    @Test func `performDNSComplaintByteCheck works correctly`() {
-        let bytes: [UInt8] = [
-            0x07, 0x45, 0x78, 0x61,
-            0x6d, 0x70, 0x6c, 0x65,
-            0x03, 0x63, 0x4f, 0x6d,
-            0x00,
-        ]
-
-        let result = IDNA.performByteCheck(onDNSWireFormatSpan: bytes.span)
-        #expect(result == .onlyNeedsLowercasingOfUppercasedASCIILetters)
-    }
-
-    @available(swiftIDNAApplePlatforms 26, *)
     @Test func `UniqueArray allocates as expected`() {
         var array = UniqueArray<UInt8>(capacity: 23)
         for _ in 0..<24 {

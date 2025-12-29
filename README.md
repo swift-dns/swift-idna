@@ -31,9 +31,9 @@ A high performance, highly optimized multi-platform implementation of Punycode a
 
 ## Notes
 
-* The only dependency of `swift-idna` is `swift-collections`, and it does not depend on `Foundation`.
-* Unit tests extensively run against 6400+ Unicode 17 test cases.
-* The C code is all auto-generated from some Unicode files.
+- The only dependency of `swift-idna` is `swift-collections`, and it does not depend on `Foundation`.
+- Unit tests extensively run against 6400+ Unicode 17 test cases.
+- The C code is all auto-generated from some Unicode files.
 
 ## Usage
 
@@ -55,53 +55,6 @@ print(idna.toUnicode(domainName: "xn--xkrr14bows.xn--fiqs8s"))
 
 Domain names are inherently case-insensitive, and they will always be lowercased.
 
-## Short Circuits
-
-`swift-idna` does short-circuit checks in both `toASCII` and `toUnicode` functions to avoid IDNA conversions when possible.
-
-`swift-idna` also provides public functions to check if a sequence of bytes will change at all after going through IDNA's `ToASCII` conversion.
-
-Note that these public functions are not sufficient to assert that a `ToUnicode` conversion will also have no effect on the string.
-For `ToUnicode`, simply use the `toUnicode` functions and they will automatically skip the conversion if not needed.
-
-- `IDNA.performByteCheck(on: String)`
-- `IDNA.performByteCheck(on: Substring)`
-- `IDNA.performByteCheck(on: Span<UInt8>)`
-- `IDNA.performByteCheck(onDNSWireFormatSpan: Span<UInt8>)`
-
-`swift-idna` also provides public functions to turn an uppercased ASCII byte into lowercased, as well as a few more useful functions.
-
-- `BinaryInteger.toLowercasedASCIILetter()`
-- `BinaryInteger._uncheckedToLowercasedASCIILetterAssumingUppercasedLetter()`
-- `BinaryInteger.isUppercasedASCIILetter`
-- `BinaryInteger.isIDNALabelSeparator`
-
-To use this on a `Unicode.Scalar`, simply use them on `Unicode.Scalar`'s `value` property.
-
-You can use these function to implement short-circuits for any reason.
-
-For example if you only have a sequence of bytes and don't want to decode them into a `String` to provide to this library, considering this library only accepts Swift `String`s as domain names.
-
-Example usage:
-
-```swift
-import SwiftIDNA
-
-let myBytes: [UInt8] = ...
-
-switch IDNA.performCharacterCheck(on: myBytes.span) {
-case .containsOnlyIDNANoOpCharacters:
-    /// `myBytes` is good
-case .onlyNeedsLowercasingOfUppercasedASCIILetters:
-    myBytes = myBytes.map {
-        $0.toLowercasedASCIILetter()
-    }
-    /// `myBytes` is good now
-case .mightChangeAfterIDNAConversion:
-    /// Need to go through IDNA conversion functions if needed
-}
-```
-
 ## Implementation
 
 This package uses Unicode 17's [IDNA test v2 suite](https://www.unicode.org/Public/idna/latest/IdnaTestV2.txt) with ~6400 test cases to ensure full compatibility.
@@ -111,6 +64,8 @@ Runs each test case extensively so each test case might even result in 2-3-4-5 t
 This testing facility enables the implementation to be highly optimized.   
 For example this packages uses `unchecked` element accessors everywhere, which do not do bounds checks.   
 This is only made possible thanks to the massive test suite: We expect the tests to reveal any implementation issues and incorrect element accesses.
+
+`swift-idna` implements short-circuits in both `toASCII` and `toUnicode` functions to avoid IDNA conversions when possible.
 
 The C code is all automatically generated using the 2 scripts in `utils/`:
 
