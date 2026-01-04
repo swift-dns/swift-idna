@@ -1,8 +1,9 @@
 {
-  "name": "swift:nightly-6.3-noble",
+  "name": "6.3 nightly",
   "image": "swiftlang/swift:nightly-6.3-noble",
   "mounts": [
-    "source=${localEnv:HOME}/.sourcekit-lsp/config.json,target=/root/.sourcekit-lsp/config.json,type=bind,consistency=cached"
+    "source=${localEnv:HOME}/.sourcekit-lsp/config.json,target=/root/.sourcekit-lsp/config.json,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/Github,target=/workspaces/Github,type=bind"
   ],
   "postCreateCommand": "apt update && apt install -y libjemalloc-dev",
   "customizations": {

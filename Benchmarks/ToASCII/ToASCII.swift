@@ -1,4 +1,5 @@
 import Benchmark
+import FoundationIDNA
 import SwiftIDNA
 
 let benchmarks: @Sendable () -> Void = {
@@ -166,6 +167,36 @@ let benchmarks: @Sendable () -> Void = {
             blackHole(domainName)
         }
 
+        if namePrefix.lowercased() == "lax" {
+            Benchmark(
+                "To_ASCII_\(namePrefix)_öob_dot_se_CPU_300K_ICU",
+                configuration: .init(
+                    metrics: [.cpuUser],
+                    warmupIterations: 15,
+                    maxIterations: 1000,
+                )
+            ) { benchmark in
+                for _ in 0..<300_000 {
+                    var domainName = "öob.dot"
+                    domainName = UIDNAHookICU.encode(domainName)!
+                    blackHole(domainName)
+                }
+            }
+
+            Benchmark(
+                "To_ASCII_\(namePrefix)_öob_dot_se_Malloc_ICU",
+                configuration: .init(
+                    metrics: [.mallocCountTotal],
+                    warmupIterations: 1,
+                    maxIterations: 10,
+                )
+            ) { benchmark in
+                var domainName = "öob.dot"
+                domainName = UIDNAHookICU.encode(domainName)!
+                blackHole(domainName)
+            }
+        }
+
         /// Mark: - 生命之花.中国
         /// Grabbed from Cloudflare top 100K domains
 
@@ -195,6 +226,36 @@ let benchmarks: @Sendable () -> Void = {
             var domainName = "生命之花.中国"
             domainName = try! idnaConfig.toASCII(domainName: domainName)
             blackHole(domainName)
+        }
+
+        if namePrefix.lowercased() == "lax" {
+            Benchmark(
+                "To_ASCII_\(namePrefix)_生命之花_dot_中国_CPU_200K_ICU",
+                configuration: .init(
+                    metrics: [.cpuUser],
+                    warmupIterations: 15,
+                    maxIterations: 1000,
+                )
+            ) { benchmark in
+                for _ in 0..<200_000 {
+                    var domainName = "生命之花.中国"
+                    domainName = UIDNAHookICU.encode(domainName)!
+                    blackHole(domainName)
+                }
+            }
+
+            Benchmark(
+                "To_ASCII_\(namePrefix)_生命之花_dot_中国_Malloc_ICU",
+                configuration: .init(
+                    metrics: [.mallocCountTotal],
+                    warmupIterations: 1,
+                    maxIterations: 10,
+                )
+            ) { benchmark in
+                var domainName = "生命之花.中国"
+                domainName = UIDNAHookICU.encode(domainName)!
+                blackHole(domainName)
+            }
         }
     }
 }

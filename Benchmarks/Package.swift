@@ -80,12 +80,28 @@ package.dependencies.append(
     ),
 )
 
+package.dependencies.append(
+    .package(
+        url: "https://github.com/apple/swift-foundation-icu.git",
+        branch: "main"
+    )
+)
+
 package.targets += [
+    .target(
+        name: "FoundationIDNA",
+        dependencies: [
+            .product(name: "_FoundationICU", package: "swift-foundation-icu")
+        ],
+        path: "FoundationIDNA",
+        swiftSettings: settings
+    ),
     .executableTarget(
         name: "ToASCIIBenchs",
         dependencies: [
             .product(name: "Benchmark", package: "package-benchmark"),
             "SwiftIDNA",
+            "FoundationIDNA",
         ],
         path: "ToASCII",
         swiftSettings: settings,
@@ -96,8 +112,9 @@ package.targets += [
     .executableTarget(
         name: "ToUnicodeBenchs",
         dependencies: [
-            "SwiftIDNA",
             .product(name: "Benchmark", package: "package-benchmark"),
+            "SwiftIDNA",
+            "FoundationIDNA",
         ],
         path: "ToUnicode",
         swiftSettings: settings,
