@@ -1,3 +1,13 @@
+import simdutf
+
+@available(swiftIDNAApplePlatforms 10.15, *)
+extension Span<UInt16> {
+    func simdutf_validate_utf16_as_ascii() -> Bool {
+        /// Just to see if we can pass a span to simdutf at all. Otherwise we don't need utf16 in IDN.
+        simdutf.validate_utf16_as_ascii(self)
+    }
+}
+
 @available(swiftIDNAApplePlatforms 10.15, *)
 extension Span<UInt8> {
     /// Whether or not the span contains only ASCII bytes.

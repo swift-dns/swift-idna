@@ -8,7 +8,8 @@ let package = Package(
         .library(name: "SwiftIDNA", targets: ["SwiftIDNA"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-collections.git", from: "1.3.0")
+        .package(url: "https://github.com/apple/swift-collections.git", from: "1.3.0"),
+        .package(url: "https://github.com/mahdibm/simdutf.git", branch: "mmbm-swiftpm-integration"),
     ],
     targets: [
         .target(
@@ -16,6 +17,7 @@ let package = Package(
             dependencies: [
                 "CSwiftIDNA",
                 .product(name: "BasicContainers", package: "swift-collections"),
+                .product(name: "simdutf", package: "simdutf"),
             ],
             swiftSettings: settings
         ),
@@ -32,12 +34,15 @@ let package = Package(
             ],
             swiftSettings: settings
         ),
-    ]
+    ],
+    cxxLanguageStandard: .gnucxx20
 )
 
 var settings: [SwiftSetting] {
     [
         .swiftLanguageMode(.v6),
+        .interoperabilityMode(.Cxx),
+        .enableExperimentalFeature("SafeInteropWrappers"),
         .enableUpcomingFeature("MemberImportVisibility"),
         .enableUpcomingFeature("InternalImportsByDefault"),
         .enableUpcomingFeature("ExistentialAny"),
