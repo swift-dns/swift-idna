@@ -45,17 +45,45 @@ let benchmarks: @Sendable () -> Void = {
         blackHole(domainName)
     }
 
-    /// Mark: - Uppercased_google.com
-
     Benchmark(
-        "To_ASCII_Uppercased_google_dot_com_CPU_10M",
+        "To_ASCII_Lowercased_google_dot_com_CPU_8M_ICU",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<10_000_000 {
+        for _ in 0..<8_000_000 {
+            var domainName = "google.com"
+            domainName = UIDNAHookICU.encode(domainName)!
+            blackHole(domainName)
+        }
+    }
+
+    Benchmark(
+        "To_ASCII_Lowercased_google_dot_com_Malloc_ICU",
+        configuration: .init(
+            metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10,
+        )
+    ) { benchmark in
+        var domainName = "google.com"
+        domainName = UIDNAHookICU.encode(domainName)!
+        blackHole(domainName)
+    }
+
+    /// Mark: - Uppercased_google.com
+
+    Benchmark(
+        "To_ASCII_Uppercased_google_dot_com_CPU_5M",
+        configuration: .init(
+            metrics: [.cpuUser],
+            warmupIterations: 15,
+            maxIterations: 1000,
+        )
+    ) { benchmark in
+        for _ in 0..<5_000_000 {
             var domainName = "GOOGLE.COM"
             domainName = try! strictConfig.toASCII(domainName: domainName)
             blackHole(domainName)
@@ -72,6 +100,34 @@ let benchmarks: @Sendable () -> Void = {
     ) { benchmark in
         var domainName = "GOOGLE.COM"
         domainName = try! strictConfig.toASCII(domainName: domainName)
+        blackHole(domainName)
+    }
+
+    Benchmark(
+        "To_ASCII_Uppercased_google_dot_com_CPU_5M_ICU",
+        configuration: .init(
+            metrics: [.cpuUser],
+            warmupIterations: 15,
+            maxIterations: 1000,
+        )
+    ) { benchmark in
+        for _ in 0..<5_000_000 {
+            var domainName = "GOOGLE.COM"
+            domainName = UIDNAHookICU.encode(domainName)!
+            blackHole(domainName)
+        }
+    }
+
+    Benchmark(
+        "To_ASCII_Uppercased_google_dot_com_Malloc_ICU",
+        configuration: .init(
+            metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10,
+        )
+    ) { benchmark in
+        var domainName = "GOOGLE.COM"
+        domainName = UIDNAHookICU.encode(domainName)!
         blackHole(domainName)
     }
 
@@ -105,10 +161,8 @@ let benchmarks: @Sendable () -> Void = {
         blackHole(domainName)
     }
 
-    /// Mark: - Uppercased_app-analytics-services.com
-
     Benchmark(
-        "To_ASCII_Uppercased_app-analytics-services_dot_com_CPU_5M",
+        "To_ASCII_Lowercased_app-analytics-services_dot_com_CPU_5M_ICU",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 15,
@@ -116,6 +170,36 @@ let benchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<5_000_000 {
+            var domainName = "app-analytics-services.com"
+            domainName = UIDNAHookICU.encode(domainName)!
+            blackHole(domainName)
+        }
+    }
+
+    Benchmark(
+        "To_ASCII_Lowercased_app-analytics-services_dot_com_Malloc_ICU",
+        configuration: .init(
+            metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10,
+        )
+    ) { benchmark in
+        var domainName = "app-analytics-services.com"
+        domainName = UIDNAHookICU.encode(domainName)!
+        blackHole(domainName)
+    }
+
+    /// Mark: - Uppercased_app-analytics-services.com
+
+    Benchmark(
+        "To_ASCII_Uppercased_app-analytics-services_dot_com_CPU_3M",
+        configuration: .init(
+            metrics: [.cpuUser],
+            warmupIterations: 15,
+            maxIterations: 1000,
+        )
+    ) { benchmark in
+        for _ in 0..<3_000_000 {
             var domainName = "APP-ANALYTICS-SERVICES.COM"
             domainName = try! strictConfig.toASCII(domainName: domainName)
             blackHole(domainName)
@@ -132,6 +216,34 @@ let benchmarks: @Sendable () -> Void = {
     ) { benchmark in
         var domainName = "APP-ANALYTICS-SERVICES.COM"
         domainName = try! strictConfig.toASCII(domainName: domainName)
+        blackHole(domainName)
+    }
+
+    Benchmark(
+        "To_ASCII_Uppercased_app-analytics-services_dot_com_CPU_3M_ICU",
+        configuration: .init(
+            metrics: [.cpuUser],
+            warmupIterations: 15,
+            maxIterations: 1000,
+        )
+    ) { benchmark in
+        for _ in 0..<3_000_000 {
+            var domainName = "APP-ANALYTICS-SERVICES.COM"
+            domainName = UIDNAHookICU.encode(domainName)!
+            blackHole(domainName)
+        }
+    }
+
+    Benchmark(
+        "To_ASCII_Uppercased_app-analytics-services_dot_com_Malloc_ICU",
+        configuration: .init(
+            metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10,
+        )
+    ) { benchmark in
+        var domainName = "APP-ANALYTICS-SERVICES.COM"
+        domainName = UIDNAHookICU.encode(domainName)!
         blackHole(domainName)
     }
 
