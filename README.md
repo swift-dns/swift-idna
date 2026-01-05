@@ -84,6 +84,67 @@ The C code is all automatically generated using the 2 scripts in `utils/`:
 - [ ] replaceBadCharacters
   - This last one is not a strict part of IDNA, and is only "recommended" to implement.
 
+## Benchmark Comparisons VS swift-foundation's ICU
+
+* To see up to date information about performance of this package, please go to this [benchmarks list](https://github.com/swift-dns/swift-idna/actions/workflows/benchmarks.yml?query=branch%3Amain), and choose the most recent benchmark. You'll see a summary of the benchmark there.
+* The results below are all reproducible by simply running `scripts/benchmark.bash` on a machine of your own.
+* swift-foundation applies short-circuits of its own for ascii domain names so it _should_ perform better than ICU (but likely still not as good as swift-idna).
+
+### Summary
+
+> [!NOTE]
+> **swift-idna** wins the **Malloc count** benchmarks by far.  
+> **ICU** wins the **Non-ASCII Domain Names** CPU time, by a bit.  
+> **swift-idna** wins **ASCII Domain Names** CPU time by far.  
+
+### Non-ASCII Domain Names
+
+#### CPU Time
+
+Benchmark | Foundation | swift-idna | Improv. Ratio
+| -- | -- | -- | --
+To_ASCII_Lax_öob_dot_se_CPU_300K | 80ms | 80ms | 1x
+To_ASCII_Lax_生命之花_dot_中国_CPU_200K | 80ms | 120ms | 0.67x
+To_Unicode_Lax_öob_dot_se_CPU_300K | 100ms | 80ms | 1.25x
+To_Unicode_Lax_生命之花_dot_中国_CPU_200K | 110ms | 110ms | 1x
+
+#### Malloc Count
+
+Benchmark | Foundation | swift-idna | Improv. Ratio
+| -- | -- | -- | --
+To_ASCII_Lax_öob_dot_se_Malloc | 2 | 1 | 2x
+To_ASCII_Lax_生命之花_dot_中国_Malloc | 5 | 4 | 1.25x
+To_Unicode_Lax_öob_dot_se_Malloc | 1 | 1 | 1x
+To_Unicode_Lax_生命之花_dot_中国_Malloc | 4 | 3 | 1.33x
+
+### ASCII Domain Names
+
+#### CPU Time
+
+Benchmark | Foundation | swift-idna | Improv. Ratio
+| -- | -- | -- | --
+To_ASCII_Lowercased_app-analytics-services_dot_com_CPU_5M | 610ms | 140ms | 4.36x
+To_ASCII_Lowercased_google_dot_com_CPU_8M | 650ms | 180ms | 3.61x
+To_ASCII_Uppercased_app-analytics-services_dot_com_CPU_3M | 340ms | 180ms | 1.89x
+To_ASCII_Uppercased_google_dot_com_CPU_5M | 380ms | 140ms | 2.71x
+To_Unicode_Lowercased_app-analytics-services_dot_com_CPU_4M | 470ms | 170ms | 2.76x
+To_Unicode_Lowercased_google_dot_com_CPU_8M | 650ms | 230ms | 2.83x
+To_Unicode_Uppercased_app-analytics-services_dot_com_CPU_4M | 440ms | 250ms | 1.76x
+To_Unicode_Uppercased_google_dot_com_CPU_5M | 380ms | 180ms | 2.11x
+
+#### Malloc Count
+
+Benchmark | Foundation | swift-idna | Improv. Ratio
+| -- | -- | -- | --
+To_ASCII_Lowercased_app-analytics-services_dot_com_Malloc | 2 | 0 | ∞
+To_ASCII_Lowercased_google_dot_com_Malloc | 1 | 0 | ∞
+To_ASCII_Uppercased_app-analytics-services_dot_com_Malloc | 2 | 1 | 2x
+To_ASCII_Uppercased_google_dot_com_Malloc | 1 | 0 | ∞
+To_Unicode_Lowercased_app-analytics-services_dot_com_Malloc | 2 | 0 | ∞
+To_Unicode_Lowercased_google_dot_com_Malloc | 1 | 0 | ∞
+To_Unicode_Uppercased_app-analytics-services_dot_com_Malloc | 2 | 1 | 2x
+To_Unicode_Uppercased_google_dot_com_Malloc | 1 | 0 | ∞
+
 ## How To Add swift-idna To Your Project
 
 To use the `swift-idna` library in a SwiftPM project,
@@ -105,4 +166,5 @@ Finally, add `import SwiftIDNA` to your source code.
 
 ## Acknowledgments
 
-This package was initially a part of [swift-dns](https://github.com/MahdiBM/swift-dns) which I decided to decouple from that project.
+This package was initially a part of [swift-dns](https://github.com/MahdiBM/swift-dns) which I decided to decouple from that project.   
+Currently it's used in [swift-endpoint](https://github.com/MahdiBM/swift-endpoint), which [swift-dns](https://github.com/MahdiBM/swift-dns) relies on.
