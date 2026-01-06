@@ -9,7 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-collections.git", from: "1.3.0"),
-        .package(url: "https://github.com/mahdibm/simdutf.git", branch: "mmbm-swiftpm-integration"),
+        .package(url: "https://github.com/mahdibm/simdutf.git", branch: "mmbm-swift-take-2"),
     ],
     targets: [
         .target(

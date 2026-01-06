@@ -1,13 +1,13 @@
 {
-  "originHash" : "b37e89926f156307bf5e7ebd42a4b82694e77afcca870904e518fb49dffedec4",
+  "originHash" : "26787bfda3107478310a405e51eebc63ba4548618d5ec115ea3d0cfd7b257d1e",
   "pins" : [
     {
       "identity" : "simdutf",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mahdibm/simdutf.git",
       "state" : {
-        "branch" : "mmbm-swiftpm-integration",
-        "revision" : "a478535f4ef5c63d0966372d2993e2e018aafe5a"
+        "branch" : "mmbm-swift-take-2",
+        "revision" : "a1976be3b17bd834c02093a3b973b06187801aa2"
       }
     },
     {
