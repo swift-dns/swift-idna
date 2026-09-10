@@ -29,7 +29,28 @@ defaults:
     shell: bash --noprofile --norc -Eeuo pipefail {0}
 
 jobs:
+  check-ci-config:
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 5
+
+    outputs:
+      benchmarks: ${{ steps.ci-config.outputs.benchmarks }}
+
+    steps:
+      - name: Check out ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check the ci config
+        id: ci-config
+        run: .github/scripts/ci-config.sh >> "${GITHUB_OUTPUT}"
+
   export-benchmark-results:
+    needs: check-ci-config
+    if: ${{ needs.check-ci-config.outputs.benchmarks == 'true' }}
+
     runs-on: [self-hosted, linux, x64]
 
     timeout-minutes: 1440
@@ -39,7 +60,7 @@ jobs:
 
     steps:
       - name: Enable full performance
-        run: /usr/bin/ordo-performance
+        run: set-perf-mode performance
 
       - name: Check out code
         uses: actions/checkout@v7
@@ -78,6 +99,7 @@ jobs:
           SKIP: ${{ inputs.skip }}
         run: |
           COMMAND=(
+            run-with-priority
             swiftly run swift ${TOOLCHAIN_MODIFIER}
             package
             -c release
@@ -112,7 +134,7 @@ jobs:
         id: calculate-archive-file-name
         run: |
           TIMESTAMP="$(date -u +"%Y-%m-%d-%H-%M-%S")"
-          FILE_NAME="swift-dns_benchmark_results_${TIMESTAMP}"
+          FILE_NAME="${{ github.event.repository.name }}_benchmark_results_${TIMESTAMP}"
 
           if [[ -n '${{ inputs.target }}' ]]; then
             TARGET="$(printf '%s' '${{ inputs.target }}' | tr ' ' '_')"
@@ -141,4 +163,4 @@ jobs:
 
       - name: Enable powersave mode
         if: always()
-        run: /usr/bin/ordo-performance powersave
+        run: set-perf-mode powersave
