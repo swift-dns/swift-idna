@@ -7,13 +7,15 @@ struct NFCTests {
     static func normalized(_ bytes: [UInt8]) -> [UInt8] {
         bytes.withUnsafeBufferPointer { bytesPtr in
             let span = unsafe bytesPtr.span
-            return NFCNormalization.withNFCNormalized(span) { outputSpan in
-                unsafe [UInt8](
-                    unsafeUninitializedCapacity: outputSpan.count
-                ) { buffer, initializedCount in
-                    for idx in outputSpan.indices {
-                        unsafe buffer[idx] = outputSpan[idx]
-                    }
+            return NFCNormalization.writeUTF8BytesInNFC(span) { (requireCapacity, writer) in
+                unsafe [UInt8](unsafeUninitializedCapacity: requireCapacity) {
+                    buffer,
+                    initializedCount in
+                    var outputSpan = unsafe OutputSpan<UInt8>(
+                        buffer: buffer,
+                        initializedCount: initializedCount
+                    )
+                    writer(&outputSpan)
                     initializedCount = outputSpan.count
                 }
             }
@@ -22,7 +24,7 @@ struct NFCTests {
 
     static func quickCheck(_ bytes: [UInt8]) -> Bool {
         bytes.withUnsafeBufferPointer { bytesPtr in
-            NFCNormalization.quickCheck(unsafe bytesPtr.span)
+            NFCNormalization.isInNFCQuickCheck(unsafe bytesPtr.span)
         }
     }
 

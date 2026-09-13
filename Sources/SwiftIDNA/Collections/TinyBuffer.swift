@@ -273,7 +273,7 @@ enum TinyBuffer: ~Copyable, ~Escapable {
     /// is allowed to move an inline buffer to the heap.
     @inlinable
     mutating func _uncheckedAssumingValidUTF8_ensureNFC() {
-        let isAlreadyNFC = self.withSpan { NFCNormalization.quickCheck($0) }
+        let isAlreadyNFC = self.withSpan { NFCNormalization.isInNFCQuickCheck($0) }
         if isAlreadyNFC {
             return
         }
@@ -281,10 +281,8 @@ enum TinyBuffer: ~Copyable, ~Escapable {
         switch consume self {
         case .inline(var elements):
             let array = elements.withSpan { span in
-                NFCNormalization.withNFCNormalized(span) { normalizedSpan in
-                    var array = UniqueArray<UInt8>(minimumCapacity: normalizedSpan.count)
-                    array.append(copying: normalizedSpan)
-                    return array
+                NFCNormalization.writeUTF8BytesInNFC(span) { (requireCapacity, writer) in
+                    UniqueArray<UInt8>(capacity: requireCapacity, initializingWith: writer)
                 }
             }
             if array.count <= InlineElements.maximumCapacity {
@@ -297,10 +295,9 @@ enum TinyBuffer: ~Copyable, ~Escapable {
                 self = .heap(array)
             }
         case .heap(let array):
-            let newArray = NFCNormalization.withNFCNormalized(array.span) { normalizedSpan in
-                var newArray = UniqueArray<UInt8>(minimumCapacity: normalizedSpan.count)
-                newArray.append(copying: normalizedSpan)
-                return newArray
+            let newArray = NFCNormalization.writeUTF8BytesInNFC(array.span) {
+                (requireCapacity, writer) in
+                UniqueArray<UInt8>(capacity: requireCapacity, initializingWith: writer)
             }
             self = .heap(newArray)
         }

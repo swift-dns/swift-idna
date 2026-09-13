@@ -420,7 +420,7 @@ extension IDNA {
         errors: inout MappingErrors
     ) {
         if !configuration.ignoreInvalidPunycode,
-            !span.isInNFC
+            !NFCNormalization.isInNFC(span)
         {
             errors.append(
                 .labelIsNotInNormalizationFormC(

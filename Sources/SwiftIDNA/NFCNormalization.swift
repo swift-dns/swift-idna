@@ -1,78 +1,42 @@
 public import CSwiftIDNA
 
-@available(SwiftStdlib 5.1, *)
-@usableFromInline
-package struct NFCScalarInfo {
-    @usableFromInline
-    package enum Tag: UInt16 {
-        case inert = 0
-        case cccOnly = 1
-        case maybe = 2
-        case maybeWithDecomposition = 3
-        case decompositionQCYes = 4
-        case decompositionQCNo = 5
-        case hangulSyllable = 6
-    }
-
-    @usableFromInline
-    package let tag: Tag
-    /// The scalar's canonical combining class for the `cccOnly` and `maybe` tags, or an index
-    /// into the decomposition slices for the decomposing tags. Otherwise always 0.
-    @usableFromInline
-    package let payload: UInt16
-
-    @inlinable
-    init(tag: Tag, payload: UInt16) {
-        self.tag = tag
-        self.payload = payload
-    }
-
-    /// Look up NFC normalization info for a given Unicode scalar.
-    /// - Parameter scalar: The Unicode scalar value to look up
-    /// - Returns: The corresponding `NFCScalarInfo` value
-    @inlinable
-    package static func `for`(scalar: UInt32) -> NFCScalarInfo {
-        let packedValue = cswift_idna_nfc_value(scalar)
-        /// This is exhaustively tested, so `unsafelyUnwrapped` is safe.
-        let tag = unsafe Tag(rawValue: packedValue >> 13).unsafelyUnwrapped
-        return NFCScalarInfo(tag: tag, payload: packedValue & 0x1FFF)
-    }
-}
-
 /// NFC normalization per UAX #15, backed by the trie built by utils/NFCTableGenerator.swift.
 @available(SwiftStdlib 5.1, *)
 @usableFromInline
 package struct NFCNormalization {
+    /// Whether the span is in Normalization Form C or not.
+    @inlinable
+    package static func isInNFC(_ span: Span<UInt8>) -> Bool {
+        if Self.isInNFCQuickCheck(span) {
+            return true
+        }
+        return Self._isInNFCSlow(span)
+    }
+
     /// Whether the span is definitely in Normalization Form C.
     ///
-    /// A `false` return does not prove the span is not in NFC; it only means the quick check
-    /// could not prove that it is, and the full normalization is required to decide.
+    /// `true` means the bytes are in in NFC.
+    /// `false` means the bytes might or might not be in NFC.
+    ///
+    /// https://www.unicode.org/reports/tr15/#Detecting_Normalization_Forms
     @inlinable
-    package static func quickCheck(_ span: Span<UInt8>) -> Bool {
+    package static func isInNFCQuickCheck(_ span: Span<UInt8>) -> Bool {
         var maxByte: UInt8 = 0
-        /// This loop is auto-vectorized into SIMD instructions by LLVM.
+        /// This loop is auto-vectorized by LLVM.
         for idx in span.indices {
             maxByte = max(maxByte, span[idx])
         }
-        /// All scalars below U+0300 are NFC_QC=Yes with ccc=0, and every UTF-8 byte of their
-        /// encodings is below 0xCC: 2-byte lead bytes reach 0xCB at U+02FF, continuation bytes
-        /// stay below 0xC0, and 3/4-byte lead bytes (0xE0+) only encode scalars above U+07FF.
-        /// The generator verifies the scalar-side claim on every table regeneration.
+        /// Bytes below 0xCC are always in NFC.
         if maxByte < 0xCC {
             return true
         }
-        return Self.quickCheckScalarByScalar(span)
-    }
 
-    /// The UAX #15 NFC quick check: fails on any NFC_QC=No/Maybe scalar or any canonical
-    /// ordering violation.
-    @inlinable
-    static func quickCheckScalarByScalar(_ span: Span<UInt8>) -> Bool {
+        /// Try scalar by scalar:
         var iterator = UnicodeScalarIterator()
-        var previousCCC: UInt16 = 0
+        var lastCanonicalClass: UInt16 = 0
         while let scalar = iterator.next(in: span) {
             if scalar < 0x300 {
-                previousCCC = 0
+                lastCanonicalClass = 0
                 continue
             }
             let info = NFCScalarInfo.for(scalar: scalar)
@@ -80,80 +44,143 @@ package struct NFCNormalization {
             case .maybe, .maybeWithDecomposition, .decompositionQCNo:
                 return false
             case .cccOnly:
-                if previousCCC > info.payload {
+                if lastCanonicalClass > info.payload {
                     return false
                 }
-                previousCCC = info.payload
+                lastCanonicalClass = info.payload
             case .inert, .decompositionQCYes, .hangulSyllable:
-                previousCCC = 0
+                lastCanonicalClass = 0
             }
         }
         return true
     }
 
-    /// Normalizes the span to Normalization Form C and runs `body` with the result, backed by
-    /// temporary stack allocations. Never allocates a Swift heap object.
+    /// Whether the span is in Normalization Form C or not.
     @inlinable
-    package static func withNFCNormalized<R: ~Copyable, Failure: Error>(
-        _ span: Span<UInt8>,
-        _ body: (Span<UInt8>) throws(Failure) -> R
-    ) throws(Failure) -> R {
+    package static func _isInNFCSlow(_ span: Span<UInt8>) -> Bool {
         /// The NFD expansion of any input is at most 2 scalars per input UTF-8 byte, and its
         /// NFC form at most 3 UTF-8 bytes per input UTF-8 byte. The generator verifies both
         /// bounds on every table regeneration.
-        try withUnsafeTemporaryAllocation(
+        withUnsafeTemporaryAllocation(
             of: UInt32.self,
             capacity: 2 &* span.count
-        ) { scalarsAllocation throws(Failure) -> R in
+        ) { scalarsAllocation in
             var scalarsCount = 0
-            unsafe Self.decomposeAndReorder(span, into: scalarsAllocation, count: &scalarsCount)
-            unsafe Self.composeInPlace(scalarsAllocation, count: &scalarsCount)
-            return try unsafe Self.withUTF8Encoded(
-                scalarsAllocation,
-                count: scalarsCount,
-                maximumUTF8Count: 3 &* span.count,
-                body
-            )
+            /// For Normalization Form C, we need to first go through the decomposition step:
+            unsafe Self.decompose(span, into: scalarsAllocation, advancingCount: &scalarsCount)
+            /// Then we (re)compose:
+            unsafe Self.compose(scalarsAllocation, advancingCount: &scalarsCount)
+
+            let scalarsRange = unsafe Range<Int>(uncheckedBounds: (0, scalarsCount))
+            let initializedScalars = UnsafeBufferPointer(scalarsAllocation)
+            let scalarsSpan = unsafe initializedScalars.span.extracting(unchecked: scalarsRange)
+
+            var utf8Count = 0
+            var iterator = UTF8BytesIterator()
+            var isEqualToCurrent = 1
+            while let (scalarUTF8Length, bytes) = iterator.branchlessNext(in: scalarsSpan) {
+                withUnsafeBytes(of: bytes) { bytesPtr in
+                    for idx in 0..<scalarUTF8Length {
+                        let uncheckedSpanIdx = utf8Count &+ idx
+                        let spanIdx = min(uncheckedSpanIdx, span.count &- 1)
+                        isEqualToCurrent &=
+                            (unsafe span[unchecked: spanIdx] == bytesPtr[idx]) ? 1 : 0
+                    }
+                }
+                utf8Count &+= scalarUTF8Length
+            }
+
+            return isEqualToCurrent == 1 && utf8Count == span.count
         }
     }
 
-    /// The canonical decomposition pass: emits the full NFD expansion of every scalar, keeping
-    /// the output canonically ordered as it goes.
+    /// Normalizes the span to Normalization Form C and runs `body` with the result, backed by
+    /// temporary stack allocations. Never allocates a Swift heap object.
+    @inline(always)
+    package static func writeUTF8BytesInNFC<R: ~Copyable>(
+        _ span: Span<UInt8>,
+        via writingUTF8Bytes:
+            (_ requiredCapacity: Int, ((inout OutputSpan<UInt8>) -> Void)) -> R
+    ) -> R {
+        /// The NFD expansion of any input is at most 2 scalars per input UTF-8 byte, and its
+        /// NFC form at most 3 UTF-8 bytes per input UTF-8 byte. The generator verifies both
+        /// bounds on every table regeneration.
+        withUnsafeTemporaryAllocation(
+            of: UInt32.self,
+            capacity: 2 &* span.count
+        ) { scalarsAllocation in
+            var scalarsCount = 0
+            /// For Normalization Form C, we need to first go through the decomposition step:
+            unsafe Self.decompose(span, into: scalarsAllocation, advancingCount: &scalarsCount)
+            /// Then we (re)compose:
+            unsafe Self.compose(scalarsAllocation, advancingCount: &scalarsCount)
+
+            /// Write utf8 bytes
+            return writingUTF8Bytes((3 &* span.count) &+ 3) { buffer in
+                let scalarsRange = unsafe Range<Int>(uncheckedBounds: (0, scalarsCount))
+                let initializedScalars = UnsafeBufferPointer(scalarsAllocation)
+                let scalarsSpan = unsafe initializedScalars.span.extracting(unchecked: scalarsRange)
+
+                unsafe buffer.withUnsafeMutableBufferPointer {
+                    utf8Buffer,
+                    initializedCount in
+                    var utf8Count = 0
+                    var iterator = UTF8BytesIterator()
+                    while let (scalarUTF8Length, bytes) = iterator.branchlessNext(in: scalarsSpan) {
+                        unsafe utf8Buffer[utf8Count] = bytes.0
+                        unsafe utf8Buffer[utf8Count &+ 1] = bytes.1
+                        unsafe utf8Buffer[utf8Count &+ 2] = bytes.2
+                        unsafe utf8Buffer[utf8Count &+ 3] = bytes.3
+                        utf8Count &+= scalarUTF8Length
+                    }
+                    initializedCount = utf8Count
+                }
+            }
+        }
+    }
+
+    /// Decomposes the span into its canonical decomposed form (NFD).
+    /// https://www.unicode.org/reports/tr15/
     @inlinable
-    static func decomposeAndReorder(
+    static func decompose(
         _ span: Span<UInt8>,
         into scalars: UnsafeMutableBufferPointer<UInt32>,
-        count: inout Int
+        advancingCount count: inout Int
     ) {
         var iterator = UnicodeScalarIterator()
         while let scalar = iterator.next(in: span) {
-            /// Scalars below U+00C0 never carry normalization data.
-            /// The generator verifies this claim on every table regeneration.
+            /// Scalars below U+00C0 are always in NF(K)D & NF(K)C already.
             if scalar < 0xC0 {
                 unsafe scalars[count] = scalar
                 count &+= 1
                 continue
             }
+
             let info = NFCScalarInfo.for(scalar: scalar)
             switch info.tag {
             case .inert:
                 unsafe scalars[count] = scalar
                 count &+= 1
             case .cccOnly, .maybe:
-                unsafe Self.reorderedAppend(
-                    (UInt32(info.payload) &<< 21) | scalar,
+                let packedScalar = (UInt32(info.payload) &<< 21) | scalar
+                unsafe Self.reorderCanonically(
+                    packedScalar: packedScalar,
                     into: scalars,
-                    count: &count
+                    advancingCount: &count
                 )
             case .maybeWithDecomposition, .decompositionQCYes, .decompositionQCNo:
                 let slice = cswift_idna_nfc_decomposition_slice(UInt32(info.payload))
                 let elementOffset = slice &>> 8
                 let elementCount = slice & 0xFF
+
                 for elementIndex in 0..<elementCount {
-                    unsafe Self.reorderedAppend(
-                        cswift_idna_nfc_decomposition_scalar_at(elementOffset &+ elementIndex),
+                    let decomposedScalar = cswift_idna_nfc_decomposition_scalar_at(
+                        elementOffset &+ elementIndex
+                    )
+                    unsafe Self.reorderCanonically(
+                        packedScalar: decomposedScalar,
                         into: scalars,
-                        count: &count
+                        advancingCount: &count
                     )
                 }
             case .hangulSyllable:
@@ -170,14 +197,15 @@ package struct NFCNormalization {
         }
     }
 
-    /// Appends a (ccc, scalar) element, sliding it left past any elements with a higher ccc,
-    /// per the Canonical Ordering Algorithm.
+    /// Reorders based on the values of the Canonical Combining Class (CCC).
+    /// [The Unicode Standard, 3.11.5 Canonical Ordering Algorithm](https://www.unicode.org/versions/Unicode17.0.0/UnicodeStandard-17.0.pdf)
     @inlinable
-    static func reorderedAppend(
-        _ packedScalar: UInt32,
+    static func reorderCanonically(
+        packedScalar: UInt32,
         into scalars: UnsafeMutableBufferPointer<UInt32>,
-        count: inout Int
+        advancingCount count: inout Int
     ) {
+        /// Canonical Combining Class
         let ccc = packedScalar &>> 21
         var targetIndex = count
         if ccc != 0 {
@@ -197,9 +225,9 @@ package struct NFCNormalization {
     /// The Canonical Composition Algorithm per UAX #15: composes each combinable scalar with
     /// the last starter unless a preceding scalar blocks it, compacting survivors in place.
     @inlinable
-    static func composeInPlace(
+    static func compose(
         _ scalars: UnsafeMutableBufferPointer<UInt32>,
-        count: inout Int
+        advancingCount count: inout Int
     ) {
         var readIndex = 0
         var writeIndex = 0
@@ -257,69 +285,5 @@ package struct NFCNormalization {
             }
         }
         return nil
-    }
-
-    /// Encodes the composed scalars back into UTF-8 in a temporary stack allocation and runs
-    /// `body` with the result.
-    @inlinable
-    static func withUTF8Encoded<R: ~Copyable, Failure: Error>(
-        _ scalars: UnsafeMutableBufferPointer<UInt32>,
-        count: Int,
-        maximumUTF8Count: Int,
-        _ body: (Span<UInt8>) throws(Failure) -> R
-    ) throws(Failure) -> R {
-        try withUnsafeTemporaryAllocation(
-            of: UInt8.self,
-            capacity: maximumUTF8Count
-        ) { utf8Allocation throws(Failure) -> R in
-            var utf8Count = 0
-            var scalarIndex = 0
-            while scalarIndex < count {
-                let scalar = unsafe scalars[scalarIndex] & 0x1F_FFFF
-                scalarIndex &+= 1
-                if scalar < 0x80 {
-                    unsafe utf8Allocation[utf8Count] = UInt8(truncatingIfNeeded: scalar)
-                    utf8Count &+= 1
-                } else if scalar < 0x800 {
-                    unsafe utf8Allocation[utf8Count] = UInt8(
-                        truncatingIfNeeded: 0xC0 | (scalar &>> 6)
-                    )
-                    unsafe utf8Allocation[utf8Count &+ 1] = UInt8(
-                        truncatingIfNeeded: 0x80 | (scalar & 0x3F)
-                    )
-                    utf8Count &+= 2
-                } else if scalar < 0x1_0000 {
-                    unsafe utf8Allocation[utf8Count] = UInt8(
-                        truncatingIfNeeded: 0xE0 | (scalar &>> 12)
-                    )
-                    unsafe utf8Allocation[utf8Count &+ 1] = UInt8(
-                        truncatingIfNeeded: 0x80 | ((scalar &>> 6) & 0x3F)
-                    )
-                    unsafe utf8Allocation[utf8Count &+ 2] = UInt8(
-                        truncatingIfNeeded: 0x80 | (scalar & 0x3F)
-                    )
-                    utf8Count &+= 3
-                } else {
-                    unsafe utf8Allocation[utf8Count] = UInt8(
-                        truncatingIfNeeded: 0xF0 | (scalar &>> 18)
-                    )
-                    unsafe utf8Allocation[utf8Count &+ 1] = UInt8(
-                        truncatingIfNeeded: 0x80 | ((scalar &>> 12) & 0x3F)
-                    )
-                    unsafe utf8Allocation[utf8Count &+ 2] = UInt8(
-                        truncatingIfNeeded: 0x80 | ((scalar &>> 6) & 0x3F)
-                    )
-                    unsafe utf8Allocation[utf8Count &+ 3] = UInt8(
-                        truncatingIfNeeded: 0x80 | (scalar & 0x3F)
-                    )
-                    utf8Count &+= 4
-                }
-            }
-
-            let range = unsafe Range<Int>(uncheckedBounds: (0, utf8Count))
-            let initialized = UnsafeBufferPointer(utf8Allocation)
-            let span = unsafe initialized.span.extracting(unchecked: range)
-            return try body(span)
-        }
     }
 }

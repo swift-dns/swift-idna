@@ -11,25 +11,6 @@ extension Span<UInt8> {
         return result <= 0x7F
     }
 
-    /// Whether or not the span scalars are all in Normalization Form C (NFC).
-    @inlinable
-    var isInNFC: Bool {
-        if NFCNormalization.quickCheck(self) {
-            return true
-        }
-        return NFCNormalization.withNFCNormalized(self) { normalizedSpan in
-            if normalizedSpan.count != self.count {
-                return false
-            }
-            for idx in self.indices {
-                if unsafe normalizedSpan[unchecked: idx] != self[idx] {
-                    return false
-                }
-            }
-            return true
-        }
-    }
-
     /// Checks if contains any labels that start with “xn--”
     @inlinable
     var containsIDNADomainNameMarkerLabelPrefix: Bool {
