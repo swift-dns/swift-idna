@@ -12,3 +12,13 @@ extension Array where Element: BitwiseCopyable {
         }
     }
 }
+
+extension Array where Element == UInt8 {
+    var _swift_idna_debugDescription: String {
+        #if $Embedded
+        "[(cannot print array values in embedded Swift)]"
+        #else
+        self.debugDescription
+        #endif
+    }
+}

@@ -58,21 +58,9 @@ package struct NFCNormalization {
     /// Whether the span is in Normalization Form C or not.
     @inlinable
     package static func _isInNFCSlow(_ span: Span<UInt8>) -> Bool {
-        /// The NFD expansion of any input is at most 2 scalars per input UTF-8 byte, and its
-        /// NFC form at most 3 UTF-8 bytes per input UTF-8 byte. The generator verifies both
-        /// bounds on every table regeneration.
-        withUnsafeTemporaryAllocation(
-            of: UInt32.self,
-            capacity: 2 &* span.count
-        ) { scalarsAllocation in
-            var scalarsCount = 0
-            /// For Normalization Form C, we need to first go through the decomposition step:
-            unsafe Self.decompose(span, into: scalarsAllocation, advancingCount: &scalarsCount)
-            /// Then we (re)compose:
-            unsafe Self.compose(scalarsAllocation, advancingCount: &scalarsCount)
-
+        unsafe withNormalizedScalars(span) { scalarsCount, scalarsBuffer in
             let scalarsRange = unsafe Range<Int>(uncheckedBounds: (0, scalarsCount))
-            let initializedScalars = UnsafeBufferPointer(scalarsAllocation)
+            let initializedScalars = UnsafeBufferPointer(scalarsBuffer)
             let scalarsSpan = unsafe initializedScalars.span.extracting(unchecked: scalarsRange)
 
             var utf8Count = 0
@@ -102,23 +90,11 @@ package struct NFCNormalization {
         via writingUTF8Bytes:
             (_ requiredCapacity: Int, ((inout OutputSpan<UInt8>) -> Void)) -> R
     ) -> R {
-        /// The NFD expansion of any input is at most 2 scalars per input UTF-8 byte, and its
-        /// NFC form at most 3 UTF-8 bytes per input UTF-8 byte. The generator verifies both
-        /// bounds on every table regeneration.
-        withUnsafeTemporaryAllocation(
-            of: UInt32.self,
-            capacity: 2 &* span.count
-        ) { scalarsAllocation in
-            var scalarsCount = 0
-            /// For Normalization Form C, we need to first go through the decomposition step:
-            unsafe Self.decompose(span, into: scalarsAllocation, advancingCount: &scalarsCount)
-            /// Then we (re)compose:
-            unsafe Self.compose(scalarsAllocation, advancingCount: &scalarsCount)
-
+        unsafe withNormalizedScalars(span) { scalarsCount, scalarsBuffer in
             /// Write utf8 bytes
-            return writingUTF8Bytes((3 &* span.count) &+ 3) { buffer in
+            writingUTF8Bytes((3 &* span.count) &+ 3) { buffer in
                 let scalarsRange = unsafe Range<Int>(uncheckedBounds: (0, scalarsCount))
-                let initializedScalars = UnsafeBufferPointer(scalarsAllocation)
+                let initializedScalars = UnsafeBufferPointer(scalarsBuffer)
                 let scalarsSpan = unsafe initializedScalars.span.extracting(unchecked: scalarsRange)
 
                 unsafe buffer.withUnsafeMutableBufferPointer {
@@ -136,6 +112,27 @@ package struct NFCNormalization {
                     initializedCount = utf8Count
                 }
             }
+        }
+    }
+
+    @inlinable @inline(always)
+    package static func withNormalizedScalars<R: ~Copyable>(
+        _ span: Span<UInt8>,
+        block: (_ count: Int, _ scalars: UnsafeMutableBufferPointer<UInt32>) -> R
+    ) -> R {
+        /// The NFD expansion of any input is at most 2 scalars per input UTF-8 byte, and its
+        /// NFC form at most 3 UTF-8 bytes per input UTF-8 byte. The generator verifies both
+        /// bounds on every table regeneration.
+        withUnsafeTemporaryAllocation(
+            of: UInt32.self,
+            capacity: 2 &* span.count
+        ) { scalarsBuffer in
+            var scalarsCount = 0
+            /// For Normalization Form C, we need to first go through the decomposition step:
+            unsafe Self.decompose(span, into: scalarsBuffer, advancingCount: &scalarsCount)
+            /// Then we (re)compose:
+            unsafe Self.compose(scalarsBuffer, advancingCount: &scalarsCount)
+            return unsafe block(scalarsCount, scalarsBuffer)
         }
     }
 

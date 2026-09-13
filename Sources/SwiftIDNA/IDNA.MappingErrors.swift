@@ -112,22 +112,22 @@ extension IDNA {
                 let label
             ):
                 return
-                    ".trueVerifyDNSLengthArgumentRequiresLabelToBe63BytesOrLess(length: \(length), label: \(label.debugDescription))"
+                    ".trueVerifyDNSLengthArgumentRequiresLabelToBe63BytesOrLess(length: \(length), label: \(label._swift_idna_debugDescription))"
             case .trueVerifyDNSLengthArgumentDisallowsEmptyLabel(let label):
                 return
-                    ".trueVerifyDNSLengthArgumentDisallowsEmptyLabel(\(label.debugDescription))"
+                    ".trueVerifyDNSLengthArgumentDisallowsEmptyLabel(\(label._swift_idna_debugDescription))"
             case .trueVerifyDNSLengthArgumentDisallowsEmptyRootLabelWithTrailingDot(let labels):
                 return
-                    ".trueVerifyDNSLengthArgumentDisallowsEmptyRootLabelWithTrailingDot(labels: \(labels.debugDescription))"
+                    ".trueVerifyDNSLengthArgumentDisallowsEmptyRootLabelWithTrailingDot(labels: \(labels._swift_idna_debugDescription))"
             case .trueVerifyDNSLengthArgumentRequiresDomainNameToBe254BytesOrLess(
                 let length,
                 let labels
             ):
                 return
-                    ".trueVerifyDNSLengthArgumentRequiresDomainNameToBe254BytesOrLess(length: \(length), labels: \(labels.debugDescription))"
+                    ".trueVerifyDNSLengthArgumentRequiresDomainNameToBe254BytesOrLess(length: \(length), labels: \(labels._swift_idna_debugDescription))"
             case .trueVerifyDNSLengthArgumentDisallowsEmptyDomainName(let labels):
                 return
-                    ".trueVerifyDNSLengthArgumentDisallowsEmptyDomainName(\(labels.debugDescription))"
+                    ".trueVerifyDNSLengthArgumentDisallowsEmptyDomainName(\(labels._swift_idna_debugDescription))"
             case .labelIsNotInNormalizationFormC(let label):
                 return
                     ".labelIsNotInNormalizationFormC(\(label.debugDescription))"
