@@ -61,8 +61,7 @@ extension IDNA {
     static func performByteCheck(
         on string: String
     ) -> CharacterCheckResult {
-        var string = string
-        return string.withSpan_Compatibility {
+        string.withSpan_Compatibility {
             performByteCheck(on: $0)
         }
     }
@@ -73,8 +72,7 @@ extension IDNA {
     static func performByteCheck(
         on substring: Substring
     ) -> CharacterCheckResult {
-        var substring = substring
-        return substring.withSpan_Compatibility {
+        substring.withSpan_Compatibility {
             performByteCheck(on: $0)
         }
     }

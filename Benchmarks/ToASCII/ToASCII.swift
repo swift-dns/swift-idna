@@ -49,7 +49,7 @@ let benchmarks: @Sendable () -> Void = {
         "To_ASCII_Lowercased_google_dot_com_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10,
         )
     ) { benchmark in
@@ -90,7 +90,7 @@ let benchmarks: @Sendable () -> Void = {
         "To_ASCII_Lowercased_google_dot_com_Instructions_ICU",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10,
         )
     ) { benchmark in
@@ -133,7 +133,7 @@ let benchmarks: @Sendable () -> Void = {
         "To_ASCII_Uppercased_google_dot_com_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10,
         )
     ) { benchmark in
@@ -174,7 +174,7 @@ let benchmarks: @Sendable () -> Void = {
         "To_ASCII_Uppercased_google_dot_com_Instructions_ICU",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10,
         )
     ) { benchmark in
@@ -217,7 +217,7 @@ let benchmarks: @Sendable () -> Void = {
         "To_ASCII_Lowercased_app-analytics-services_dot_com_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10,
         )
     ) { benchmark in
@@ -258,7 +258,7 @@ let benchmarks: @Sendable () -> Void = {
         "To_ASCII_Lowercased_app-analytics-services_dot_com_Instructions_ICU",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10,
         )
     ) { benchmark in
@@ -301,7 +301,7 @@ let benchmarks: @Sendable () -> Void = {
         "To_ASCII_Uppercased_app-analytics-services_dot_com_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10,
         )
     ) { benchmark in
@@ -342,7 +342,7 @@ let benchmarks: @Sendable () -> Void = {
         "To_ASCII_Uppercased_app-analytics-services_dot_com_Instructions_ICU",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10,
         )
     ) { benchmark in
@@ -524,7 +524,7 @@ let benchmarks: @Sendable () -> Void = {
         "To_ASCII_Multiple_ASCII_Domains_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10,
         )
     ) { benchmark in
@@ -571,7 +571,7 @@ let benchmarks: @Sendable () -> Void = {
         "To_ASCII_Multiple_ASCII_Domains_Instructions_ICU",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10,
         )
     ) { benchmark in
@@ -714,7 +714,7 @@ let benchmarks: @Sendable () -> Void = {
             "To_ASCII_\(namePrefix)_生命之花_dot_中国_Instructions",
             configuration: .init(
                 metrics: [.instructions],
-                warmupIterations: 10,
+                warmupIterations: 100,
                 maxIterations: 10,
             )
         ) { benchmark in
@@ -756,7 +756,7 @@ let benchmarks: @Sendable () -> Void = {
                 "To_ASCII_\(namePrefix)_生命之花_dot_中国_Instructions_ICU",
                 configuration: .init(
                     metrics: [.instructions],
-                    warmupIterations: 10,
+                    warmupIterations: 100,
                     maxIterations: 10,
                 )
             ) { benchmark in
@@ -811,7 +811,7 @@ let benchmarks: @Sendable () -> Void = {
             "To_ASCII_\(namePrefix)_Multiple_Domains_Instructions",
             configuration: .init(
                 metrics: [.instructions],
-                warmupIterations: 10,
+                warmupIterations: 100,
                 maxIterations: 10,
             )
         ) { benchmark in
@@ -859,7 +859,7 @@ let benchmarks: @Sendable () -> Void = {
                 "To_ASCII_\(namePrefix)_Multiple_Domains_Instructions_ICU",
                 configuration: .init(
                     metrics: [.instructions],
-                    warmupIterations: 10,
+                    warmupIterations: 100,
                     maxIterations: 10,
                 )
             ) { benchmark in
