@@ -29,6 +29,10 @@ jobs:
 
     timeout-minutes: 15
 
+    env:
+      ASAN_OPTIONS: "detect_leaks=1"
+      LSAN_OPTIONS: "suppressions=.github/lsan-suppressions.txt"
+
     steps:
       - name: Check out ${{ github.event.repository.name }}
         uses: actions/checkout@v7
@@ -55,6 +59,7 @@ jobs:
           swift build \
             --build-tests \
             --enable-code-coverage \
+            --sanitize=address \
             --explicit-target-dependency-import-check error \
             -Xswiftc -require-explicit-sendable \
             -c ${{ matrix.config.mode }}
@@ -73,6 +78,7 @@ jobs:
             --skip "IntegrationTests." \
             --skip-build \
             --enable-code-coverage \
+            --sanitize=address \
             -Xswiftc -require-explicit-sendable \
             -c ${{ matrix.config.mode }}
 
@@ -178,6 +184,8 @@ jobs:
     timeout-minutes: 20
 
     env:
+      ASAN_OPTIONS: "detect_leaks=0"
+      UBSAN_OPTIONS: "halt_on_error=1:print_stacktrace=1"
       SWIFTLY_HOME_DIR: "/Users/runner/.swiftly"
       SWIFTLY_BIN_DIR: "/Users/runner/.swiftly/bin"
       SWIFTLY_TOOLCHAINS_DIR: "/Users/runner/Library/Developer/Toolchains"
@@ -255,6 +263,7 @@ jobs:
           swift build \
             --build-tests \
             --enable-code-coverage \
+            --sanitize=address --sanitize=undefined \
             --explicit-target-dependency-import-check error \
             -Xswiftc -require-explicit-sendable \
             -c ${{ matrix.config.mode }}
@@ -273,6 +282,7 @@ jobs:
             --skip "IntegrationTests." \
             --skip-build \
             --enable-code-coverage \
+            --sanitize=address --sanitize=undefined \
             -Xswiftc -require-explicit-sendable \
             -c ${{ matrix.config.mode }}
 

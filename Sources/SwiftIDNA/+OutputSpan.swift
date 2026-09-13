@@ -6,12 +6,15 @@ extension OutputSpan<UInt8> {
         let appendCount = span.count
         if appendCount == 0 { return }
         let usedCapacity = self.count
-        let capacity = self.capacity
         unsafe self.withUnsafeMutableBufferPointer { buffer, initializedCount in
             span.withUnsafeBytes { spanPtr in
-                let range = unsafe Range<Int>(uncheckedBounds: (usedCapacity, capacity))
-                let target = buffer.extracting(range)
-                _ = unsafe target.initialize(fromContentsOf: spanPtr)
+                let target = unsafe UnsafeMutableRawPointer(
+                    buffer.baseAddress.unsafelyUnwrapped
+                ).advanced(by: usedCapacity)
+                unsafe target.copyMemory(
+                    from: spanPtr.baseAddress.unsafelyUnwrapped,
+                    byteCount: appendCount
+                )
             }
             initializedCount = usedCapacity &+ appendCount
         }

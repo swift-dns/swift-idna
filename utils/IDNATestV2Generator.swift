@@ -34,6 +34,74 @@ func fetchWithRetries(url: URL) throws -> Data {
     fatalError("Unreachable")
 }
 
+/// Encodes a single octal byte escape (always 3 digits, so it can never merge with a
+/// following hex/octal digit in the C string literal).
+func octalByteEscape(_ byte: UInt8) -> String {
+    let d0 = (byte >> 6) & 0x7
+    let d1 = (byte >> 3) & 0x7
+    let d2 = byte & 0x7
+    return "\\\(d0)\(d1)\(d2)"
+}
+
+/// Returns the UTF-8 bytes of the given code point, or its WTF-8 bytes when it is a
+/// surrogate (0xD800...0xDFFF), which has no valid UTF-8 encoding. Only handles the
+/// BMP because IdnaTestV2.txt only ever escapes single BMP code points as `\uXXXX`.
+func utf8OrWTF8Bytes(of codePoint: UInt32) -> [UInt8] {
+    switch codePoint {
+    case 0..<0x80:
+        return [UInt8(codePoint)]
+    case 0x80..<0x800:
+        return [
+            UInt8(0xC0 | (codePoint >> 6)),
+            UInt8(0x80 | (codePoint & 0x3F)),
+        ]
+    default:
+        return [
+            UInt8(0xE0 | (codePoint >> 12)),
+            UInt8(0x80 | ((codePoint >> 6) & 0x3F)),
+            UInt8(0x80 | (codePoint & 0x3F)),
+        ]
+    }
+}
+
+/// C rejects `\u` universal character names for surrogates (0xD800...0xDFFF) and for code
+/// points below 0x00A0. Every other `\uXXXX` compiles natively, so only these are rewritten.
+func cRejectsUniversalCharacterName(for codePoint: UInt32) -> Bool {
+    codePoint < 0xA0 || (0xD800...0xDFFF).contains(codePoint)
+}
+
+/// Rewrites only the literal `\uXXXX` escape sequences that C refuses to compile (see above)
+/// into octal byte escapes of the UTF-8/WTF-8 encoding of the code point. All other characters
+/// — including `\uXXXX` escapes C accepts — pass through unchanged so the diff stays minimal.
+func escapedForCLiteral(_ string: String) -> String {
+    let scalars = Array(string.unicodeScalars)
+    var result = String.UnicodeScalarView()
+    var index = 0
+    while index < scalars.count {
+        if scalars[index] == "\\",
+            index + 5 < scalars.count,
+            scalars[index + 1] == "u",
+            let codePoint = UInt32(
+                String(String.UnicodeScalarView(scalars[(index + 2)...(index + 5)])),
+                radix: 16
+            )
+        {
+            if cRejectsUniversalCharacterName(for: codePoint) {
+                for byte in utf8OrWTF8Bytes(of: codePoint) {
+                    result.append(contentsOf: octalByteEscape(byte).unicodeScalars)
+                }
+            } else {
+                result.append(contentsOf: scalars[index...(index + 5)])
+            }
+            index += 6
+        } else {
+            result.append(scalars[index])
+            index += 1
+        }
+    }
+    return String(result)
+}
+
 func parseStatusString(_ statusStr: String) -> [String] {
     let trimmed = statusStr.trimmingWhitespaces()
     if trimmed.isEmpty || trimmed == "[]" {
@@ -89,19 +157,13 @@ func generate() -> String {
         testCases.append(testCase)
     }
 
-    // Filter out test cases that contain \uD900 or \u0080 in specific fields
-    // Clang doesn't accept those characters in the generated code
-    let filteredTestCases = testCases.filter { testCase in
-        !testCase.source.contains("\\uD900") && !(testCase.toUnicode?.contains("\\u0080") == true)
-    }
-
-    print("Parsed \(testCases.count) test cases, filtered to \(filteredTestCases.count) cases")
+    print("Parsed \(testCases.count) test cases, filtered to \(testCases.count) cases")
 
     var generatedCode = """
         #include "../include/CSwiftIDNATesting.h"
         #include <stddef.h>
 
-        #define CSwift_IDNA_TEST_V2_CASES_COUNT \(filteredTestCases.count)
+        #define CSwift_IDNA_TEST_V2_CASES_COUNT \(testCases.count)
 
         extern const CSwiftIDNATestV2CCase cswift_idna_test_v2_cases[];
 
@@ -114,7 +176,7 @@ func generate() -> String {
 
         """
 
-    for testCase in filteredTestCases {
+    for testCase in testCases {
         let toUnicodeStatusArray = testCase.toUnicodeStatus.map {
             "\"\($0)\""
         }.joined(separator: ", ")
@@ -124,7 +186,7 @@ func generate() -> String {
 
         generatedCode += """
                     {
-                        .source = "\(testCase.source)",
+                        .source = "\(escapedForCLiteral(testCase.source))",
                         .toUnicode = \(testCase.toUnicode.quotedOrNULL()),
                         .toUnicodeStatus = (const char*[]){ \(toUnicodeStatusArray) },
                         .toUnicodeStatusCount = \(testCase.toUnicodeStatus.count),
@@ -175,7 +237,7 @@ extension String? {
     func quotedOrNULL() -> String {
         switch self {
         case .some(let value):
-            return "\"\(value)\""
+            return "\"\(escapedForCLiteral(value))\""
         case .none:
             return "NULL"
         }

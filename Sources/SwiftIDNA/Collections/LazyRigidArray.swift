@@ -27,6 +27,7 @@ struct LazyRigidArray<Integer: FixedWidthInteger>: ~Copyable {
     /// This behavior is needed for the implementation of the IDNA conversion algorithm.
     /// Tests will immediately crash if the code is changed to not initialize the elements.
     @inlinable
+    @inline(__always)
     mutating func withRigidArrayOutputSpan<T>(_ body: (inout OutputSpan<Integer>) -> T) -> T {
         if array != nil {
             return self.array!.edit { output in

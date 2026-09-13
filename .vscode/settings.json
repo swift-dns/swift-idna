@@ -1,6 +1,6 @@
 {
   "swift.backgroundCompilation": true,
-  "swift.debugger.debugAdapter": "CodeLLDB",
+  "swift.debugger.debugAdapter": "auto",
   "swift.additionalTestArguments": ["--disable-xctest"],
   "swift.buildArguments": ["--disable-xctest"],
   "swift.recordTestDuration": false,

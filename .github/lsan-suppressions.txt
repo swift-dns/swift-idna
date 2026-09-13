@@ -1,0 +1,2 @@
+# LeakSanitizer suppressions for leaks in the test-runner infrastructure, not project code.
+leak:libXCTest.so

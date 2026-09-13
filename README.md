@@ -105,63 +105,55 @@ The C code is all automatically generated using the 2 scripts in `utils/`:
 
 * To see up to date information about performance of this package, please go to this [benchmarks list](https://github.com/swift-dns/swift-idna/actions/workflows/benchmarks.yml?query=branch%3Amain), and choose the most recent benchmark. You'll see a summary of the benchmark there.
 * The results below are all reproducible by simply running `scripts/benchmark.sh` on a machine of your own.
+* These were performed on a dedicated-cpu-core machine from Hetzner, on Ubuntu 24.04.
 * swift-foundation applies short-circuits of its own for ascii domain names so it _should_ perform better than ICU (but likely still not as good as swift-idna).
-* Last update: Jul 20, 2026
+* The benchmarks below are run in deterministically random order over multiple domains.
+  * This is to simulate a real-world workload, and so the CPU can't over-fit over specific patterns.
+* Last update: Jul 25, 2026
 
 ### Summary
 
 > [!NOTE]
-> * swift-idna wins 23 of the 24 benchmarks, ties 1.
+> * swift-idna wins 7 of the 8 benchmarks, loses 1.
 > * swift-idna commits considerably less heap allocations.
 > * swift-idna is much faster for the vast majority of the domain names in the wild, which are ASCII.
 
-### Non-ASCII Domain Names
-
-#### CPU Time
-
-| Benchmark                                  | ICU   | swift-idna | Improv. % |
-| ------------------------------------------ | ----- | ---------- | --------- |
-| To_ASCII_Lax_öob_dot_se_CPU_300K           | 100ms | 70ms       | 1.43x     |
-| To_ASCII_Lax_生命之花_dot_中国_CPU_200K      | 110ms | 100ms      | 1.1x      |
-| To_Unicode_Lax_öob_dot_se_CPU_300K         | 120ms | 70ms       | 1.71x     |
-| To_Unicode_Lax_生命之花_dot_中国_CPU_200K    | 140ms | 110ms      | 1.27x     |
-
-#### Malloc Count
-
-| Benchmark                                | ICU | swift-idna | Improv. %  |
-| ---------------------------------------- | --- | ---------- | ---------- |
-| To_ASCII_Lax_öob_dot_se_Malloc           | 2   | 1          | 2x    (-1) |
-| To_ASCII_Lax_生命之花_dot_中国_Malloc      | 5   | 4          | 1.25x (-1) |
-| To_Unicode_Lax_öob_dot_se_Malloc         | 1   | 1          | 1x    (0)  |
-| To_Unicode_Lax_生命之花_dot_中国_Malloc    | 4   | 3          | 1.33x (-1) |
-
 ### ASCII Domain Names
 
+* These are performed on 20 different ASCII domain names in [Cloudflare's top domains](https://radar.cloudflare.com/domains) list in top 50.
+* 4 domain names are uppercased to account for such domains.
+
 #### CPU Time
 
-| Benchmark                                                   | ICU   | swift-idna | Improv. % |
-| ----------------------------------------------------------- | ----- | ---------- | --------- |
-| To_ASCII_Lowercased_app-analytics-services_dot_com_CPU_5M   | 530ms | 120ms      | 4.42x     |
-| To_ASCII_Lowercased_google_dot_com_CPU_8M                   | 580ms | 150ms      | 3.87x     |
-| To_ASCII_Uppercased_app-analytics-services_dot_com_CPU_3M   | 320ms | 130ms      | 2.46x     |
-| To_ASCII_Uppercased_google_dot_com_CPU_5M                   | 360ms | 120ms      | 3x        |
-| To_Unicode_Lowercased_app-analytics-services_dot_com_CPU_4M | 420ms | 130ms      | 3.23x     |
-| To_Unicode_Lowercased_google_dot_com_CPU_8M                 | 570ms | 190ms      | 3x        |
-| To_Unicode_Uppercased_app-analytics-services_dot_com_CPU_4M | 430ms | 220ms      | 1.95x     |
-| To_Unicode_Uppercased_google_dot_com_CPU_5M                 | 350ms | 150ms      | 2.33x     |
+| Domain     | Operation  | swift-idna (ns/op) | ICU (ns/op) | Speedup |
+| ---------- | ---------- | ------------------ | ----------- | ------- |
+| 20 domains | To ASCII   | 26.0               | 114.0       | 4.38x   |
+| 20 domains | To Unicode | 32.5               | 112.5       | 3.46x   |
 
 #### Malloc Count
 
-| Benchmark                                                   | ICU | swift-idna | Improv. % |
-| ----------------------------------------------------------- | --- | ---------- | --------- |
-| To_ASCII_Lowercased_app-analytics-services_dot_com_Malloc   | 2   | 0          | ∞  (-2)   |
-| To_ASCII_Lowercased_google_dot_com_Malloc                   | 1   | 0          | ∞  (-1)   |
-| To_ASCII_Uppercased_app-analytics-services_dot_com_Malloc   | 2   | 1          | 2x (-1)   |
-| To_ASCII_Uppercased_google_dot_com_Malloc                   | 1   | 0          | ∞  (-1)   |
-| To_Unicode_Lowercased_app-analytics-services_dot_com_Malloc | 2   | 0          | ∞  (-2)   |
-| To_Unicode_Lowercased_google_dot_com_Malloc                 | 1   | 0          | ∞  (-1)   |
-| To_Unicode_Uppercased_app-analytics-services_dot_com_Malloc | 2   | 1          | 2x (-1)   |
-| To_Unicode_Uppercased_google_dot_com_Malloc                 | 1   | 0          | ∞  (-1)   |
+| Domain     | Operation  | swift-idna (allocs/op) | ICU (allocs/op) | Improvement |
+| ---------- | ---------- | ---------------------- | --------------- | ----------- |
+| 20 domains | To ASCII   | 0.05                   | 1.15            | 23x         |
+| 20 domains | To Unicode | 0.05                   | 1.15            | 23x         |
+
+### Non-ASCII Domain Names
+
+* These are performed on all the 13 different non-ASCII domain names in [Cloudflare's top domains](https://radar.cloudflare.com/domains) list in top 50_000.
+
+#### CPU Time
+
+| Domain     | Operation  | swift-idna (ns/op) | ICU (ns/op) | Speedup |
+| ---------- | ---------- | ------------------ | ----------- | ------- |
+| 13 domains | To ASCII   | 533.3              | 566.7       | 1.06x   |
+| 13 domains | To Unicode | 566.7              | 600.0       | 1.06x   |
+
+#### Malloc Count
+
+| Domain     | Operation  | swift-idna (allocs/op) | ICU (allocs/op) | Improvement |
+| ---------- | ---------- | ---------------------- | --------------- | ----------- |
+| 13 domains | To ASCII   | 2.46                   | 3.54            | 1.44x       |
+| 13 domains | To Unicode | 2.62                   | 1.92            | 0.74x       |
 
 ## How To Add swift-idna To Your Project
 

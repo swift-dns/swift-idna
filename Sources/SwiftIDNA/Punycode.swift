@@ -47,7 +47,7 @@ enum Punycode {
     /// Returns true if successful and false if conversion failed.
     ///
     /// This function uses unchecked/unsafe handling of some values. These are all safe.
-    /// This function is heavily tested with 12_000+ tests from Unicode's IDNA V2 test suite.
+    /// This function is heavily tested with 6400 tests from Unicode's IDNA V2 test suite.
     ///
     /// This function does not do overflow handling because based on RFC 3492,
     /// overflows are not possible for what matches the description of Swift's `Unicode.Scalar` type:
@@ -77,7 +77,7 @@ enum Punycode {
     /// You can use use the `outputBufferForReuse` after the function returns.
     @inlinable
     static func encode(
-        _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
+        inputBytesSpan: Span<UInt8>,
         outputBufferForReuse output: inout TinyBuffer,
         decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
     ) {
@@ -104,17 +104,20 @@ enum Punycode {
         while loopIdx < scalarsCount {
             var m: UInt32 = .max
 
-            for idx in 0..<scalarsCount {
+            var idx = 0
+            while idx < scalarsCount {
                 let codePoint = decodedUnicodeScalars[idx]
                 if !codePoint.isASCII, codePoint.value >= n {
                     m = min(m, codePoint.value)
                 }
+                idx &+= 1
             }
 
             delta &+= ((m &- n) &* (h &+ 1))
 
             n = m
-            for idx in 0..<scalarsCount {
+            idx = 0
+            while idx < scalarsCount {
                 let codePoint = decodedUnicodeScalars[idx]
                 if codePoint.value < n || codePoint.isASCII {
                     delta &+= 1
@@ -153,6 +156,7 @@ enum Punycode {
                     /// Skip one unicode scalar
                     loopIdx &+= 1
                 }
+                idx &+= 1
             }
             delta &+= 1
             n &+= 1
@@ -163,7 +167,7 @@ enum Punycode {
     /// Returns true if successful and false if conversion failed.
     ///
     /// This function uses unchecked/unsafe handling of some values. These are all safe.
-    /// This function is heavily tested with 12_000+ tests from Unicode's IDNA V2 test suite.
+    /// This function is heavily tested with 6400 tests from Unicode's IDNA V2 test suite.
     ///
     /// This function does not do overflow handling because based on RFC 3492,
     /// overflows are not possible for what matches the description of Swift's `Unicode.Scalar` type:
@@ -220,8 +224,10 @@ enum Punycode {
         return unicodeScalarsIndexToUTF8Index.withRigidArrayOutputSpan {
             unicodeScalarsIndexToUTF8Index in
 
-            for idx in 0..<output.count {
+            var idx = 0
+            while idx < output.count {
                 unsafe unicodeScalarsIndexToUTF8Index[unchecked: idx] = idx
+                idx &+= 1
             }
             var unicodeScalarsIndexToUTF8IndexCount = output.count
 
@@ -232,10 +238,8 @@ enum Punycode {
                 for k in stride(from: Constants.base, to: .max, by: Int(Constants.base)) {
                     /// Above we check that input is not empty, so this is safe.
                     /// There are also extensive tests for this in the IDNATests.swift.
-                    guard
-                        let codePoint = unicodeScalarsIterator.next(in: inputBytesSpan),
-                        let digit = Punycode.mapUnicodeScalarToDigit(codePoint)
-                    else {
+                    let codePoint = unicodeScalarsIterator.uncheckedNext(in: inputBytesSpan)
+                    guard let digit = Punycode.mapCodePointToDigit(codePoint) else {
                         output.removeAll()
                         return false
                     }
@@ -292,8 +296,10 @@ enum Punycode {
                 unicodeScalarsIndexToUTF8Index.swift_idna_insert(toInsert, at: iInt)
                 unicodeScalarsIndexToUTF8IndexCount &+= 1
 
-                for idx in (iInt &+ 1)..<unicodeScalarsIndexToUTF8IndexCount {
+                var idx = iInt &+ 1
+                while idx < unicodeScalarsIndexToUTF8IndexCount {
                     unsafe unicodeScalarsIndexToUTF8Index[unchecked: idx] &+= utf8Count
+                    idx &+= 1
                 }
 
                 i &+= 1
@@ -337,8 +343,8 @@ enum Punycode {
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Parameter values for Punycode](https://datatracker.ietf.org/doc/html/rfc3492#section-5)
     /// A-Z -> 0-25; a-z -> 0-25; 0-9 -> 26-35
     @inlinable
-    static func mapUnicodeScalarToDigit(_ unicodeScalar: Unicode.Scalar) -> UInt32? {
-        let value = unicodeScalar.value
+    static func mapCodePointToDigit(_ codePoint: UInt32) -> UInt32? {
+        let value = codePoint
 
         /// An uppercase ASCII letter should not make it through to Punycode conversion.
         assert(!(value >= 0x41 && value <= 0x5a))

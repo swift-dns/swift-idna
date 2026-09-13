@@ -8,17 +8,30 @@ struct DecodedUnicodeScalars: ~Copyable {
     var scalars: RigidArray<Unicode.Scalar>
 
     @inlinable
-    init(utf8Bytes: Span<UInt8>) {
+    init(utf8Bytes: Span<UInt8>, errors: inout IDNA.MappingErrors) {
         self.scalars = RigidArray<Unicode.Scalar>(capacity: utf8Bytes.count)
-        self.decode(utf8Bytes: utf8Bytes)
+        self.decode(utf8Bytes: utf8Bytes, errors: &errors)
     }
 
     /// Decodes the given UTF-8 bytes into Unicode scalars.
     @usableFromInline
-    mutating func decode(utf8Bytes: Span<UInt8>) {
+    mutating func decode(
+        utf8Bytes: Span<UInt8>,
+        errors: inout IDNA.MappingErrors
+    ) {
         self.scalars.edit { output in
             var unicodeScalarsIterator = UnicodeScalarIterator()
-            while let scalar = unicodeScalarsIterator.next(in: utf8Bytes) {
+            while let uncheckedScalar = unicodeScalarsIterator.next(in: utf8Bytes) {
+                guard let scalar = Unicode.Scalar(uncheckedScalar) else {
+                    /// This type is to use in punycode-encode func so we preemptively assume that.
+                    errors.append(
+                        .labelPunycodeEncodeFailed(
+                            label: String(span: utf8Bytes)
+                        )
+                    )
+                    /// Error already appended in mapToIDNAMappings
+                    continue
+                }
                 output.append(scalar)
             }
         }
@@ -70,17 +83,20 @@ extension DecodedUnicodeScalars {
             if range.lowerBound == 0 {
                 self.startIndex = 0
             } else {
-                for idx in self.endIndex..<scalarsCount {
+                var idx = self.endIndex
+                while idx < scalarsCount {
                     let scalar = unsafe self.scalars[unchecked: idx]
                     byteOffset &+= scalar.utf8.count
                     if byteOffset == range.lowerBound {
                         self.startIndex = idx &+ 1
                         break
                     }
+                    idx &+= 1
                 }
             }
 
-            for idx in self.startIndex..<scalarsCount {
+            var idx = self.startIndex
+            while idx < scalarsCount {
                 let scalar = unsafe self.scalars[unchecked: idx]
                 byteOffset &+= scalar.utf8.count
                 if byteOffset == range.upperBound {
@@ -88,6 +104,7 @@ extension DecodedUnicodeScalars {
                     self.endIndexByteOffset = byteOffset
                     break
                 }
+                idx &+= 1
             }
         }
 

@@ -48,16 +48,17 @@ extension IDNA {
                 unsafe errors.append(contentsOf: spanPtr)
             }
             return CollectedMappingErrors(
-                domainName: String(_uncheckedAssumingValidUTF8: self.domainNameSpan),
+                domainName: String(span: self.domainNameSpan),
                 errors: errors
             )
         }
     }
 
+    /// If a label contains invalid UTF8, the String representation of it will be repaired into valid UTF8.
     @nonexhaustive
     public enum MappingError: Sendable, CustomStringConvertible {
         case labelStartsWithXNHyphenMinusHyphenMinusButContainsNonASCII(label: String)
-        case labelPunycodeEncodeFailed(label: [UInt8])
+        case labelPunycodeEncodeFailed(label: String)
         case labelPunycodeDecodeFailed(label: String)
         case labelIsEmptyAfterPunycodeConversion(label: String)
         case labelContainsOnlyASCIIAfterPunycodeDecode(label: String)
@@ -83,11 +84,12 @@ extension IDNA {
             label: String
         )
         case labelStartsWithCombiningMark(label: String)
-        case labelContainsInvalidUnicode(Unicode.Scalar, label: String)
+        case labelContainsInvalidUnicode(UInt32, label: String)
         case trueUseSTD3ASCIIRulesArgumentRequiresLabelToOnlyContainCertainASCIICharacters(
             label: String
         )
 
+        /// If a label contains invalid UTF8, the String representation of it is repaired into valid UTF8.
         public var description: String {
             switch self {
             case .labelStartsWithXNHyphenMinusHyphenMinusButContainsNonASCII(let label):
@@ -147,7 +149,7 @@ extension IDNA {
                     ".labelStartsWithCombiningMark(\(label.debugDescription))"
             case .labelContainsInvalidUnicode(let codePoint, let label):
                 return
-                    ".labelContainsInvalidUnicode(\(codePoint.debugDescription), label: \(label.debugDescription))"
+                    ".labelContainsInvalidUnicode(\(codePoint), label: \(label.debugDescription))"
             case .trueUseSTD3ASCIIRulesArgumentRequiresLabelToOnlyContainCertainASCIICharacters(
                 let label
             ):
