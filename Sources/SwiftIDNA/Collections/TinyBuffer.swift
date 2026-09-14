@@ -124,6 +124,28 @@ enum TinyBuffer: ~Copyable, ~Escapable {
         }
     }
 
+    /// Appends the given element to the buffer, moving to the heap if it does not fit inline.
+    @inlinable
+    mutating func append(_ element: UInt8) {
+        switch consume self {
+        case .inline(var elements):
+            if elements.count == InlineElements.maximumCapacity {
+                var array = UniqueArray(
+                    copying: elements,
+                    capacity: TINY_ARRAY__UNIQUE_ARRAY_ALLOCATION_THRESHOLD
+                )
+                array.append(element)
+                self = .heap(array)
+            } else {
+                elements.append(unchecked: element)
+                self = .inline(elements)
+            }
+        case .heap(var array):
+            array.append(element)
+            self = .heap(array)
+        }
+    }
+
     /// Appends the given element to the buffer.
     /// Assumes the buffer has enough capacity to hold the element.
     @inlinable

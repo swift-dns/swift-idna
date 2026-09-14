@@ -89,14 +89,14 @@ enum Punycode {
         for idx in inputBytesSpan.indices {
             let byte = inputBytesSpan[idx]
             if byte.isASCII {
-                output.append(unchecked: byte)
+                output.append(byte)
             }
         }
         let b = UInt32(output.count)
         var h = b
 
         if !output.isEmpty {
-            output.append(unchecked: UInt8.asciiHyphenMinus)
+            output.append(UInt8.asciiHyphenMinus)
         }
 
         var loopIdx = h
@@ -142,13 +142,13 @@ enum Punycode {
                         let digit = t &+ ((q &- t) % (Constants.base &- t))
                         /// Logically this is safe because we know that digit is in the range 0...35
                         /// There are also extensive tests for this in the IDNATests.swift.
-                        output.append(unchecked: Punycode.uncheckedMapDigitToUTF8Byte(digit))
+                        output.append(Punycode.uncheckedMapDigitToUTF8Byte(digit))
 
                         q = (q &- t) / (Constants.base &- t)
                     }
                     /// Logically this is safe because we know that digit is in the range 0...35
                     /// There are also extensive tests for this in the IDNATests.swift.
-                    output.append(unchecked: Punycode.uncheckedMapDigitToUTF8Byte(q))
+                    output.append(Punycode.uncheckedMapDigitToUTF8Byte(q))
 
                     bias = adapt(delta: delta, codePointCount: h &+ 1, isFirstTime: h == b)
                     delta = 0

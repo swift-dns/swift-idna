@@ -56,6 +56,7 @@ package struct NFCNormalization {
     }
 
     /// Whether the span is in Normalization Form C or not.
+    @usableFromInline
     @inline(never)
     package static func _isInNFCSlow(_ span: Span<UInt8>) -> Bool {
         unsafe withNormalizedScalars(span) { scalarsCount, scalarsBuffer in
