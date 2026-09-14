@@ -1,6 +1,5 @@
+import SwiftIDNA
 import Testing
-
-@testable import SwiftIDNA
 
 @Suite
 struct PunycodeCapacityTests {

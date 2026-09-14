@@ -11,14 +11,14 @@ package var TINY_ARRAY__UNIQUE_ARRAY_ALLOCATION_THRESHOLD: Int {
 /// This is useful for skipping allocations if we don't have many bytes to store.
 @available(SwiftStdlib 5.1, *)
 @usableFromInline
-enum TinyBuffer: ~Copyable, ~Escapable {
+package enum TinyBuffer: ~Copyable, ~Escapable {
     case inline(InlineElements)
     case heap(UniqueArray<UInt8>)
 
     /// Runs `body` with an empty `TinyBuffer` backed by a inline stack allocation.
     @inlinable
     @inline(__always)
-    static func withInlineAllocation<R: ~Copyable, Failure: Error>(
+    package static func withInlineAllocation<R: ~Copyable, Failure: Error>(
         _ body: (inout TinyBuffer) throws(Failure) -> R
     ) throws(Failure) -> R {
         try Self.withInlineAllocation(requiredCapacity: 0, body)
@@ -216,7 +216,7 @@ enum TinyBuffer: ~Copyable, ~Escapable {
 
     /// Gives access to the underlying buffer as a `Span<UInt8>`.
     @inlinable
-    func withSpan<T: ~Copyable>(_ block: (Span<UInt8>) -> T) -> T {
+    package func withSpan<T: ~Copyable>(_ block: (Span<UInt8>) -> T) -> T {
         switch self {
         case .inline(let elements):
             return elements.withSpan(block)
@@ -328,7 +328,7 @@ extension TinyBuffer {
     /// Some bytes held in a inline stack allocation, alongside their count.
     /// Currently holds up to 24 bytes.
     @usableFromInline
-    @safe struct InlineElements: ~Copyable, ~Escapable {
+    @safe package struct InlineElements: ~Copyable, ~Escapable {
         @usableFromInline
         var buffer: UnsafeMutableBufferPointer<UInt8>
         @usableFromInline
@@ -336,7 +336,7 @@ extension TinyBuffer {
 
         /// The maximum number of bytes that can be held inline.
         @inlinable
-        static var maximumCapacity: Int {
+        package static var maximumCapacity: Int {
             24
         }
 

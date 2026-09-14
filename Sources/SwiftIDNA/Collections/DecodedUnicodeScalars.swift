@@ -3,12 +3,12 @@ public import BasicContainers
 /// A container that holds a group of decoded Unicode scalars.
 @available(SwiftStdlib 5.1, *)
 @usableFromInline
-struct DecodedUnicodeScalars: ~Copyable {
+package struct DecodedUnicodeScalars: ~Copyable {
     @usableFromInline
     var scalars: RigidArray<Unicode.Scalar>
 
     @inlinable
-    init(utf8Bytes: Span<UInt8>, errors: inout IDNA.MappingErrors) {
+    package init(utf8Bytes: Span<UInt8>, errors: inout IDNA.MappingErrors) {
         self.scalars = RigidArray<Unicode.Scalar>(capacity: utf8Bytes.count)
         self.decode(utf8Bytes: utf8Bytes, errors: &errors)
     }
@@ -43,7 +43,7 @@ extension DecodedUnicodeScalars {
     /// A subsequence of a `DecodedUnicodeScalars` container.
     /// This is tuned to this library's needs so it might need some adjustments for other use cases.
     @usableFromInline
-    struct Subsequence: ~Copyable, ~Escapable {
+    package struct Subsequence: ~Copyable, ~Escapable {
         @usableFromInline
         var scalars: Span<Unicode.Scalar>
         @usableFromInline
@@ -63,7 +63,7 @@ extension DecodedUnicodeScalars {
         /// We're using `inout` to ensure exclusive access.
         @inlinable
         @_lifetime(&base)
-        init(base: inout DecodedUnicodeScalars) {
+        package init(base: inout DecodedUnicodeScalars) {
             self.scalars = base.scalars.span
             self.startIndex = 0
             self.endIndex = 0
@@ -76,7 +76,7 @@ extension DecodedUnicodeScalars {
         /// As an optimization, this function assumes the new range is after the last range it was set to.
         /// As always, tests will catch the issue if it's not the case.
         @inlinable
-        mutating func set(utf8OffsetRange range: Range<Int>) {
+        package mutating func set(utf8OffsetRange range: Range<Int>) {
             let scalarsCount = self.scalars.count
             var byteOffset = self.endIndexByteOffset
 

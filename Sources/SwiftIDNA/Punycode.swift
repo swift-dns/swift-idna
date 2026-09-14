@@ -1,7 +1,7 @@
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
 @available(SwiftStdlib 5.1, *)
 @usableFromInline
-enum Punycode {
+package enum Punycode {
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Parameter values for Punycode](https://datatracker.ietf.org/doc/html/rfc3492#section-5)
     ///
     /// To support 32-bit platforms, we use `UInt32` instead of `Int` throughout this implementation.
@@ -76,7 +76,7 @@ enum Punycode {
     /// reset and reuse the buffer.
     /// You can use use the `outputBufferForReuse` after the function returns.
     @inlinable
-    static func encode(
+    package static func encode(
         inputBytesSpan: Span<UInt8>,
         outputBufferForReuse output: inout TinyBuffer,
         decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence

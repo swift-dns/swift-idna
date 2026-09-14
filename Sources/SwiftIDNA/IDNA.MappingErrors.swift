@@ -14,7 +14,7 @@ extension IDNA {
     }
 
     @usableFromInline
-    struct MappingErrors: ~Copyable, ~Escapable {
+    package struct MappingErrors: ~Copyable, ~Escapable {
         @usableFromInline
         let domainNameSpan: Span<UInt8>
         @usableFromInline
@@ -27,7 +27,7 @@ extension IDNA {
 
         @inlinable
         @_lifetime(copy domainNameSpan)
-        init(domainNameSpan: Span<UInt8>) {
+        package init(domainNameSpan: Span<UInt8>) {
             self.domainNameSpan = domainNameSpan
             self.errors = UniqueArray<MappingError>(minimumCapacity: 0)
         }
