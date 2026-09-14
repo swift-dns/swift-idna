@@ -1,19 +1,3 @@
-#if os(Windows)
-import ucrt
-#elseif canImport(Darwin)
-import Darwin
-#elseif canImport(Glibc)
-@preconcurrency import Glibc
-#elseif canImport(Musl)
-@preconcurrency import Musl
-#elseif canImport(Bionic)
-@preconcurrency import Bionic
-#elseif canImport(WASILibc)
-@preconcurrency import WASILibc
-#else
-#error("The SwiftIDNA.IDNAUnicodeScalarView module was unable to identify your C library.")
-#endif
-
 /// A type that wraps some `UInt8`s that this library can guarantee to be valid Unicode scalars.
 ///
 /// Unchecked `Sendable` because the pointer is guaranteed to be valid for the duration of the program execution.
@@ -34,13 +18,14 @@ import Darwin
 extension IDNAUnicodeScalarView: Equatable {
     public static func == (lhs: IDNAUnicodeScalarView, rhs: IDNAUnicodeScalarView) -> Bool {
         if unsafe lhs.pointer.count != rhs.pointer.count { return false }
-        if unsafe lhs.pointer.count == 0 { return true }
-        return unsafe memcmp(
-            /// If the count is non-zero then the `UnsafeBufferPointer` guarantees there is a non-nil pointer.
-            lhs.pointer.baseAddress.unsafelyUnwrapped,
-            rhs.pointer.baseAddress.unsafelyUnwrapped,
-            lhs.pointer.count
-        ) == 0
+        let lhsSpan = unsafe lhs.pointer.span
+        let rhsSpan = unsafe rhs.pointer.span
+        var mismatches: UInt8 = 0
+        /// This loop is auto-vectorized by LLVM.
+        for idx in lhsSpan.indices {
+            mismatches |= unsafe lhsSpan[unchecked: idx] ^ rhsSpan[unchecked: idx]
+        }
+        return mismatches == 0
     }
 }
 

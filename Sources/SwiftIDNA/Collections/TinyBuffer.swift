@@ -278,13 +278,14 @@ enum TinyBuffer: ~Copyable, ~Escapable {
             return
         }
 
+        let array = self.withSpan { span in
+            NFCNormalization.writeUTF8BytesInNFC(span) { (requireCapacity, writer) in
+                UniqueArray<UInt8>(capacity: requireCapacity, initializingWith: writer)
+            }
+        }
+
         switch consume self {
         case .inline(var elements):
-            let array = elements.withSpan { span in
-                NFCNormalization.writeUTF8BytesInNFC(span) { (requireCapacity, writer) in
-                    UniqueArray<UInt8>(capacity: requireCapacity, initializingWith: writer)
-                }
-            }
             if array.count <= InlineElements.maximumCapacity {
                 elements.removeAll()
                 elements.edit { output in
@@ -294,12 +295,8 @@ enum TinyBuffer: ~Copyable, ~Escapable {
             } else {
                 self = .heap(array)
             }
-        case .heap(let array):
-            let newArray = NFCNormalization.writeUTF8BytesInNFC(array.span) {
-                (requireCapacity, writer) in
-                UniqueArray<UInt8>(capacity: requireCapacity, initializingWith: writer)
-            }
-            self = .heap(newArray)
+        case .heap:
+            self = .heap(array)
         }
     }
 }
