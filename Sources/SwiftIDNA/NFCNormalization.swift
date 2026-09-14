@@ -56,7 +56,7 @@ package struct NFCNormalization {
     }
 
     /// Whether the span is in Normalization Form C or not.
-    @inlinable
+    @inline(never)
     package static func _isInNFCSlow(_ span: Span<UInt8>) -> Bool {
         unsafe withNormalizedScalars(span) { scalarsCount, scalarsBuffer in
             let scalarsRange = unsafe Range<Int>(uncheckedBounds: (0, scalarsCount))
@@ -71,8 +71,8 @@ package struct NFCNormalization {
                     for idx in 0..<scalarUTF8Length {
                         let uncheckedSpanIdx = utf8Count &+ idx
                         let spanIdx = min(uncheckedSpanIdx, span.count &- 1)
-                        isEqualToCurrent &=
-                            (unsafe span[unchecked: spanIdx] == bytesPtr[idx]) ? 1 : 0
+                        let spanByte = unsafe span[unchecked: spanIdx]
+                        isEqualToCurrent &= unsafe (spanByte == bytesPtr[idx]) ? 1 : 0
                     }
                 }
                 utf8Count &+= scalarUTF8Length
@@ -114,7 +114,7 @@ package struct NFCNormalization {
         }
     }
 
-    @inlinable @inline(always)
+    @inline(always)
     package static func withNormalizedScalars<R: ~Copyable>(
         _ span: Span<UInt8>,
         block: (_ count: Int, _ scalars: UnsafeMutableBufferPointer<UInt32>) -> R

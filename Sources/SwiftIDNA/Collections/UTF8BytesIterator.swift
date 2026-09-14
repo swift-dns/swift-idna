@@ -82,15 +82,16 @@ struct UTF8BytesIterator {
     ) -> (scalarUTF8Length: Int, bytes: (UInt8, UInt8, UInt8, UInt8)) {
         let packedScalar = unsafe scalars[unchecked: self.currentScalarOffset]
         self.currentScalarOffset &+= 1
-        return Self.branchlessEncodeScalar(packedScalar & 0x1F_FFFF)
+        return Self.branchlessEncodeValidScalar(packedScalar & 0x1F_FFFF)
     }
 
     /// The inverse of `UnicodeScalarIterator.decodeScalar`.
     @inline(__always)
     @inlinable
-    static func branchlessEncodeScalar(
+    static func branchlessEncodeValidScalar(
         _ scalar: UInt32
     ) -> (scalarUTF8Length: Int, bytes: (UInt8, UInt8, UInt8, UInt8)) {
+        /// Valid UTF-32 scalars are in the range `0x0000_0000` to `0x10FFFF`.
         assert(scalar <= 0x1F_FFFF)
 
         let scalarUTF8Length = Int(
