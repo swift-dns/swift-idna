@@ -91,11 +91,14 @@ struct UTF8BytesIterator {
     static func branchlessEncodeScalar(
         _ scalar: UInt32
     ) -> (scalarUTF8Length: Int, bytes: (UInt8, UInt8, UInt8, UInt8)) {
-        let scalarUTF8Length =
+        assert(scalar <= 0x1F_FFFF)
+
+        let scalarUTF8Length = Int(
             1
-            &+ (scalar > 0x7F ? 1 : 0)
-            &+ (scalar > 0x7FF ? 1 : 0)
-            &+ (scalar > 0xFFFF ? 1 : 0)
+                &+ ((0x7F &- scalar) &>> 31)
+                &+ ((0x7FF &- scalar) &>> 31)
+                &+ ((0xFFFF &- scalar) &>> 31)
+        )
         let shifted = scalar &<< (6 &* (4 &- scalarUTF8Length))
         let leadPrefix = (0xF0E0_C000 as UInt32) &>> (8 &* (scalarUTF8Length &- 1)) & 0xFF
         return (

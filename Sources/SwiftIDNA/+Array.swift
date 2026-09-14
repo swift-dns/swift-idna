@@ -15,10 +15,20 @@ extension Array where Element: BitwiseCopyable {
 
 extension Array where Element == UInt8 {
     var _swift_idna_debugDescription: String {
-        #if $Embedded
-        "[(cannot print array values in embedded Swift)]"
-        #else
-        self.debugDescription
-        #endif
+        /// At most 3 digits per byte, 2 bytes for each of the `count - 1` separators, 2 for the brackets.
+        var description = ""
+        description.reserveCapacity(self.count &* 5)
+        description += "["
+        var isFirst = true
+        for byte in self {
+            if isFirst {
+                isFirst = false
+            } else {
+                description += ", "
+            }
+            description += "\(byte)"
+        }
+        description += "]"
+        return description
     }
 }

@@ -87,8 +87,7 @@ package struct NFCNormalization {
     @inline(always)
     package static func writeUTF8BytesInNFC<R: ~Copyable>(
         _ span: Span<UInt8>,
-        via writingUTF8Bytes:
-            (_ requiredCapacity: Int, ((inout OutputSpan<UInt8>) -> Void)) -> R
+        via writingUTF8Bytes: (_ requiredCapacity: Int, ((inout OutputSpan<UInt8>) -> Void)) -> R
     ) -> R {
         unsafe withNormalizedScalars(span) { scalarsCount, scalarsBuffer in
             /// Write utf8 bytes
@@ -229,6 +228,7 @@ package struct NFCNormalization {
         var readIndex = 0
         var writeIndex = 0
         var starterIndex = -1
+        /// Canonical Combining Class
         var previousCCC: UInt32 = 0
         while readIndex < count {
             let packedScalar = unsafe scalars[readIndex]
