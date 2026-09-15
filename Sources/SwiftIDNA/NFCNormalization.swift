@@ -137,7 +137,7 @@ package struct NFCNormalization {
     }
 
     /// Decomposes the span into its canonical decomposed form (NFD).
-    /// https://www.unicode.org/reports/tr15/
+    /// [The Unicode Standard, 3.7 Decomposition](https://www.unicode.org/versions/Unicode17.0.0/UnicodeStandard-17.0.pdf)
     @inlinable
     static func decompose(
         _ span: Span<UInt8>,
@@ -219,8 +219,8 @@ package struct NFCNormalization {
         count &+= 1
     }
 
-    /// The Canonical Composition Algorithm per UAX #15: composes each combinable scalar with
-    /// the last starter unless a preceding scalar blocks it, compacting survivors in place.
+    /// (Re)composes the span into its canonical composed form (NFC).
+    /// [The Unicode Standard, 3.11.6 Canonical Composition Algorithm](https://www.unicode.org/versions/Unicode17.0.0/UnicodeStandard-17.0.pdf)
     @inlinable
     static func compose(
         _ scalars: UnsafeMutableBufferPointer<UInt32>,
@@ -255,8 +255,7 @@ package struct NFCNormalization {
         count = writeIndex
     }
 
-    /// Returns the primary composite of the two scalars, composing Hangul arithmetically and
-    /// everything else through a binary search of the canonical composition pair table.
+    /// [The Unicode Standard, 3.11.6 Canonical Composition Algorithm](https://www.unicode.org/versions/Unicode17.0.0/UnicodeStandard-17.0.pdf)
     @inlinable
     package static func composePair(_ first: UInt32, _ second: UInt32) -> UInt32? {
         if first &- 0x1100 < 19, second &- 0x1161 < 21 {

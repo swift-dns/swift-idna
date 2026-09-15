@@ -232,7 +232,7 @@ package enum Punycode {
             var unicodeScalarsIndexToUTF8IndexCount = output.count
 
             var unicodeScalarsIterator = UnicodeScalarIterator()
-            while unicodeScalarsIterator.currentCodeUnitOffset != inputBytesSpan.count {
+            while unicodeScalarsIterator.currentCodePointOffset != inputBytesSpan.count {
                 let oldi = i
                 var w: UInt32 = 1
                 for k in stride(from: Constants.base, to: .max, by: Int(Constants.base)) {

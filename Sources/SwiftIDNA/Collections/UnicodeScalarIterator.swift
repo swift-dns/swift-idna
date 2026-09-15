@@ -3,11 +3,11 @@
 @usableFromInline
 struct UnicodeScalarIterator {
     @usableFromInline
-    var currentCodeUnitOffset: Int
+    var currentCodePointOffset: Int
 
     @inlinable
     init() {
-        self.currentCodeUnitOffset = 0
+        self.currentCodePointOffset = 0
     }
 
     /// Decodes and returns the next Unicode scalar and the range of utf8 bytes it was decoded from.
@@ -18,7 +18,7 @@ struct UnicodeScalarIterator {
     @inline(__always)
     @inlinable
     mutating func uncheckedNext(in bytes: Span<UInt8>) -> UInt32 {
-        let lowerBound = self.currentCodeUnitOffset
+        let lowerBound = self.currentCodePointOffset
         let leadByte = unsafe bytes[unchecked: lowerBound]
         let lastIndex = bytes.count &- 1
         let continuationByte1 = unsafe bytes[unchecked: Swift.min(lowerBound &+ 1, lastIndex)]
@@ -31,7 +31,7 @@ struct UnicodeScalarIterator {
             continuationByte2: continuationByte2,
             continuationByte3: continuationByte3
         )
-        self.currentCodeUnitOffset = lowerBound &+ scalarUTF8Length
+        self.currentCodePointOffset = lowerBound &+ scalarUTF8Length
 
         return uncheckedScalar
     }
@@ -66,7 +66,7 @@ struct UnicodeScalarIterator {
     @inline(__always)
     @inlinable
     mutating func next(in bytes: Span<UInt8>) -> UInt32? {
-        guard self.currentCodeUnitOffset < bytes.count else { return nil }
+        guard self.currentCodePointOffset < bytes.count else { return nil }
         return self.uncheckedNext(in: bytes)
     }
 
@@ -78,10 +78,10 @@ struct UnicodeScalarIterator {
     @inline(__always)
     @inlinable
     mutating func uncheckedNextWithRange(in bytes: Span<UInt8>) -> (UInt32, Range<Int>)? {
-        let lowerBound = self.currentCodeUnitOffset
+        let lowerBound = self.currentCodePointOffset
         let next = self.uncheckedNext(in: bytes)
         let range = unsafe Range<Int>(
-            uncheckedBounds: (lowerBound, self.currentCodeUnitOffset)
+            uncheckedBounds: (lowerBound, self.currentCodePointOffset)
         )
         return (next, range)
     }
@@ -93,11 +93,11 @@ struct UnicodeScalarIterator {
     @inline(__always)
     @inlinable
     mutating func nextWithRange(in bytes: Span<UInt8>) -> (UInt32, Range<Int>)? {
-        guard self.currentCodeUnitOffset < bytes.count else { return nil }
-        let lowerBound = self.currentCodeUnitOffset
+        guard self.currentCodePointOffset < bytes.count else { return nil }
+        let lowerBound = self.currentCodePointOffset
         let next = self.uncheckedNext(in: bytes)
         let range = unsafe Range<Int>(
-            uncheckedBounds: (lowerBound, self.currentCodeUnitOffset)
+            uncheckedBounds: (lowerBound, self.currentCodePointOffset)
         )
         return (next, range)
     }
