@@ -11,14 +11,6 @@ extension Span<UInt8> {
         return result <= 0x7F
     }
 
-    /// Whether or not the span scalars are all in Normalization Form C (NFC).
-    @usableFromInline
-    var isInNFC: Bool {
-        if self.isEmpty || self.isASCII { return true }
-        let string = String(_uncheckedAssumingValidUTF8: self)
-        return string.isEqualToNFCCodePointsOfSelf()
-    }
-
     /// Checks if contains any labels that start with “xn--”
     @inlinable
     var containsIDNADomainNameMarkerLabelPrefix: Bool {
@@ -38,6 +30,7 @@ extension Span<UInt8> {
         /// Did not start with “xn--”, check the rest of the labels
 
         return self.containsAnyIDNADomainNameMarkerLabelPrefix { idxOfX in
+            /// Count behind the "x" in a "xn--"
             let countBehindX = idxOfX
 
             /// See if there is a label separator before this "xn--"
@@ -127,21 +120,46 @@ extension Span<UInt8> {
             return false
         }
     }
+
+    /// Returns true if the span contains only valid UTF-8 bytes.
+    @inlinable
+    func checkUTF8() -> Bool {
+        if self.isASCII {
+            return true
+        }
+
+        var seenInvalidUTF8 = false
+
+        SIMDUnicodeScalarDecoder.withTemporaryDecoder { decoder in
+            /// Process windows of size `SIMDUnicodeScalarDecoder.windowSize`, one by one.
+            var startIdx = 0
+            outerLoop: while startIdx < count {
+                decoder.decodeNextWindow(of: self, startIdx: startIdx)
+                let scalarCount = decoder.scalarCount
+
+                var scalarIdx = 0
+                while scalarIdx < scalarCount {
+                    let offset = decoder.scalarStartOffset(at: scalarIdx)
+                    let uncheckedScalar = unsafe decoder.uncheckedScalarValues[unchecked: offset]
+
+                    if Unicode.Scalar(uncheckedScalar) == nil {
+                        seenInvalidUTF8 = true
+                        break outerLoop
+                    }
+
+                    scalarIdx &+= 1
+                }
+
+                startIdx &+= decoder.windowEndOffset()
+            }
+        }
+
+        return !seenInvalidUTF8
+    }
 }
 
 @available(SwiftStdlib 5.1, *)
 extension Span {
-    /// Whether or not all the elements in the span satisfy the given predicate.
-    @inlinable
-    func allSatisfy(_ predicate: (Element) -> Bool) -> Bool {
-        for idx in self.indices {
-            if !predicate(self[idx]) {
-                return false
-            }
-        }
-        return true
-    }
-
     /// Finds the last index of the given element in the span.
     @inlinable
     func lastIndex(of element: Element) -> Int? where Element: Equatable {

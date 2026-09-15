@@ -25,19 +25,18 @@ extension IDNA {
         /// Perform an action using the span of the result.
         /// `ifNotAvailable` is called when no changes were needed and the original string was all-good.
         @inlinable
-        public func withSpan<T>(
-            _ block: (Span<UInt8>) throws -> T,
-            ifNotAvailable: () throws -> T
-        ) rethrows -> T {
+        public func withSpan<T, E: Error>(
+            _ block: (Span<UInt8>) throws(E) -> T,
+            ifNotAvailable: () throws(E) -> T
+        ) throws(E) -> T {
             switch self {
             case .noChangesNeeded:
                 return try ifNotAvailable()
             case .bytes(let bytes):
                 return try block(bytes.span)
             case .string(let string):
-                var string = string
-                return try string.withSpan_Compatibility {
-                    try block($0)
+                return try string.withSpan_Compatibility { (span) throws(E) in
+                    try block(span)
                 }
             }
         }

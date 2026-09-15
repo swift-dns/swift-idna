@@ -6,12 +6,15 @@ extension OutputSpan<UInt8> {
         let appendCount = span.count
         if appendCount == 0 { return }
         let usedCapacity = self.count
-        let capacity = self.capacity
         unsafe self.withUnsafeMutableBufferPointer { buffer, initializedCount in
             span.withUnsafeBytes { spanPtr in
-                let range = unsafe Range<Int>(uncheckedBounds: (usedCapacity, capacity))
-                let target = buffer.extracting(range)
-                _ = unsafe target.initialize(fromContentsOf: spanPtr)
+                let target = unsafe UnsafeMutableRawPointer(
+                    buffer.baseAddress.unsafelyUnwrapped
+                ).advanced(by: usedCapacity)
+                unsafe target.copyMemory(
+                    from: spanPtr.baseAddress.unsafelyUnwrapped,
+                    byteCount: appendCount
+                )
             }
             initializedCount = usedCapacity &+ appendCount
         }
@@ -37,6 +40,17 @@ extension OutputSpan where Element: BinaryInteger {
             }
             unsafe buffer.initializeElement(at: index, to: element)
             initializedCount = usedCapacity &+ 1
+        }
+    }
+}
+
+@available(SwiftStdlib 5.1, *)
+extension OutputSpan<UInt8> {
+    /// Appends the given UTF-8 view to the output span.
+    @inlinable
+    mutating func swift_idna_append(copying utf8View: Unicode.Scalar.UTF8View) {
+        for byte in utf8View {
+            self.append(byte)
         }
     }
 }

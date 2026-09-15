@@ -1,7 +1,7 @@
 #include "../include/CSwiftIDNATesting.h"
 #include <stddef.h>
 
-#define CSwift_IDNA_TEST_V2_CASES_COUNT 6388
+#define CSwift_IDNA_TEST_V2_CASES_COUNT 6391
 
 extern const CSwiftIDNATestV2CCase cswift_idna_test_v2_cases[];
 
@@ -1700,6 +1700,15 @@ const CSwiftIDNATestV2CCase cswift_idna_test_v2_cases[] = {
             .toUnicodeStatus = (const char*[]){ "P4" },
             .toUnicodeStatusCount = 1,
             .toAsciiN = NULL,
+            .toAsciiNStatus = (const char*[]){  },
+            .toAsciiNStatusCount = 0,
+        },
+        {
+            .source = "xn--a.pt",
+            .toUnicode = "\302\200.pt",
+            .toUnicodeStatus = (const char*[]){ "V7" },
+            .toUnicodeStatusCount = 1,
+            .toAsciiN = "xn--a.pt",
             .toAsciiNStatus = (const char*[]){  },
             .toAsciiNStatusCount = 0,
         },
@@ -3898,6 +3907,24 @@ const CSwiftIDNATestV2CCase cswift_idna_test_v2_cases[] = {
             .toAsciiN = NULL,
             .toAsciiNStatus = (const char*[]){  },
             .toAsciiNStatusCount = 0,
+        },
+        {
+            .source = "a\355\244\200z",
+            .toUnicode = NULL,
+            .toUnicodeStatus = (const char*[]){ "V7" },
+            .toUnicodeStatusCount = 1,
+            .toAsciiN = NULL,
+            .toAsciiNStatus = (const char*[]){ "V7", "A3" },
+            .toAsciiNStatusCount = 2,
+        },
+        {
+            .source = "A\355\244\200Z",
+            .toUnicode = "a\355\244\200z",
+            .toUnicodeStatus = (const char*[]){ "V7" },
+            .toUnicodeStatusCount = 1,
+            .toAsciiN = NULL,
+            .toAsciiNStatus = (const char*[]){ "V7", "A3" },
+            .toAsciiNStatusCount = 2,
         },
         {
             .source = "xn--",

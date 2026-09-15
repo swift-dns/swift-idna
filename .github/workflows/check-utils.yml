@@ -33,6 +33,10 @@ jobs:
           swift utils/IDNAMappingTableGenerator.swift
           echo "- Running IDNA Test V2 Generator..."
           swift utils/IDNATestV2Generator.swift
+          echo "- Running NFC Table Generator..."
+          swift utils/NFCTableGenerator.swift
+          echo "- Running NFC Test Generator..."
+          swift utils/NFCTestGenerator.swift
 
       - name: Check for modifications
         id: check-modifications

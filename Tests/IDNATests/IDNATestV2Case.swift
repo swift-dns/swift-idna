@@ -33,6 +33,7 @@ struct IDNATestV2Case {
     /// For example, V4 refers to https://www.unicode.org/reports/tr46/#Validity_Criteria
     /// point number 4: If not CheckHyphens, the label must not begin with “xn--”.
     enum Status: String {
+        case A3
         case A4_1, A4_2
         case B1, B2, B3, B4, B5, B6
         case C1, C2
@@ -43,21 +44,21 @@ struct IDNATestV2Case {
     }
 
     /// The source string to be tested
-    let source: String
+    let source: [UInt8]
     /// The result of applying toUnicode to the source, with Transitional_Processing=false
-    let toUnicode: String?
+    let toUnicode: [UInt8]?
     /// A set of status codes for toUnicode operation
     let toUnicodeStatus: [Status]
     /// The result of applying toASCII to the source, with Transitional_Processing=false
-    let toAsciiN: String?
+    let toAsciiN: [UInt8]?
     /// A set of status codes for toAsciiN operation
     let toAsciiNStatus: [Status]
 
     init(
-        source: String,
-        toUnicode: String?,
+        source: [UInt8],
+        toUnicode: [UInt8]?,
         toUnicodeStatus: [Status],
-        toAsciiN: String?,
+        toAsciiN: [UInt8]?,
         toAsciiNStatus: [Status]
     ) {
         self.source = source
@@ -68,9 +69,9 @@ struct IDNATestV2Case {
     }
 
     init(from cCase: CSwiftIDNATestV2CCase) {
-        self.source = unsafe String(cString: cCase.source)
-        self.toUnicode = unsafe cCase.toUnicode.map(String.init(cString:))
-        self.toAsciiN = unsafe cCase.toAsciiN.map(String.init(cString:))
+        self.source = unsafe Self.toUInt8Array(cCase.source)
+        self.toUnicode = unsafe cCase.toUnicode.map { unsafe Self.toUInt8Array($0) }
+        self.toAsciiN = unsafe cCase.toAsciiN.map { unsafe Self.toUInt8Array($0) }
         self.toUnicodeStatus = unsafe Array(
             UnsafeBufferPointer(
                 start: cCase.toUnicodeStatus!,
@@ -93,12 +94,15 @@ struct IDNATestV2Case {
         }
     }
 
-    static func allCases() -> [IDNATestV2Case] {
-        var count: Int = 0
-        guard let ptr = unsafe cswift_idna_test_v2_all_cases(&count) else {
-            fatalError("Failed to get IDNA Test V2 cases")
+    private static func toUInt8Array(_ cString: UnsafePointer<CChar>) -> [UInt8] {
+        let length = unsafe UTF8._nullCodeUnitOffset(in: cString)
+        let buffer = unsafe UnsafeBufferPointer(start: cString, count: length)
+        return unsafe buffer.withMemoryRebound(to: UInt8.self) {
+            unsafe Array($0)
         }
-        let allUnicodeCases = (0..<count).map { i in unsafe IDNATestV2Case(from: ptr[i]) }
+    }
+
+    private static var customCases: [IDNATestV2Case] {
         let massiveASCII = massivePunyCodeStrings.ascii
         let massiveUnicode = massivePunyCodeStrings.unicode
         let asciiString =
@@ -109,21 +113,42 @@ struct IDNATestV2Case {
             /// These cases are just for my peace of mind that the optimizations I've done and the pre-allocations will not
             /// result in a crash or something even for such massive ~invalid inputs.
             IDNATestV2Case(
-                source: asciiString,
-                toUnicode: unicodeString,
+                source: [UInt8](asciiString.utf8),
+                toUnicode: [UInt8](unicodeString.utf8),
                 toUnicodeStatus: [.P4, .P4, .P4, .P4, .P4, .P4],
-                toAsciiN: asciiString,
+                toAsciiN: [UInt8](asciiString.utf8),
                 toAsciiNStatus: [.P4, .P4, .P4, .P4, .P4, .P4]
             ),
             IDNATestV2Case(
-                source: unicodeString,
-                toUnicode: unicodeString,
+                source: [UInt8](unicodeString.utf8),
+                toUnicode: [UInt8](unicodeString.utf8),
                 toUnicodeStatus: [.A4_2],
-                toAsciiN: asciiString,
+                toAsciiN: [UInt8](asciiString.utf8),
                 toAsciiNStatus: [.A4_2]
             ),
+            /// This reproduces an impl issue that was caught in dev stage (before merge).
+            IDNATestV2Case(
+                source: [UInt8]("мойассистент.рф".utf8),
+                toUnicode: [UInt8]("мойассистент.рф".utf8),
+                toUnicodeStatus: [],
+                toAsciiN: [UInt8]("xn--80akicokc0aablc.xn--p1ai".utf8),
+                toAsciiNStatus: []
+            ),
         ]
-        return allUnicodeCases + customCases
+        return customCases
+    }
+
+    private static func allUnicodeCases() -> [IDNATestV2Case] {
+        var count: Int = 0
+        guard let ptr = unsafe cswift_idna_test_v2_all_cases(&count) else {
+            fatalError("Failed to get IDNA Test V2 cases")
+        }
+        let all = (0..<count).map { i in unsafe IDNATestV2Case(from: ptr[i]) }
+        return all
+    }
+
+    private static func allCases() -> [IDNATestV2Case] {
+        Self.customCases + allUnicodeCases()
     }
 
     /// This is better for debuggability.
@@ -136,10 +161,14 @@ struct IDNATestV2Case {
 
 extension IDNATestV2Case: CustomStringConvertible {
     var description: String {
-        let sourceDebug = source.debugDescription
-        let toUnicodeDebug = toUnicode?.debugDescription ?? "nil"
+        /// For the very few invalid-UTF8 cases, these string representation will be inaccurate
+        /// as they'll be the repaired string's representation, not the original one.
+        let sourceDebug = String(decoding: source, as: UTF8.self).debugDescription
+        let toUnicodeDebug =
+            toUnicode.map { String(decoding: $0, as: UTF8.self).debugDescription } ?? "nil"
         let toUnicodeStatusDebug = toUnicodeStatus.debugDescription
-        let toAsciiNDebug = toAsciiN?.debugDescription ?? "nil"
+        let toAsciiNDebug =
+            toAsciiN.map { String(decoding: $0, as: UTF8.self).debugDescription } ?? "nil"
         let toAsciiNStatusDebug = toAsciiNStatus.debugDescription
         return
             "IDNATestV2Case(source: \(sourceDebug), toUnicode: \(toUnicodeDebug), toUnicodeStatus: \(toUnicodeStatusDebug), toAsciiN: \(toAsciiNDebug), toAsciiNStatus: \(toAsciiNStatusDebug))"
@@ -158,7 +187,7 @@ extension IDNA.MappingError {
         case .labelStartsWithXNHyphenMinusHyphenMinusButContainsNonASCII:
             return .P4
         case .labelPunycodeEncodeFailed:
-            return nil
+            return .A3
         case .labelPunycodeDecodeFailed:
             return .X4_2
         case .labelIsEmptyAfterPunycodeConversion:
@@ -200,7 +229,7 @@ extension IDNA.MappingError {
             switch status {
             case .P4, .V1, .V4, .V6, .V7, .X4_2:
                 return true
-            case .A4_1, .A4_2, .B1, .B2, .B3, .B4, .B5, .B6, .C1, .C2, .V2, .V3, .U1:
+            case .A3, .A4_1, .A4_2, .B1, .B2, .B3, .B4, .B5, .B6, .C1, .C2, .V2, .V3, .U1:
                 return false
             }
         }
@@ -216,6 +245,7 @@ extension IDNA.MappingError {
         }
 
         switch correspondingStatus {
+        case .A3: break
         case .A4_1:
             configuration.verifyDNSLength = false
         case .A4_2:
