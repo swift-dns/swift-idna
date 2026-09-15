@@ -43,3 +43,14 @@ extension OutputSpan where Element: BinaryInteger {
         }
     }
 }
+
+@available(SwiftStdlib 5.1, *)
+extension OutputSpan<UInt8> {
+    /// Appends the given UTF-8 view to the output span.
+    @inlinable
+    mutating func swift_idna_append(copying utf8View: Unicode.Scalar.UTF8View) {
+        for byte in utf8View {
+            self.append(byte)
+        }
+    }
+}

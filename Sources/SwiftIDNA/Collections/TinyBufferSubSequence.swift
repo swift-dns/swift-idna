@@ -42,6 +42,16 @@ struct TinyBufferSubsequence: ~Copyable, ~Escapable {
         self.base.insert(copying: collection, at: self.startIndex + index)
     }
 
+    /// Reserves the given extra capacity on the buffer, and then
+    /// gives access to the underlying buffer as an `OutputSpan<UInt8>`.
+    @inlinable
+    mutating func append(
+        extraRequiredCapacity extraCapacity: Int,
+        _ block: (inout OutputSpan<UInt8>) -> Void
+    ) {
+        self.base.append(extraRequiredCapacity: extraCapacity, block)
+    }
+
     @inlinable
     mutating func preferablyReserveCapacity(_ minimumCapacity: Int) {
         self.base.preferablyReserveCapacity(minimumCapacity)

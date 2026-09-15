@@ -198,10 +198,7 @@ extension IDNA {
         newerBytes.reserveCapacity(newBytes.count)
 
         newBytes.withSpan { newBytesSpan in
-            let maxRequiredCapacityForAllLabels = self.maxLabelLength(span: newBytesSpan)
-            var scalarsIndexToUTF8IndexForReuse = LazyRigidArray<Int>(
-                capacity: maxRequiredCapacityForAllLabels
-            )
+            var scalarsForReuse = LinkedList<UInt32>()
 
             var startIndex = 0
             for idx in newBytesSpan.indices {
@@ -215,7 +212,7 @@ extension IDNA {
 
                 if convertAndValidateLabel(
                     chunk,
-                    scalarsIndexToUTF8IndexForReuse: &scalarsIndexToUTF8IndexForReuse,
+                    scalarsForReuse: &scalarsForReuse,
                     newerBytes: &newerBytes,
                     errors: &errors
                 ) {
@@ -229,77 +226,10 @@ extension IDNA {
             let chunk = unsafe newBytesSpan.extracting(unchecked: range)
             _ = convertAndValidateLabel(
                 chunk,
-                scalarsIndexToUTF8IndexForReuse: &scalarsIndexToUTF8IndexForReuse,
+                scalarsForReuse: &scalarsForReuse,
                 newerBytes: &newerBytes,
                 errors: &errors
             )
-        }
-    }
-
-    /// Returns the length of the longest label in the given span.
-    /// Assumes the span does not contain any label separators other than `.`.
-    @inlinable
-    func maxLabelLength(span: Span<UInt8>) -> Int {
-        let count = span.count
-
-        var maxLabelLength = 0
-        var startIndex = 0
-
-        return span.withUnsafeBytes { buffer in
-            guard let base = buffer.baseAddress else {
-                return 0
-            }
-
-            var idx = 0
-            /// Only enter the loop while a full 8-byte word still fits.
-            while idx &+ 8 <= count {
-                /// Load the next eight bytes as a little-endian word, so that byte `idx` is
-                /// the least significant one and bit positions map back to byte offsets.
-                let word = unsafe UInt64(
-                    littleEndian: base.loadUnaligned(fromByteOffset: idx, as: UInt64.self)
-                )
-                /// Every byte that equals `.` (0x2E) becomes 0, every other byte becomes non-zero.
-                let dots = word ^ 0x2E2E_2E2E_2E2E_2E2E
-                /// Adding `0x7F` to the low 7 bits of each byte sets that byte's high bit whenever
-                /// those 7 bits are non-zero. It cannot carry across bytes, as `0x7F &+ 0x7F` stays
-                /// below `0x100`, so unlike a `&-` this never contaminates a neighboring byte.
-                let low7BitsRaised = (dots & 0x7F7F_7F7F_7F7F_7F7F) &+ 0x7F7F_7F7F_7F7F_7F7F
-                /// Fold the original high bit back in, so each byte's high bit is set exactly when
-                /// the byte was non-zero, that is, when it was not a `.`.
-                let nonZeroBytes = low7BitsRaised | dots
-                /// Invert and keep just the high bits, leaving every `.` as a single `0x80` marker.
-                let mask = ~nonZeroBytes & 0x8080_8080_8080_8080
-
-                /// No `.` in these eight bytes, the common case, so extend the current label by
-                /// skipping the whole chunk.
-                if mask == 0 {
-                    idx &+= 8
-                    continue
-                }
-
-                /// The lowest set bit marks the first `.` in the chunk; dividing its bit position
-                /// by 8 turns it back into a byte offset.
-                let dotIndex = idx &+ (mask.trailingZeroBitCount &>> 3)
-                /// The label ends right before this `.`, so record its length.
-                maxLabelLength = max(maxLabelLength, dotIndex &- startIndex)
-                /// The next label starts right after this `.`, which is also where the next word
-                /// load resumes. Any later `.` in this chunk is found by that reload instead.
-                startIndex = dotIndex &+ 1
-                idx = startIndex
-            }
-
-            /// Measure the remaining fewer-than-8 bytes one at a time.
-            while idx < count {
-                /// Same measuring as above, but for a single byte.
-                if unsafe base.loadUnaligned(fromByteOffset: idx, as: UInt8.self) == .asciiDot {
-                    maxLabelLength = max(maxLabelLength, idx &- startIndex)
-                    startIndex = idx &+ 1
-                }
-                idx &+= 1
-            }
-
-            /// The final label has no trailing `.`, so it ends at `count`.
-            return max(maxLabelLength, count &- startIndex)
         }
     }
 
@@ -308,7 +238,7 @@ extension IDNA {
     @inlinable
     func convertAndValidateLabel(
         _ span: Span<UInt8>,
-        scalarsIndexToUTF8IndexForReuse: inout LazyRigidArray<Int>,
+        scalarsForReuse: inout LinkedList<UInt32>,
         newerBytes: inout TinyBuffer,
         errors: inout MappingErrors
     ) -> Bool {
@@ -345,7 +275,7 @@ extension IDNA {
         )
         if Punycode.decode(
             _uncheckedAssumingValidUTF8: unsafe span.extracting(unchecked: noXNRange),
-            scalarsIndexToUTF8IndexForReuse: &scalarsIndexToUTF8IndexForReuse,
+            scalarsForReuse: &scalarsForReuse,
             outputBuffer: &outputBuffer
         ) {
             newerBytes = outputBuffer.base
