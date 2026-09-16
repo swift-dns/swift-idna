@@ -134,6 +134,50 @@ struct IDNATestV2Case {
                 toAsciiN: [UInt8]("xn--80akicokc0aablc.xn--p1ai".utf8),
                 toAsciiNStatus: []
             ),
+            IDNATestV2Case(
+                source: [UInt8]("abc.xn--\u{00E9}".utf8),
+                toUnicode: [UInt8]("abc.xn--\u{00E9}".utf8),
+                toUnicodeStatus: [.P4],
+                toAsciiN: nil,
+                toAsciiNStatus: []
+            ),
+            IDNATestV2Case(
+                source: [UInt8]("abc.xn--a-*b".utf8),
+                toUnicode: [UInt8]("abc.xn--a-*b".utf8),
+                toUnicodeStatus: [.V2, .U1, .X4_2],
+                toAsciiN: nil,
+                toAsciiNStatus: []
+            ),
+            IDNATestV2Case(
+                source: [UInt8]("abc.xn--0.def".utf8),
+                toUnicode: [UInt8]("abc.xn--0.def".utf8),
+                toUnicodeStatus: [.V2, .X4_2],
+                toAsciiN: nil,
+                toAsciiNStatus: []
+            ),
+            IDNATestV2Case(
+                source: [UInt8]("keep.xn--\u{00E9}.tail".utf8),
+                toUnicode: [UInt8]("keep.xn--\u{00E9}.tail".utf8),
+                toUnicodeStatus: [.P4],
+                toAsciiN: nil,
+                toAsciiNStatus: []
+            ),
+            IDNATestV2Case(
+                source: [UInt8]("xn--maana-pta.xn--\u{00E9}".utf8),
+                toUnicode: [UInt8]("ma\u{00F1}ana.xn--\u{00E9}".utf8),
+                toUnicodeStatus: [.P4],
+                toAsciiN: nil,
+                toAsciiNStatus: []
+            ),
+            /// The digits of `xn--9b` never finish a delta, so decoding has to stop at the end
+            /// of the label.
+            IDNATestV2Case(
+                source: [UInt8]("e\u{0301}e\u{0301}.xn--9b".utf8),
+                toUnicode: [UInt8]("\u{00E9}\u{00E9}.xn--9b".utf8),
+                toUnicodeStatus: [.V2, .X4_2],
+                toAsciiN: nil,
+                toAsciiNStatus: []
+            ),
         ]
         return customCases
     }

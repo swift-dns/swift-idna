@@ -232,7 +232,7 @@ package enum Punycode {
             let oldi = i
             var w: UInt32 = 1
             var k = Constants.base
-            while k < UInt32.max {
+            while true {
                 defer { k &+= Constants.base }
 
                 guard offset < inputBytesSpan.count else {
