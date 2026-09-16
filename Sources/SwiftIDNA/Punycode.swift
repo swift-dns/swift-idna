@@ -227,17 +227,19 @@ package enum Punycode {
             inputBytesSpan = unsafe inputBytesSpan.extracting(unchecked: inputBytesRange)
         }
 
-        var unicodeScalarsIterator = UnicodeScalarIterator()
-        while unicodeScalarsIterator.currentCodePointOffset != inputBytesSpan.count {
+        var offset = 0
+        while offset != inputBytesSpan.count {
             let oldi = i
             var w: UInt32 = 1
             for k in stride(from: Constants.base, to: .max, by: Int(Constants.base)) {
-                /// Above we check that input is not empty, so this is safe.
-                /// There are also extensive tests for this in the IDNATests.swift.
-                let codePoint = unicodeScalarsIterator.uncheckedNext(in: inputBytesSpan)
-                guard let digit = Punycode.mapCodePointToDigit(codePoint) else {
+                guard offset < inputBytesSpan.count else {
                     return false
                 }
+                let byte = unsafe inputBytesSpan[unchecked: offset]
+                guard let digit = Punycode.mapCodePointToDigit(UInt32(byte)) else {
+                    return false
+                }
+                offset &+= 1
 
                 i &+= (digit &* w)
 
