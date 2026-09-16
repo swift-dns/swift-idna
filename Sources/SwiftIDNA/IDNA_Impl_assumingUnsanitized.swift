@@ -143,7 +143,7 @@ extension IDNA {
         /// because we're guaranteed to have enough capacity.
         newBytes.append(extraRequiredCapacity: requiredCapacity) { output in
             while let (uncheckedScalar, range) = unicodeScalarsIterator.nextWithRange(in: span) {
-                guard let scalar = Unicode.Scalar(uncheckedScalar) else {
+                guard let scalar = UnicodeScalarValue(uncheckedScalar) else {
                     errors.append(
                         .labelContainsInvalidUnicode(
                             uncheckedScalar,
@@ -210,7 +210,7 @@ extension IDNA {
                             unchecked: offset
                         ]
 
-                        guard let scalar = Unicode.Scalar(uncheckedScalar) else {
+                        guard let scalar = UnicodeScalarValue(uncheckedScalar) else {
                             errors.append(
                                 .labelContainsInvalidUnicode(
                                     uncheckedScalar,

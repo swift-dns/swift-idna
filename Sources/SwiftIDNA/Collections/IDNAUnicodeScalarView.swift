@@ -96,7 +96,10 @@ extension IDNAUnicodeScalarView: Sequence {
             guard let uncheckedScalar = unsafe self.iterator.next(in: self.base.pointer.span) else {
                 return nil
             }
-            return unsafe Unicode.Scalar(uncheckedScalar).unsafelyUnwrapped
+            /// `Unicode.Scalar` is `@frozen` and stores exactly one `UInt32`, so
+            /// this is safe as long as the value is indeed valid (which is guaranteed here).
+            let scalar = unsafe unsafeBitCast(uncheckedScalar, to: Unicode.Scalar.self)
+            return scalar
         }
     }
 }

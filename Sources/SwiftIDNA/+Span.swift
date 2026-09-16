@@ -142,7 +142,7 @@ extension Span<UInt8> {
                     let offset = decoder.scalarStartOffset(at: scalarIdx)
                     let uncheckedScalar = unsafe decoder.uncheckedScalarValues[unchecked: offset]
 
-                    if Unicode.Scalar(uncheckedScalar) == nil {
+                    if !UnicodeScalarValue.isValid(uncheckedScalar) {
                         seenInvalidUTF8 = true
                         break outerLoop
                     }

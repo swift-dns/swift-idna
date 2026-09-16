@@ -37,6 +37,8 @@ jobs:
           swift utils/NFCTableGenerator.swift
           echo "- Running NFC Test Generator..."
           swift utils/NFCTestGenerator.swift
+          echo "- Running Mark Table Generator..."
+          swift utils/MarkTableGenerator.swift
 
       - name: Check for modifications
         id: check-modifications

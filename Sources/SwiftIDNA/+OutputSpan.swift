@@ -46,11 +46,27 @@ extension OutputSpan where Element: BinaryInteger {
 
 @available(SwiftStdlib 5.1, *)
 extension OutputSpan<UInt8> {
-    /// Appends the given UTF-8 view to the output span.
+    /// Appends the significant bytes of an encoded Unicode scalar to the output span, possibly speculatively.
     @inlinable
-    mutating func swift_idna_append(copying utf8View: Unicode.Scalar.UTF8View) {
-        for byte in utf8View {
-            self.append(byte)
+    mutating func swift_idna_append(
+        encodedScalar bytes: (UInt8, UInt8, UInt8, UInt8),
+        count: Int
+    ) {
+        assert(count >= 1 && count <= 4)
+        unsafe self.withUnsafeMutableBufferPointer { buffer, initializedCount in
+            let idx = initializedCount
+            if idx &+ 4 <= buffer.count {
+                unsafe buffer[idx] = bytes.0
+                unsafe buffer[idx &+ 1] = bytes.1
+                unsafe buffer[idx &+ 2] = bytes.2
+                unsafe buffer[idx &+ 3] = bytes.3
+            } else {
+                unsafe buffer[idx] = bytes.0
+                if count > 1 { unsafe buffer[idx &+ 1] = bytes.1 }
+                if count > 2 { unsafe buffer[idx &+ 2] = bytes.2 }
+                if count > 3 { unsafe buffer[idx &+ 3] = bytes.3 }
+            }
+            initializedCount &+= count
         }
     }
 }

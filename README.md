@@ -84,10 +84,11 @@ This is only made possible thanks to the massive test suite: We expect the tests
 
 `swift-idna` implements short-circuits in both `toASCII` and `toUnicode` functions to avoid IDNA conversions when possible.
 
-The C code is all automatically generated using the 2 scripts in `utils/`:
+The C code is all automatically generated using the scripts in `utils/`:
 
 - `IDNAMappingTableGenerator.swift` generates the [IDNA mapping lookup table](https://www.unicode.org/Public/idna/latest/IdnaMappingTable.txt).
 - `IDNATestV2Generator.swift` generates the [IDNA test v2 suite](https://www.unicode.org/Public/idna/latest/IdnaTestV2.txt) cases to use in tests to ensure full compatibility.
+- `MarkTableGenerator.swift` generates the [General_Category=Mark](https://www.unicode.org/Public/UCD/latest/ucd/extracted/DerivedGeneralCategory.txt) lookup table.
 
 #### Current supported [IDNA flags](https://www.unicode.org/reports/tr46/#Processing):
 

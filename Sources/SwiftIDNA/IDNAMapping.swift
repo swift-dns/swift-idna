@@ -46,7 +46,7 @@ extension IDNAMapping {
     /// - Parameter scalar: The Unicode scalar to look up
     /// - Returns: The corresponding `IDNAMapping` value
     @inlinable
-    package static func `for`(scalar: Unicode.Scalar) -> IDNAMapping {
+    package static func `for`(scalar: UnicodeScalarValue) -> IDNAMapping {
         IDNAMapping(packedValue: cswift_idna_packed_value(scalar.value))
     }
 
@@ -57,9 +57,7 @@ extension IDNAMapping {
     /// - Returns: The corresponding `IDNAMapping` value
     @inlinable
     package static func `for`(uncheckedScalar: UInt32) -> IDNAMapping {
-        let isSurrogate = (uncheckedScalar &- 0xD800) &>> 11 == 0
-        let isAboveMaxScalarValue = uncheckedScalar > 0x10_FFFF
-        let isInvalid = isSurrogate || isAboveMaxScalarValue
+        let isInvalid = !UnicodeScalarValue.isValid(uncheckedScalar)
         /// if isInvalid, replace with the first "ignored" scalar, which is `0xAD`.
         let scalar = isInvalid ? 0xAD : uncheckedScalar
         let packedValue = cswift_idna_packed_value(scalar)

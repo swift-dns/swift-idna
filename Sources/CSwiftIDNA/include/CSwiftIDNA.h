@@ -105,6 +105,38 @@ static inline uint64_t cswift_idna_nfc_composition_pair(int32_t index) {
     return cswift_idna_nfc_composition_pairs[index];
 }
 
+// General_Category=Mark data is stored as a two-stage bitset trie built by
+// utils/MarkTableGenerator.swift. A block number indexes `mark_block_offsets`, which gives the
+// index of that block's first 64-bit word in `mark_bits`; each word holds one bit per code point:
+//
+//   is_mark = mark_bits[mark_block_offsets[cp >> MARK_BLOCK_SHIFT]
+//       + ((cp & MARK_BLOCK_MASK) >> 6)] >> (cp & 63) & 1
+//
+// The only code points at or above MARK_TRIE_LIMIT with General_Category=Mark are
+// MARK_TAIL_START..MARK_TAIL_END, so the lookup answers those arithmetically instead of
+// storing an otherwise empty trie for the remaining planes. The generator verifies this.
+
+#define CSWIFT_IDNA_MARK_TRIE_LIMIT 0x30000
+#define CSWIFT_IDNA_MARK_BLOCK_SHIFT 8
+#define CSWIFT_IDNA_MARK_BLOCK_MASK 255
+#define CSWIFT_IDNA_MARK_TAIL_START 0xE0100
+#define CSWIFT_IDNA_MARK_TAIL_END 0xE01EF
+
+extern const uint16_t cswift_idna_mark_block_offsets[];
+extern const uint64_t cswift_idna_mark_bits[];
+
+// Returns whether the given valid Unicode scalar value has General_Category=Mark.
+static inline _Bool cswift_idna_is_mark(uint32_t code_point) {
+    if (code_point >= CSWIFT_IDNA_MARK_TRIE_LIMIT) {
+        return code_point >= CSWIFT_IDNA_MARK_TAIL_START
+            && code_point <= CSWIFT_IDNA_MARK_TAIL_END;
+    }
+    uint32_t word_index =
+        (uint32_t)cswift_idna_mark_block_offsets[code_point >> CSWIFT_IDNA_MARK_BLOCK_SHIFT]
+        + ((code_point & CSWIFT_IDNA_MARK_BLOCK_MASK) >> 6);
+    return (cswift_idna_mark_bits[word_index] >> (code_point & 63)) & 1;
+}
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

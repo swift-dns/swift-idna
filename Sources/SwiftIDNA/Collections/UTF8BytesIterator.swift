@@ -82,24 +82,31 @@ struct UTF8BytesIterator {
     ) -> (scalarUTF8Length: Int, bytes: (UInt8, UInt8, UInt8, UInt8)) {
         let packedScalar = unsafe scalars[unchecked: self.currentScalarOffset]
         self.currentScalarOffset &+= 1
-        return Self.branchlessEncodeValidScalar(packedScalar & 0x1F_FFFF)
+        return Self.encode(uncheckedScalar: packedScalar & 0x1F_FFFF)
     }
 
-    /// The inverse of `UnicodeScalarIterator.decodeScalar`.
+    /// How many UTF-8 bytes the scalar would encode into.
     @inline(__always)
     @inlinable
-    static func branchlessEncodeValidScalar(
-        _ scalar: UInt32
-    ) -> (scalarUTF8Length: Int, bytes: (UInt8, UInt8, UInt8, UInt8)) {
+    static func utf8Length(uncheckedScalar scalar: UInt32) -> Int {
         /// Valid UTF-32 scalars are in the range `0x0000_0000` to `0x10FFFF`.
         assert(scalar <= 0x1F_FFFF)
 
-        let scalarUTF8Length = Int(
+        return Int(
             1
                 &+ ((0x7F &- scalar) &>> 31)
                 &+ ((0x7FF &- scalar) &>> 31)
                 &+ ((0xFFFF &- scalar) &>> 31)
         )
+    }
+
+    /// The inverse of `UnicodeScalarIterator.decodeScalar`.
+    @inline(__always)
+    @inlinable
+    static func encode(
+        uncheckedScalar scalar: UInt32
+    ) -> (scalarUTF8Length: Int, bytes: (UInt8, UInt8, UInt8, UInt8)) {
+        let scalarUTF8Length = Self.utf8Length(uncheckedScalar: scalar)
         let shifted = scalar &<< (6 &* (4 &- scalarUTF8Length))
         let leadPrefix = (0xF0E0_C000 as UInt32) &>> (8 &* (scalarUTF8Length &- 1)) & 0xFF
         return (

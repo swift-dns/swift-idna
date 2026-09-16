@@ -397,8 +397,8 @@ extension IDNA {
         var unicodeScalarsIterator = UnicodeScalarIterator()
         if !configuration.ignoreInvalidPunycode,
             let firstUncheckedScalar = unicodeScalarsIterator.next(in: span),
-            let firstScalar = Unicode.Scalar(firstUncheckedScalar),
-            firstScalar.properties.generalCategory.isMark == true
+            let firstScalar = UnicodeScalarValue(firstUncheckedScalar),
+            firstScalar.isMark
         {
             errors.append(
                 .labelStartsWithCombiningMark(
@@ -411,7 +411,7 @@ extension IDNA {
             var unicodeScalarsIterator = UnicodeScalarIterator()
 
             while let uncheckedScalar = unicodeScalarsIterator.next(in: span) {
-                guard let scalar = Unicode.Scalar(uncheckedScalar) else {
+                guard let scalar = UnicodeScalarValue(uncheckedScalar) else {
                     /// Error already appended in mapToIDNAMappings
                     continue
                 }

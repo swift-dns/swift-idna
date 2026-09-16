@@ -269,7 +269,7 @@ package enum Punycode {
             }
 
             scalars.insert(n, at: Int(i))
-            utf8Count &+= unsafe Unicode.Scalar(n).unsafelyUnwrapped.utf8.count
+            utf8Count &+= UTF8BytesIterator.utf8Length(uncheckedScalar: n)
 
             i &+= 1
         }
@@ -278,9 +278,10 @@ package enum Punycode {
         output.append(extraRequiredCapacity: utf8Count) { output in
             var scalarsIterator = scalarsIterator
             while let scalar = scalarsIterator.next() {
-                output.swift_idna_append(
-                    copying: unsafe Unicode.Scalar(scalar).unsafelyUnwrapped.utf8
+                let (scalarUTF8Length, bytes) = UTF8BytesIterator.encode(
+                    uncheckedScalar: scalar
                 )
+                output.swift_idna_append(encodedScalar: bytes, count: scalarUTF8Length)
             }
         }
 

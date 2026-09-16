@@ -12,6 +12,7 @@ struct IDNAMappingLookupTests {
 
         for value in probes {
             #expect(Unicode.Scalar(value) == nil)
+            #expect(UnicodeScalarValue(value) == nil)
             let mapping = IDNAMapping.for(uncheckedScalar: value)
             #expect(
                 mapping.tag == .ignored,
@@ -28,7 +29,7 @@ struct IDNAMappingLookupTests {
 
     @Test func agreesWithCheckedLookupForEveryValidScalar() {
         for value in UInt32(0)...0x10_FFFF {
-            guard let scalar = Unicode.Scalar(value) else { continue }
+            guard let scalar = UnicodeScalarValue(value) else { continue }
             #expect(
                 IDNAMapping.for(scalar: scalar).tag
                     == IDNAMapping.for(uncheckedScalar: value).tag,
