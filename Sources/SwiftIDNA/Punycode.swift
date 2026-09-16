@@ -195,7 +195,7 @@ package enum Punycode {
     @inlinable
     static func decode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
-        scalarsForReuse scalars: inout LinkedList<UInt32>,
+        scalarsForReuse scalars: inout LinkedList<UnicodeScalarValue>,
         outputBuffer output: inout TinyBufferSubsequence
     ) -> Bool {
         var inputBytesSpan = inputBytesSpan
@@ -216,7 +216,8 @@ package enum Punycode {
             }
 
             for idx in basicBytesSpan.indices {
-                scalars.append(UInt32(unsafe basicBytesSpan[unchecked: idx]))
+                let byte = UInt32(unsafe basicBytesSpan[unchecked: idx])
+                scalars.append(UnicodeScalarValue(_uncheckedAssumingValid: byte))
             }
             utf8Count = basicBytesSpan.count
 
@@ -268,7 +269,7 @@ package enum Punycode {
                 return false
             }
 
-            scalars.insert(n, at: Int(i))
+            scalars.insert(UnicodeScalarValue(_uncheckedAssumingValid: n), at: Int(i))
             utf8Count &+= UTF8BytesIterator.utf8Length(uncheckedScalar: n)
 
             i &+= 1
@@ -278,10 +279,10 @@ package enum Punycode {
         output.append(extraRequiredCapacity: utf8Count) { output in
             var scalarsIterator = scalarsIterator
             while let scalar = scalarsIterator.next() {
-                let (scalarUTF8Length, bytes) = UTF8BytesIterator.encode(
-                    uncheckedScalar: scalar
+                let (utf8Length, bytes) = UTF8BytesIterator.encode(
+                    uncheckedScalar: scalar.value
                 )
-                output.swift_idna_append(encodedScalar: bytes, count: scalarUTF8Length)
+                output.swift_idna_append(encodedScalar: bytes, count: utf8Length)
             }
         }
 

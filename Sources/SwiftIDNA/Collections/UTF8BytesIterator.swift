@@ -79,7 +79,7 @@ struct UTF8BytesIterator {
     @inlinable
     mutating func uncheckedBranchlessNext(
         in scalars: Span<UInt32>
-    ) -> (scalarUTF8Length: Int, bytes: (UInt8, UInt8, UInt8, UInt8)) {
+    ) -> (utf8Length: Int, bytes: (UInt8, UInt8, UInt8, UInt8)) {
         let packedScalar = unsafe scalars[unchecked: self.currentScalarOffset]
         self.currentScalarOffset &+= 1
         return Self.encode(uncheckedScalar: packedScalar & 0x1F_FFFF)
@@ -105,12 +105,12 @@ struct UTF8BytesIterator {
     @inlinable
     static func encode(
         uncheckedScalar scalar: UInt32
-    ) -> (scalarUTF8Length: Int, bytes: (UInt8, UInt8, UInt8, UInt8)) {
-        let scalarUTF8Length = Self.utf8Length(uncheckedScalar: scalar)
-        let shifted = scalar &<< (6 &* (4 &- scalarUTF8Length))
-        let leadPrefix = (0xF0E0_C000 as UInt32) &>> (8 &* (scalarUTF8Length &- 1)) & 0xFF
+    ) -> (utf8Length: Int, bytes: (UInt8, UInt8, UInt8, UInt8)) {
+        let utf8Length = Self.utf8Length(uncheckedScalar: scalar)
+        let shifted = scalar &<< (6 &* (4 &- utf8Length))
+        let leadPrefix = (0xF0E0_C000 as UInt32) &>> (8 &* (utf8Length &- 1)) & 0xFF
         return (
-            scalarUTF8Length,
+            utf8Length,
             (
                 UInt8(truncatingIfNeeded: (shifted &>> 18) | leadPrefix),
                 UInt8(truncatingIfNeeded: 0x80 | ((shifted &>> 12) & 0x3F)),
@@ -129,7 +129,7 @@ struct UTF8BytesIterator {
     @inlinable
     mutating func branchlessNext(
         in scalars: Span<UInt32>
-    ) -> (scalarUTF8Length: Int, bytes: (UInt8, UInt8, UInt8, UInt8))? {
+    ) -> (utf8Length: Int, bytes: (UInt8, UInt8, UInt8, UInt8))? {
         guard self.currentScalarOffset < scalars.count else { return nil }
         return self.uncheckedBranchlessNext(in: scalars)
     }

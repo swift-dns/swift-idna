@@ -198,7 +198,7 @@ extension IDNA {
         newerBytes.reserveCapacity(newBytes.count)
 
         newBytes.withSpan { newBytesSpan in
-            var scalarsForReuse = LinkedList<UInt32>()
+            var scalarsForReuse = LinkedList<UnicodeScalarValue>()
 
             var startIndex = 0
             for idx in newBytesSpan.indices {
@@ -238,7 +238,7 @@ extension IDNA {
     @inlinable
     func convertAndValidateLabel(
         _ span: Span<UInt8>,
-        scalarsForReuse: inout LinkedList<UInt32>,
+        scalarsForReuse: inout LinkedList<UnicodeScalarValue>,
         newerBytes: inout TinyBuffer,
         errors: inout MappingErrors
     ) -> Bool {

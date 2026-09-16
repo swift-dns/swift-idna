@@ -118,7 +118,7 @@ package struct NFCNormalization {
     @inline(always)
     package static func withNormalizedScalars<R: ~Copyable>(
         _ span: Span<UInt8>,
-        block: (_ count: Int, _ scalars: UnsafeMutableBufferPointer<UInt32>) -> R
+        block: (_ scalarsCount: Int, _ scalars: UnsafeMutableBufferPointer<UInt32>) -> R
     ) -> R {
         /// The NFD expansion of any input is at most 2 scalars per input UTF-8 byte, and its
         /// NFC form at most 3 UTF-8 bytes per input UTF-8 byte. The generator verifies both
