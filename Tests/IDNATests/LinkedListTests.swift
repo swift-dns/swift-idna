@@ -3,8 +3,7 @@ import Testing
 
 @Suite
 struct LinkedListTests {
-    /// Cross-checks a `LinkedList` against an `Array` built from the very same insertions,
-    /// so that any disagreement in the link rewiring or in the cursor shows up as a mismatch.
+    /// Cross-checks a `LinkedList` against an `Array` built from the same insertions.
     @available(SwiftStdlib 5.1, *)
     func checkAgainstArray(insertions: [(value: UInt32, position: Int)]) {
         var list = LinkedList<UInt32>()
@@ -37,11 +36,11 @@ struct LinkedListTests {
         }
     }
 
-    /// Walks well past the initial arena capacity, so that the list has to reallocate several
+    /// Walks well past the initial buffer capacity, so that the list has to reallocate several
     /// times and every node index has to survive the move.
     @available(SwiftStdlib 5.1, *)
     @Test(arguments: [1, 63, 64, 65, 127, 128, 129, 300])
-    func randomizedInsertionsGrowTheArena(count: Int) {
+    func randomizedInsertionsGrowTheStorage(count: Int) {
         var generator = SystemRandomNumberGenerator()
         for _ in 0..<20 {
             var insertions: [(value: UInt32, position: Int)] = []
@@ -70,10 +69,42 @@ struct LinkedListTests {
         #expect(actual == Array(0..<200 as Range<UInt32>))
     }
 
-    /// `removeAll()` keeps the arena, so a reused list has to forget its head and its cursor
+    /// Mixes appends with inserts elsewhere, which is the sequence that leaves the tracked last
+    /// node stale if appending and inserting disagree about which node ends the list. The element
+    /// count also passes the initial buffer capacity, so the tracked node has to survive a move.
+    @available(SwiftStdlib 5.1, *)
+    @Test func appendsInterleavedWithInsertsInTheMiddle() {
+        var generator = SystemRandomNumberGenerator()
+
+        for _ in 0..<50 {
+            var list = LinkedList<UInt32>()
+            var expected: [UInt32] = []
+
+            for value in 0..<80 as Range<UInt32> {
+                if expected.isEmpty || Bool.random(using: &generator) {
+                    list.append(value)
+                    expected.append(value)
+                } else {
+                    let position = Int.random(in: 0...expected.count, using: &generator)
+                    list.insert(value, at: position)
+                    expected.insert(value, at: position)
+                }
+            }
+
+            var actual: [UInt32] = []
+            var iterator = list.makeIterator()
+            while let value = iterator.next() {
+                actual.append(value)
+            }
+
+            #expect(actual == expected)
+        }
+    }
+
+    /// `removeAll()` keeps the buffer, so a reused list has to forget its head and its cursor
     /// without forgetting the capacity it already paid for.
     @available(SwiftStdlib 5.1, *)
-    @Test func reusesTheArenaAfterRemoveAll() {
+    @Test func reusesTheStorageAfterRemoveAll() {
         var list = LinkedList<UInt32>()
         var generator = SystemRandomNumberGenerator()
 

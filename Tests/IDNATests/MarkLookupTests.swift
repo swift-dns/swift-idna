@@ -8,6 +8,10 @@ struct MarkLookupTests {
         for value in UInt32(0)...0x10_FFFF {
             guard let scalar = UnicodeScalarValue(value) else { continue }
             let stdlibScalar = try #require(Unicode.Scalar(scalar.value))
+            /// Unicode 17.0 gave U+1ACF...U+1ADD to combining marks. macOS 15 still has them unassigned.
+            if #unavailable(SwiftStdlib 6.2) {
+                if stdlibScalar.properties.generalCategory == .unassigned { continue }
+            }
             let expected = stdlibScalar.isMark
             if scalar.isMark != expected {
                 mismatches.append(value)
