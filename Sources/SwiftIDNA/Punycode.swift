@@ -231,10 +231,14 @@ package enum Punycode {
         while offset != inputBytesSpan.count {
             let oldi = i
             var w: UInt32 = 1
-            for k in stride(from: Constants.base, to: .max, by: Int(Constants.base)) {
+            var k = Constants.base
+            while k < UInt32.max {
+                defer { k &+= Constants.base }
+
                 guard offset < inputBytesSpan.count else {
                     return false
                 }
+
                 let byte = unsafe inputBytesSpan[unchecked: offset]
                 guard let digit = Punycode.mapCodePointToDigit(UInt32(byte)) else {
                     return false
