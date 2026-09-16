@@ -125,7 +125,10 @@ package enum Punycode {
 
                 if codePoint.value == n {
                     var q = delta
-                    for k in stride(from: Constants.base, to: .max, by: Int(Constants.base)) {
+                    var k = Constants.base
+                    while true {
+                        defer { k &+= Constants.base }
+
                         let t =
                             if k <= (bias &+ Constants.tMin) {
                                 Constants.tMin
