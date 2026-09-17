@@ -137,7 +137,7 @@ package struct NFCNormalization {
     }
 
     /// Decomposes the span into its canonical decomposed form (NFD).
-    /// [The Unicode Standard, 3.7 Decomposition](https://www.unicode.org/versions/Unicode17.0.0/UnicodeStandard-17.0.pdf)
+    /// [The Unicode Standard, 3.7 Decomposition](https://www.unicode.org/versions/Unicode18.0.0/UnicodeStandard-18.0.pdf)
     @inlinable
     static func decompose(
         _ span: Span<UInt8>,
@@ -195,7 +195,7 @@ package struct NFCNormalization {
     }
 
     /// Reorders based on the values of the Canonical Combining Class (CCC).
-    /// [The Unicode Standard, 3.11.5 Canonical Ordering Algorithm](https://www.unicode.org/versions/Unicode17.0.0/UnicodeStandard-17.0.pdf)
+    /// [The Unicode Standard, 3.11.5 Canonical Ordering Algorithm](https://www.unicode.org/versions/Unicode18.0.0/UnicodeStandard-18.0.pdf)
     @inlinable
     static func reorderCanonically(
         packedScalar: UInt32,
@@ -220,7 +220,7 @@ package struct NFCNormalization {
     }
 
     /// (Re)composes the span into its canonical composed form (NFC).
-    /// [The Unicode Standard, 3.11.6 Canonical Composition Algorithm](https://www.unicode.org/versions/Unicode17.0.0/UnicodeStandard-17.0.pdf)
+    /// [The Unicode Standard, 3.11.6 Canonical Composition Algorithm](https://www.unicode.org/versions/Unicode18.0.0/UnicodeStandard-18.0.pdf)
     @inlinable
     static func compose(
         _ scalars: UnsafeMutableBufferPointer<UInt32>,
@@ -255,7 +255,7 @@ package struct NFCNormalization {
         count = writeIndex
     }
 
-    /// [The Unicode Standard, 3.11.6 Canonical Composition Algorithm](https://www.unicode.org/versions/Unicode17.0.0/UnicodeStandard-17.0.pdf)
+    /// [The Unicode Standard, 3.11.6 Canonical Composition Algorithm](https://www.unicode.org/versions/Unicode18.0.0/UnicodeStandard-18.0.pdf)
     @inlinable
     package static func composePair(_ first: UInt32, _ second: UInt32) -> UInt32? {
         if first &- 0x1100 < 19, second &- 0x1161 < 21 {

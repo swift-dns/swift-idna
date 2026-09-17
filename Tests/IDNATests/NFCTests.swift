@@ -37,11 +37,31 @@ struct NFCTests {
         return bytes
     }
 
+    /// The trie is generated from Unicode 18.0, which gave these code points a non-zero
+    /// canonical combining class. No released stdlib carries Unicode 18 data yet, so it still
+    /// reports them as unassigned with a combining class of zero. Drop them here once the
+    /// stdlib catches up.
+    static let unicode18CCCAdditions: Set<UInt32> = Set(
+        [
+            0x5C8...0x5C9,
+            0x1ADE...0x1ADF,
+            0x1AEC...0x1AF0,
+            0x10ECB...0x10ECF,
+            0x10EF0...0x10EF9,
+            0x1D127...0x1D128,
+            0x1D250...0x1D252,
+            0x1D25B...0x1D25C,
+            0x1D25F...0x1D25F,
+            0x1D280...0x1D281,
+        ].joined()
+    )
+
     @available(SwiftStdlib 6.2, *)
     @Test func `Exhaustive ccc cross-check against the stdlib`() {
         var mismatches: [UInt32] = []
         for value in UInt32(0)...0x10FFFF {
             guard let scalar = Unicode.Scalar(value) else { continue }
+            if Self.unicode18CCCAdditions.contains(value) { continue }
             let expectedCCC = UInt16(scalar.properties.canonicalCombiningClass.rawValue)
             let info = NFCScalarInfo.for(scalar: value)
             let matches: Bool

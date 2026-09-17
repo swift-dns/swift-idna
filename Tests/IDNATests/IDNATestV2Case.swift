@@ -2,13 +2,13 @@ import CSwiftIDNATesting
 import SwiftIDNA
 
 /// Represents a single test case from the IDNA Test V2 specification:
-/// https://www.unicode.org/Public/idna/16.0.0/IdnaTestV2.txt
+/// https://www.unicode.org/Public/idna/latest/IdnaTestV2.txt
 struct IDNATestV2Case {
     /// Each of these statuses refer to some part of the Unicode document at
     /// https://www.unicode.org/reports/tr46 .
     /// This enum is named "Status" by the IDNAtestV2, but it's more like an "ErrorKind" enum.
     ///
-    /// From https://www.unicode.org/Public/idna/16.0.0/IdnaTestV2.txt:
+    /// From https://www.unicode.org/Public/idna/latest/IdnaTestV2.txt:
     /// ```text
     ///   Pn for Section 4 Processing step n
     ///   Vn for 4.1 Validity Criteria step n
