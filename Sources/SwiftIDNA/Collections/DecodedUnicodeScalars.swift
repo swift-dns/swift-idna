@@ -3,22 +3,35 @@ public import BasicContainers
 /// A container that holds a group of decoded Unicode scalars.
 @available(SwiftStdlib 5.1, *)
 @usableFromInline
-struct DecodedUnicodeScalars: ~Copyable {
+package struct DecodedUnicodeScalars: ~Copyable {
     @usableFromInline
-    var scalars: RigidArray<Unicode.Scalar>
+    var scalars: RigidArray<UnicodeScalarValue>
 
     @inlinable
-    init(utf8Bytes: Span<UInt8>) {
-        self.scalars = RigidArray<Unicode.Scalar>(capacity: utf8Bytes.count)
-        self.decode(utf8Bytes: utf8Bytes)
+    package init(utf8Bytes: Span<UInt8>, errors: inout IDNA.MappingErrors) {
+        self.scalars = RigidArray<UnicodeScalarValue>(capacity: utf8Bytes.count)
+        self.decode(utf8Bytes: utf8Bytes, errors: &errors)
     }
 
     /// Decodes the given UTF-8 bytes into Unicode scalars.
     @usableFromInline
-    mutating func decode(utf8Bytes: Span<UInt8>) {
+    mutating func decode(
+        utf8Bytes: Span<UInt8>,
+        errors: inout IDNA.MappingErrors
+    ) {
         self.scalars.edit { output in
             var unicodeScalarsIterator = UnicodeScalarIterator()
-            while let scalar = unicodeScalarsIterator.next(in: utf8Bytes) {
+            while let uncheckedScalar = unicodeScalarsIterator.next(in: utf8Bytes) {
+                guard let scalar = UnicodeScalarValue(uncheckedScalar) else {
+                    /// This type is to use in punycode-encode func so we preemptively assume that.
+                    errors.append(
+                        .labelPunycodeEncodeFailed(
+                            label: String(span: utf8Bytes)
+                        )
+                    )
+                    /// Error already appended in mapToIDNAMappings
+                    continue
+                }
                 output.append(scalar)
             }
         }
@@ -30,9 +43,9 @@ extension DecodedUnicodeScalars {
     /// A subsequence of a `DecodedUnicodeScalars` container.
     /// This is tuned to this library's needs so it might need some adjustments for other use cases.
     @usableFromInline
-    struct Subsequence: ~Copyable, ~Escapable {
+    package struct Subsequence: ~Copyable, ~Escapable {
         @usableFromInline
-        var scalars: Span<Unicode.Scalar>
+        var scalars: Span<UnicodeScalarValue>
         @usableFromInline
         var startIndex: Int
         @usableFromInline
@@ -50,7 +63,7 @@ extension DecodedUnicodeScalars {
         /// We're using `inout` to ensure exclusive access.
         @inlinable
         @_lifetime(&base)
-        init(base: inout DecodedUnicodeScalars) {
+        package init(base: inout DecodedUnicodeScalars) {
             self.scalars = base.scalars.span
             self.startIndex = 0
             self.endIndex = 0
@@ -63,37 +76,41 @@ extension DecodedUnicodeScalars {
         /// As an optimization, this function assumes the new range is after the last range it was set to.
         /// As always, tests will catch the issue if it's not the case.
         @inlinable
-        mutating func set(utf8OffsetRange range: Range<Int>) {
+        package mutating func set(utf8OffsetRange range: Range<Int>) {
             let scalarsCount = self.scalars.count
             var byteOffset = self.endIndexByteOffset
 
             if range.lowerBound == 0 {
                 self.startIndex = 0
             } else {
-                for idx in self.endIndex..<scalarsCount {
+                var idx = self.endIndex
+                while idx < scalarsCount {
                     let scalar = unsafe self.scalars[unchecked: idx]
-                    byteOffset &+= scalar.utf8.count
+                    byteOffset &+= UTF8BytesIterator.utf8Length(uncheckedScalar: scalar.value)
                     if byteOffset == range.lowerBound {
                         self.startIndex = idx &+ 1
                         break
                     }
+                    idx &+= 1
                 }
             }
 
-            for idx in self.startIndex..<scalarsCount {
+            var idx = self.startIndex
+            while idx < scalarsCount {
                 let scalar = unsafe self.scalars[unchecked: idx]
-                byteOffset &+= scalar.utf8.count
+                byteOffset &+= UTF8BytesIterator.utf8Length(uncheckedScalar: scalar.value)
                 if byteOffset == range.upperBound {
                     self.endIndex = idx &+ 1
                     self.endIndexByteOffset = byteOffset
                     break
                 }
+                idx &+= 1
             }
         }
 
         /// Returns the unicode scalar at the given index.
         @inlinable
-        subscript(index: Int) -> Unicode.Scalar {
+        subscript(index: Int) -> UnicodeScalarValue {
             /// This assert is to trap in tests for the most part.
             /// That's why it's not a precondition.
             assert(self.endIndex > index, "Index out of bounds")

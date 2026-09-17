@@ -19,6 +19,22 @@ typedef struct {
 
 const CSwiftIDNATestV2CCase *cswift_idna_test_v2_all_cases(size_t *count);
 
+typedef struct {
+    const char* c1;
+    size_t c1Count;
+    const char* c2;
+    size_t c2Count;
+    const char* c3;
+    size_t c3Count;
+    const char* c4;
+    size_t c4Count;
+    const char* c5;
+    size_t c5Count;
+    int part;
+} CSwiftIDNANFCTestCCase;
+
+const CSwiftIDNANFCTestCCase *cswift_idna_nfc_test_all_cases(size_t *count);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

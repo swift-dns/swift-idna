@@ -14,7 +14,7 @@ extension IDNA {
     }
 
     @usableFromInline
-    struct MappingErrors: ~Copyable, ~Escapable {
+    package struct MappingErrors: ~Copyable, ~Escapable {
         @usableFromInline
         let domainNameSpan: Span<UInt8>
         @usableFromInline
@@ -27,7 +27,7 @@ extension IDNA {
 
         @inlinable
         @_lifetime(copy domainNameSpan)
-        init(domainNameSpan: Span<UInt8>) {
+        package init(domainNameSpan: Span<UInt8>) {
             self.domainNameSpan = domainNameSpan
             self.errors = UniqueArray<MappingError>(minimumCapacity: 0)
         }
@@ -48,16 +48,17 @@ extension IDNA {
                 unsafe errors.append(contentsOf: spanPtr)
             }
             return CollectedMappingErrors(
-                domainName: String(_uncheckedAssumingValidUTF8: self.domainNameSpan),
+                domainName: String(span: self.domainNameSpan),
                 errors: errors
             )
         }
     }
 
+    /// If a label contains invalid UTF8, the String representation of it will be repaired into valid UTF8.
     @nonexhaustive
     public enum MappingError: Sendable, CustomStringConvertible {
         case labelStartsWithXNHyphenMinusHyphenMinusButContainsNonASCII(label: String)
-        case labelPunycodeEncodeFailed(label: [UInt8])
+        case labelPunycodeEncodeFailed(label: String)
         case labelPunycodeDecodeFailed(label: String)
         case labelIsEmptyAfterPunycodeConversion(label: String)
         case labelContainsOnlyASCIIAfterPunycodeDecode(label: String)
@@ -83,11 +84,12 @@ extension IDNA {
             label: String
         )
         case labelStartsWithCombiningMark(label: String)
-        case labelContainsInvalidUnicode(Unicode.Scalar, label: String)
+        case labelContainsInvalidUnicode(UInt32, label: String)
         case trueUseSTD3ASCIIRulesArgumentRequiresLabelToOnlyContainCertainASCIICharacters(
             label: String
         )
 
+        /// If a label contains invalid UTF8, the String representation of it is repaired into valid UTF8.
         public var description: String {
             switch self {
             case .labelStartsWithXNHyphenMinusHyphenMinusButContainsNonASCII(let label):
@@ -110,22 +112,22 @@ extension IDNA {
                 let label
             ):
                 return
-                    ".trueVerifyDNSLengthArgumentRequiresLabelToBe63BytesOrLess(length: \(length), label: \(label.debugDescription))"
+                    ".trueVerifyDNSLengthArgumentRequiresLabelToBe63BytesOrLess(length: \(length), label: \(label._swift_idna_debugDescription))"
             case .trueVerifyDNSLengthArgumentDisallowsEmptyLabel(let label):
                 return
-                    ".trueVerifyDNSLengthArgumentDisallowsEmptyLabel(\(label.debugDescription))"
+                    ".trueVerifyDNSLengthArgumentDisallowsEmptyLabel(\(label._swift_idna_debugDescription))"
             case .trueVerifyDNSLengthArgumentDisallowsEmptyRootLabelWithTrailingDot(let labels):
                 return
-                    ".trueVerifyDNSLengthArgumentDisallowsEmptyRootLabelWithTrailingDot(labels: \(labels.debugDescription))"
+                    ".trueVerifyDNSLengthArgumentDisallowsEmptyRootLabelWithTrailingDot(labels: \(labels._swift_idna_debugDescription))"
             case .trueVerifyDNSLengthArgumentRequiresDomainNameToBe254BytesOrLess(
                 let length,
                 let labels
             ):
                 return
-                    ".trueVerifyDNSLengthArgumentRequiresDomainNameToBe254BytesOrLess(length: \(length), labels: \(labels.debugDescription))"
+                    ".trueVerifyDNSLengthArgumentRequiresDomainNameToBe254BytesOrLess(length: \(length), labels: \(labels._swift_idna_debugDescription))"
             case .trueVerifyDNSLengthArgumentDisallowsEmptyDomainName(let labels):
                 return
-                    ".trueVerifyDNSLengthArgumentDisallowsEmptyDomainName(\(labels.debugDescription))"
+                    ".trueVerifyDNSLengthArgumentDisallowsEmptyDomainName(\(labels._swift_idna_debugDescription))"
             case .labelIsNotInNormalizationFormC(let label):
                 return
                     ".labelIsNotInNormalizationFormC(\(label.debugDescription))"
@@ -147,7 +149,7 @@ extension IDNA {
                     ".labelStartsWithCombiningMark(\(label.debugDescription))"
             case .labelContainsInvalidUnicode(let codePoint, let label):
                 return
-                    ".labelContainsInvalidUnicode(\(codePoint.debugDescription), label: \(label.debugDescription))"
+                    ".labelContainsInvalidUnicode(\(codePoint), label: \(label.debugDescription))"
             case .trueUseSTD3ASCIIRulesArgumentRequiresLabelToOnlyContainCertainASCIICharacters(
                 let label
             ):
