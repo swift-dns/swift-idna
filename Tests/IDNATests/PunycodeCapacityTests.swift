@@ -1,46 +1,45 @@
+import BasicContainers
 import SwiftIDNA
 import Testing
 
 @Suite
 struct PunycodeCapacityTests {
     /// `Punycode.encode` appends into `outputBufferForReuse` without ever reserving capacity,
-    /// so a label whose encoded form outgrows `InlineElements.maximumCapacity` is written past
-    /// the end of the inline stack allocation.
+    /// so a label whose encoded form outgrows the stack seed must have spilled over to the heap
+    /// rather than been written past the end of the stack allocation.
     @Test(arguments: 1...40)
     func encodedLabelStaysWithinTheBuffer(asciiCount: Int) {
         let input = Array((String(repeating: "a", count: asciiCount) + "\u{00E9}").utf8)
-        let (isInline, count, encoded) = input.withUnsafeBufferPointer {
-            raw -> (Bool, Int, String) in
+        let (capacity, count, encoded) = input.withUnsafeBufferPointer {
+            raw -> (Int, Int, String) in
             let span = unsafe raw.span
             var errors = IDNA.MappingErrors(domainNameSpan: span)
             var base = DecodedUnicodeScalars(utf8Bytes: span, errors: &errors)
             var scalars = DecodedUnicodeScalars.Subsequence(base: &base)
             scalars.set(utf8OffsetRange: unsafe Range(uncheckedBounds: (0, span.count)))
-            return TinyBuffer.withInlineAllocation { output -> (Bool, Int, String) in
+            return withIDNATemporaryBuffer { output -> (Int, Int, String) in
                 Punycode.encode(
                     inputBytesSpan: span,
                     outputBufferForReuse: &output,
                     decodedUnicodeScalars: scalars
                 )
-                let isInline: Bool
-                switch output {
-                case .inline: isInline = true
-                case .heap: isInline = false
+                let encoded = output.span
+                var text = ""
+                for idx in encoded.indices {
+                    text.unicodeScalars.append(Unicode.Scalar(encoded[idx]))
                 }
-                return output.withSpan { encoded -> (Bool, Int, String) in
-                    var text = ""
-                    for idx in encoded.indices {
-                        text.unicodeScalars.append(Unicode.Scalar(encoded[idx]))
-                    }
-                    return (isInline, encoded.count, text)
-                }
+                return (output.capacity, encoded.count, text)
             }
         }
 
-        if isInline {
+        #expect(
+            count <= capacity,
+            "wrote \(count) bytes into a buffer of \(capacity)"
+        )
+        if count > TEMPORARY_ARRAY__STACK_SEED_CAPACITY {
             #expect(
-                count <= TinyBuffer.InlineElements.maximumCapacity,
-                "wrote \(count) bytes into an inline buffer of \(TinyBuffer.InlineElements.maximumCapacity)"
+                capacity > TEMPORARY_ARRAY__STACK_SEED_CAPACITY,
+                "\(count) bytes did not spill the \(TEMPORARY_ARRAY__STACK_SEED_CAPACITY) byte stack seed"
             )
         }
         #expect(encoded == Self.referenceEncodings[asciiCount])

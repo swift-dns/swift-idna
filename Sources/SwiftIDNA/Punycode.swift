@@ -1,3 +1,5 @@
+public import BasicContainers
+
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
 @available(SwiftStdlib 5.1, *)
 @usableFromInline
@@ -78,13 +80,13 @@ package enum Punycode {
     @inlinable
     package static func encode(
         inputBytesSpan: Span<UInt8>,
-        outputBufferForReuse output: inout TinyBuffer,
+        outputBufferForReuse output: inout TemporaryArray<UInt8>,
         decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
     ) {
         var n = Constants.initialN
         var delta: UInt32 = 0
         var bias = Constants.initialBias
-        output.removeAll(keepingCapacity: true)
+        output.removeAllKeepingCapacity()
 
         for idx in inputBytesSpan.indices {
             let byte = inputBytesSpan[idx]
@@ -199,7 +201,7 @@ package enum Punycode {
     static func decode(
         _uncheckedAssumingValidUTF8 inputBytesSpan: Span<UInt8>,
         scalarsForReuse scalars: inout LinkedList<UnicodeScalarValue>,
-        outputBuffer output: inout TinyBufferSubsequence
+        outputBuffer output: inout TemporaryArray<UInt8>
     ) -> Bool {
         var inputBytesSpan = inputBytesSpan
         var n = Constants.initialN
@@ -286,7 +288,7 @@ package enum Punycode {
         }
 
         let scalarsIterator = scalars.makeIterator()
-        output.append(extraRequiredCapacity: utf8Count) { output in
+        output.append(addingCount: utf8Count) { output in
             var scalarsIterator = scalarsIterator
             while let scalar = scalarsIterator.next() {
                 let (utf8Length, bytes) = UTF8BytesIterator.encode(

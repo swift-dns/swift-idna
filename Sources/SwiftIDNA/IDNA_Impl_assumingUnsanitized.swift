@@ -1,3 +1,5 @@
+public import BasicContainers
+
 /// The implementations below in this file, do not pass the un-sanitized user-input `span` to
 /// any functions outside this file.
 /// The other functions outside this file can assume they are operating on UTF8-only bytes.
@@ -22,8 +24,8 @@ extension IDNA {
         var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
-        let result = TinyBuffer.withInlineAllocation { convertedBytes -> ConversionResult in
-            TinyBuffer.withInlineAllocation { processedBytes -> ConversionResult in
+        let result = withIDNATemporaryBuffer { convertedBytes -> ConversionResult in
+            withIDNATemporaryBuffer { processedBytes -> ConversionResult in
 
                 /// Main `Processing` IDNA implementation.
                 /// https://www.unicode.org/reports/tr46/#Processing
@@ -79,8 +81,8 @@ extension IDNA {
         var errors = MappingErrors(domainNameSpan: span)
 
         // 1.
-        let result = TinyBuffer.withInlineAllocation { reuseBuffer -> ConversionResult in
-            TinyBuffer.withInlineAllocation { utf8Bytes -> ConversionResult in
+        let result = withIDNATemporaryBuffer { reuseBuffer -> ConversionResult in
+            withIDNATemporaryBuffer { utf8Bytes -> ConversionResult in
 
                 /// Main `Processing` IDNA implementation.
                 /// https://www.unicode.org/reports/tr46/#Processing
@@ -114,7 +116,7 @@ extension IDNA {
     @inline(__always)
     func mapToIDNAMappings_Scalar(
         span: Span<UInt8>,
-        into newBytes: inout TinyBuffer,
+        into newBytes: inout TemporaryArray<UInt8>,
         errors: inout MappingErrors
     ) {
         var requiredCapacity = 0
@@ -141,7 +143,7 @@ extension IDNA {
 
         /// Reserve the exact required capacity up front so we can skip further capacity checks
         /// because we're guaranteed to have enough capacity.
-        newBytes.append(extraRequiredCapacity: requiredCapacity) { output in
+        newBytes.append(addingCount: requiredCapacity) { output in
             while let (uncheckedScalar, range) = unicodeScalarsIterator.nextWithRange(in: span) {
                 guard let scalar = UnicodeScalarValue(uncheckedScalar) else {
                     errors.append(
@@ -170,7 +172,7 @@ extension IDNA {
     @inline(__always)
     func mapToIDNAMappings_SIMD(
         span: Span<UInt8>,
-        into newBytes: inout TinyBuffer,
+        into newBytes: inout TemporaryArray<UInt8>,
         errors: inout MappingErrors
     ) {
         let count = span.count
@@ -202,7 +204,7 @@ extension IDNA {
                     requiredCapacity &+= toAdd
                 }
 
-                newBytes.append(extraRequiredCapacity: requiredCapacity) { output in
+                newBytes.append(addingCount: requiredCapacity) { output in
                     for scalarIdx in range {
                         let offset = decoder.scalarStartOffset(at: scalarIdx)
                         let scalarUTF8Length = decoder.scalarUTF8Length(at: scalarIdx)

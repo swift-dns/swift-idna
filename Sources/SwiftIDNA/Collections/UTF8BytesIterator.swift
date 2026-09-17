@@ -85,6 +85,14 @@ struct UTF8BytesIterator {
         return Self.encode(uncheckedScalar: packedScalar & 0x1F_FFFF)
     }
 
+    /// How many UTF-8 bytes the scalar packed alongside its canonical combining class would
+    /// encode into.
+    @inline(__always)
+    @inlinable
+    static func utf8Length(uncheckedPackedScalar packedScalar: UInt32) -> Int {
+        Self.utf8Length(uncheckedScalar: packedScalar & 0x1F_FFFF)
+    }
+
     /// How many UTF-8 bytes the scalar would encode into.
     @inline(__always)
     @inlinable

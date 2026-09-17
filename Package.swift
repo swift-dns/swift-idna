@@ -8,7 +8,10 @@ let package = Package(
         .library(name: "SwiftIDNA", targets: ["SwiftIDNA"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-collections.git", from: "1.6.0")
+        .package(
+            url: "https://github.com/apple/swift-collections.git",
+            revision: "3a073885285739ec5a1e7a1eec08ad9d4863e8d9"
+        )
     ],
     targets: [
         .target(

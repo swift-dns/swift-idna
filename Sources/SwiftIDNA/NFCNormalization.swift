@@ -115,6 +115,25 @@ package struct NFCNormalization {
         }
     }
 
+    /// Normalizes the span into `scalars` and returns how many scalars it wrote.
+    ///
+    /// Unlike `withNormalizedScalars(_:block:)` this does not keep `span` borrowed past the
+    /// call, so the caller may write the result back over the span's own storage.
+    ///
+    /// `scalars` must have room for `2 * span.count` elements.
+    @inline(always)
+    package static func normalizeScalars(
+        _ span: Span<UInt8>,
+        into scalars: UnsafeMutableBufferPointer<UInt32>
+    ) -> Int {
+        var scalarsCount = 0
+        /// For Normalization Form C, we need to first go through the decomposition step:
+        unsafe Self.decompose(span, into: scalars, advancingCount: &scalarsCount)
+        /// Then we (re)compose:
+        unsafe Self.compose(scalars, advancingCount: &scalarsCount)
+        return scalarsCount
+    }
+
     @inline(always)
     package static func withNormalizedScalars<R: ~Copyable>(
         _ span: Span<UInt8>,

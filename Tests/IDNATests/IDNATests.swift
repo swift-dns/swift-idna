@@ -11,12 +11,14 @@ struct IDNATests {
     )
 
     @available(SwiftStdlib 6.2, *)
-    @Test func `UniqueArray allocates as expected`() {
-        var array = UniqueArray<UInt8>(minimumCapacity: 24)
-        for _ in 0..<25 {
-            array.append(0)
+    @Test func `TemporaryArray allocates as expected`() {
+        let capacity = withIDNATemporaryBuffer { buffer -> Int in
+            for _ in 0...TEMPORARY_ARRAY__STACK_SEED_CAPACITY {
+                buffer.append(0)
+            }
+            return buffer.capacity
         }
-        #expect(array.capacity == TINY_ARRAY__UNIQUE_ARRAY_ALLOCATION_THRESHOLD)
+        #expect(capacity == TEMPORARY_ARRAY__HEAP_SEED_THRESHOLD)
     }
 
     static func makeBytesFunction(
