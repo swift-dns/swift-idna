@@ -3,10 +3,31 @@ import Testing
 
 @Suite
 struct MarkLookupTests {
+    /// The lookup table is generated from Unicode 18.0, which gave these code points to
+    /// General_Category=Mark. No released stdlib carries Unicode 18 data yet, so it still
+    /// reports them as unassigned. Drop them here once the stdlib catches up.
+    static let unicode18MarkAdditions: Set<UInt32> = Set(
+        [
+            0x5C8...0x5C9,
+            0xB53...0xB54,
+            0x1ADE...0x1ADF,
+            0x1AEC...0x1AF0,
+            0x10ECB...0x10ECF,
+            0x10EF0...0x10EF9,
+            0x11DF0...0x11DF0,
+            0x1D127...0x1D128,
+            0x1D250...0x1D252,
+            0x1D25B...0x1D25C,
+            0x1D25F...0x1D25F,
+            0x1D280...0x1D281,
+        ].joined()
+    )
+
     @Test func `swift-idna mark info agrees with stdlib`() throws {
         var mismatches: [UInt32] = []
         for value in UInt32(0)...0x10_FFFF {
             guard let scalar = UnicodeScalarValue(value) else { continue }
+            if Self.unicode18MarkAdditions.contains(value) { continue }
             let stdlibScalar = try #require(Unicode.Scalar(scalar.value))
             /// Unicode 17.0 gave U+1ACF...U+1ADD to combining marks. macOS 15 still has them unassigned.
             if #unavailable(SwiftStdlib 6.2) {

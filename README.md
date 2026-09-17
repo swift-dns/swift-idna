@@ -49,7 +49,7 @@ A high performance, highly optimized multi-platform implementation of Punycode a
 ## Notes
 
 - The only dependency of `swift-idna` is `swift-collections`, and it does not depend on `Foundation`.
-- Unit tests extensively run against 6400+ Unicode 17 test cases.
+- Unit tests extensively run against 6400+ Unicode 18 test cases.
 - The C code is all auto-generated from some Unicode files.
 
 ## Usage
@@ -74,7 +74,7 @@ Domain names are inherently case-insensitive, and they will always be lowercased
 
 ## Implementation
 
-This package uses Unicode 17's [IDNA test v2 suite](https://www.unicode.org/Public/idna/latest/IdnaTestV2.txt) with ~6400 test cases to ensure full compatibility.
+This package uses Unicode 18's [IDNA test v2 suite](https://www.unicode.org/Public/idna/latest/IdnaTestV2.txt) with ~6400 test cases to ensure full compatibility.
 
 Runs each test case extensively so each test case might even result in 2-3-4-5 test runs.
 
