@@ -522,6 +522,7 @@ jobs:
           copy-files: Tests
           swift-build-flags: >-
             --build-tests
+            --disable-xctest
             --explicit-target-dependency-import-check error
           swift-test-flags: --filter "IntegrationTests."
 
