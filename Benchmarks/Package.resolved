@@ -1,5 +1,5 @@
 {
-  "originHash" : "153c03a9594454c84b4bb99c1ba5b540ed5a1a7216c4d372addd6c3b87687c33",
+  "originHash" : "92fc5537936920b4bcb6dd760d76755f6f0ba46282038b4a9bf04ed6c0d1d7fd",
   "pins" : [
     {
       "identity" : "hdrhistogram-swift",
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-dns/swift-highway.git",
       "state" : {
-        "revision" : "272530f7053ea738849e2b3b62348bb9e50cbe9d",
-        "version" : "1.0.0-alpha.2"
+        "revision" : "34966485e29159cc5f042bb1320784ff38feab00",
+        "version" : "1.0.0-alpha.3"
       }
     },
     {

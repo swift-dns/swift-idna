@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-collections.git", from: "1.3.0"),
-        .package(url: "https://github.com/swift-dns/swift-highway.git", exact: "1.0.0-alpha.2"),
+        .package(url: "https://github.com/swift-dns/swift-highway.git", exact: "1.0.0-alpha.3"),
     ],
     targets: [
         .target(
@@ -19,11 +19,7 @@ let package = Package(
             dependencies: [
                 "CSwiftIDNA",
                 .product(name: "BasicContainers", package: "swift-collections"),
-                .product(
-                    name: "Highway",
-                    package: "swift-highway",
-                    condition: .when(platforms: highwayPlatforms)
-                ),
+                .product(name: "Highway", package: "swift-highway"),
             ],
             swiftSettings: settings
         ),
@@ -43,10 +39,25 @@ let package = Package(
     ]
 )
 
-/// Highway is a hosted C++ library and using it turns C++ interoperability on, neither of which
-/// the embedded baremetal triples or the WASI SDK can take.
+/// The platforms swift-highway supports, which is every one but WASI, whose SDK cycles through the
+/// libc++ module map under C++ interoperability. Conditioning the setting on them also keeps
+/// SwiftPM's synthesized test runner from turning interoperability on there.
 var highwayPlatforms: [Platform] {
-    [.macOS, .macCatalyst, .iOS, .tvOS, .watchOS, .visionOS, .linux, .windows, .android]
+    [
+        .macOS,
+        .macCatalyst,
+        .iOS,
+        .tvOS,
+        .watchOS,
+        .visionOS,
+        .driverKit,
+        .linux,
+        .android,
+        .windows,
+        .openbsd,
+        // `Platform.freebsd` is not available to any released tools version yet.
+        .custom("freebsd"),
+    ]
 }
 
 var settings: [SwiftSetting] {

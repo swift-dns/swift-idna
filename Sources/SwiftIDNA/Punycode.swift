@@ -1,6 +1,4 @@
-#if canImport(Highway)
 internal import Highway
-#endif
 
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
 @available(SwiftStdlib 5.1, *)
@@ -343,7 +341,16 @@ package enum Punycode {
         guard scalarsCount > 0 else {
             return .max
         }
-        #if canImport(Highway)
+        #if $Embedded || os(WASI)
+        return unsafe decodedUnicodeScalars.withUnsafeScalarValues { values in
+            var smallest = UInt32.max
+            for idx in 0..<scalarsCount {
+                let value = unsafe values[idx]
+                smallest = min(smallest, value < n ? .max : value)
+            }
+            return smallest
+        } ?? .max
+        #else
         let laneCount = HighwayUInt32.laneCount
         let identity = HighwayUInt32.repeating(.max)
         let threshold = HighwayUInt32.repeating(n)
@@ -374,15 +381,6 @@ package enum Punycode {
                 )
             }
             return HighwayUInt32.smallest(accumulator)
-        } ?? .max
-        #else
-        return unsafe decodedUnicodeScalars.withUnsafeScalarValues { values in
-            var smallest = UInt32.max
-            for idx in 0..<scalarsCount {
-                let value = unsafe values[idx]
-                smallest = min(smallest, value < n ? .max : value)
-            }
-            return smallest
         } ?? .max
         #endif
     }
