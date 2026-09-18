@@ -19,7 +19,11 @@ let package = Package(
             dependencies: [
                 "CSwiftIDNA",
                 .product(name: "BasicContainers", package: "swift-collections"),
-                .product(name: "Highway", package: "swift-highway"),
+                .product(
+                    name: "Highway",
+                    package: "swift-highway",
+                    condition: .when(platforms: highwayPlatforms)
+                ),
             ],
             swiftSettings: settings
         ),
@@ -39,9 +43,15 @@ let package = Package(
     ]
 )
 
+/// Highway is a hosted C++ library and using it turns C++ interoperability on, neither of which
+/// the embedded baremetal triples or the WASI SDK can take.
+var highwayPlatforms: [Platform] {
+    [.macOS, .macCatalyst, .iOS, .tvOS, .watchOS, .visionOS, .linux, .windows, .android]
+}
+
 var settings: [SwiftSetting] {
     [
-        .interoperabilityMode(.Cxx),
+        .interoperabilityMode(.Cxx, .when(platforms: highwayPlatforms)),
         .swiftLanguageMode(.v6),
         .strictMemorySafety(),
         .enableUpcomingFeature("MemberImportVisibility"),
