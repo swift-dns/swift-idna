@@ -1,5 +1,5 @@
 #if !($Embedded || os(WASI))
-public import Highway
+internal import Highway
 #endif
 
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
@@ -335,7 +335,6 @@ package enum Punycode {
     /// already implies the scalar is not ASCII. `UInt32.max` is min's identity and is not a valid
     /// scalar value, so it can never be the answer.
     @inline(always)
-    @inlinable
     static func smallestScalar(
         atLeast n: UInt32,
         in decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
@@ -355,7 +354,6 @@ package enum Punycode {
     ///   loop not vectorized: value that could not be identified as reduction is used outside the loop
     /// ```
     @inline(never)
-    @inlinable
     static func smallestScalar_SlowPath(
         atLeast n: UInt32,
         in decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
@@ -376,7 +374,6 @@ package enum Punycode {
     }
     #else
     @inline(always)
-    @inlinable
     static func smallestScalar_FastPath(
         atLeast n: UInt32,
         in decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
