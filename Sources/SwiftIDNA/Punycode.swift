@@ -1,4 +1,4 @@
-internal import Highway
+public import Highway
 
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
 @available(SwiftStdlib 5.1, *)
@@ -332,8 +332,24 @@ package enum Punycode {
     /// `n` starts at `initialN` and only grows, so it is never below `0x80` and `value >= n`
     /// already implies the scalar is not ASCII. `UInt32.max` is min's identity and is not a valid
     /// scalar value, so it can never be the answer.
-    @usableFromInline
+    @inline(always)
+    @inlinable
     static func smallestScalar(
+        atLeast n: UInt32,
+        in decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
+    ) -> UInt32 {
+        #if $Embedded || os(WASI)
+        return smallestScalar_SlowPath(atLeast: n, in: decodedUnicodeScalars)
+        #else
+        return smallestScalar_FastPath(atLeast: n, in: decodedUnicodeScalars)
+        #endif
+    }
+
+    #if $Embedded || os(WASI)
+    /// Intentionally `@inline(never)`, so LLVM auto-vectorizes it (otherwise it refuses to).
+    @inline(never)
+    @inlinable
+    static func smallestScalar_SlowPath(
         atLeast n: UInt32,
         in decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
     ) -> UInt32 {
@@ -341,7 +357,7 @@ package enum Punycode {
         guard scalarsCount > 0 else {
             return .max
         }
-        #if $Embedded || os(WASI)
+
         return unsafe decodedUnicodeScalars.withUnsafeScalarValues { values in
             var smallest = UInt32.max
             for idx in 0..<scalarsCount {
@@ -350,7 +366,19 @@ package enum Punycode {
             }
             return smallest
         } ?? .max
-        #else
+    }
+    #else
+    @inline(always)
+    @inlinable
+    static func smallestScalar_FastPath(
+        atLeast n: UInt32,
+        in decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
+    ) -> UInt32 {
+        let scalarsCount = decodedUnicodeScalars.count
+        guard scalarsCount > 0 else {
+            return .max
+        }
+
         let laneCount = HighwayUInt32.laneCount
         let identity = HighwayUInt32.repeating(.max)
         let threshold = HighwayUInt32.repeating(n)
@@ -382,8 +410,8 @@ package enum Punycode {
             }
             return HighwayUInt32.smallest(accumulator)
         } ?? .max
-        #endif
     }
+    #endif
 
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Bias adaptation function](https://datatracker.ietf.org/doc/html/rfc3492#section-6.1)
     @inlinable
