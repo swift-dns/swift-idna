@@ -108,6 +108,25 @@ extension DecodedUnicodeScalars {
             }
         }
 
+        /// Runs `body` over the subsequence's scalar values as raw `UInt32`s.
+        ///
+        /// `UnicodeScalarValue` is `@frozen` around a single `UInt32`, so the rebind is a
+        /// reinterpretation of identical storage, not a conversion.
+        @inlinable
+        func withUnsafeScalarValues<R>(_ body: (UnsafePointer<UInt32>) -> R) -> R? {
+            unsafe self.scalars.withUnsafeBufferPointer { buffer -> R? in
+                guard let base = unsafe buffer.baseAddress else {
+                    return nil
+                }
+                return unsafe base.withMemoryRebound(
+                    to: UInt32.self,
+                    capacity: buffer.count
+                ) { values -> R? in
+                    unsafe body(values + self.startIndex)
+                }
+            }
+        }
+
         /// Returns the unicode scalar at the given index.
         @inlinable
         subscript(index: Int) -> UnicodeScalarValue {

@@ -1,3 +1,5 @@
+internal import Highway
+
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
 @available(SwiftStdlib 5.1, *)
 @usableFromInline
@@ -40,6 +42,34 @@ package enum Punycode {
         @inlinable
         static var initialN: UInt32 {
             128
+        }
+
+        /// A valid IDNA label cannot need more digits than this for a single delta, so a longer
+        /// run of digits is always invalid input.
+        ///
+        /// Per RFC 3492 section 6.4 a valid label's delta never exceeds
+        /// `(0x10FFFF - initialN) * (63 + 1)`. `adapt` is monotonic in its delta, so evaluating it
+        /// at that maximum is what bounds the bias, giving `163`.
+        ///
+        /// The positions a delta occupies at a given bias are `min { j : delta < M(j) }`, over the
+        /// cumulative capacities `M(1) = t(1)` and `M(j + 1) = M(j) + t(j + 1) * W(j + 1)` built
+        /// from the weights of section 3.3, `W(1) = 1` and `W(j + 1) = W(j) * (base - t(j))`.
+        /// Evaluating that at the maximum delta for every bias in `0...163` peaks at 8, reached at
+        /// the small biases where `t(j)` is already clamped to `tMax` so each position only
+        /// multiplies the capacity by `base - tMax`.
+        @inlinable
+        static var maximumDigitsPerDeltaPlusOne: UInt32 {
+            9
+        }
+
+        /// `encode` emits one more digit after its loop, and unlike `decode` it has no way to
+        /// reject its input: nothing bounds the label length before it runs, so it can be handed a
+        /// delta no valid label could produce. Its loop therefore has to be wide enough for any
+        /// `UInt32` delta rather than only the valid ones, and by the same derivation as above the
+        /// widest of those occupies 10 positions, at bias 14.
+        @inlinable
+        static var maximumEncodedDigitsPerDelta: UInt32 {
+            10
         }
     }
 
@@ -102,21 +132,12 @@ package enum Punycode {
         var loopIdx = h
         let scalarsCount = decodedUnicodeScalars.count
         while loopIdx < scalarsCount {
-            var m: UInt32 = .max
-
-            var idx = 0
-            while idx < scalarsCount {
-                let codePoint = decodedUnicodeScalars[idx]
-                if !codePoint.isASCII, codePoint.value >= n {
-                    m = min(m, codePoint.value)
-                }
-                idx &+= 1
-            }
+            let m = Punycode.smallestScalar(atLeast: n, in: decodedUnicodeScalars)
 
             delta &+= ((m &- n) &* (h &+ 1))
 
             n = m
-            idx = 0
+            var idx = 0
             while idx < scalarsCount {
                 let codePoint = decodedUnicodeScalars[idx]
                 if codePoint.value < n || codePoint.isASCII {
@@ -125,9 +146,9 @@ package enum Punycode {
 
                 if codePoint.value == n {
                     var q = delta
-                    var k = Constants.base
-                    while true {
-                        defer { k &+= Constants.base }
+
+                    for idx in 1..<Constants.maximumEncodedDigitsPerDelta {
+                        let k = Constants.base &* idx
 
                         let t =
                             if k <= (bias &+ Constants.tMin) {
@@ -234,9 +255,10 @@ package enum Punycode {
         while offset != inputBytesSpan.count {
             let oldi = i
             var w: UInt32 = 1
-            var k = Constants.base
-            while true {
-                defer { k &+= Constants.base }
+            var isDeltaComplete = false
+
+            for idx in 1..<Constants.maximumDigitsPerDeltaPlusOne {
+                let k = Constants.base &* idx
 
                 guard offset < inputBytesSpan.count else {
                     return false
@@ -261,11 +283,17 @@ package enum Punycode {
                     }
 
                 if digit < t {
+                    isDeltaComplete = true
                     break
                 }
 
                 w = w &* (Constants.base &- t)
             }
+
+            guard isDeltaComplete else {
+                return false
+            }
+
             let outputCountPlusOne = UInt32(scalars.count) &+ 1
             bias = adapt(
                 delta: i &- oldi,
@@ -274,12 +302,12 @@ package enum Punycode {
             )
             n = n &+ (i / outputCountPlusOne)
             i = i % outputCountPlusOne
-            /// Check if n is basic (aka ASCII).
-            if n.isASCII {
+            /// Check if n is basic (aka ASCII), a surrogate, or above the maximum scalar value.
+            guard !n.isASCII, let scalar = UnicodeScalarValue(n) else {
                 return false
             }
 
-            scalars.insert(UnicodeScalarValue(_uncheckedAssumingValid: n), at: Int(i))
+            scalars.insert(scalar, at: Int(i))
             utf8Count &+= UTF8BytesIterator.utf8Length(uncheckedScalar: n)
 
             i &+= 1
@@ -297,6 +325,53 @@ package enum Punycode {
         }
 
         return true
+    }
+
+    /// The smallest non-ASCII scalar that is not below `n`, or `UInt32.max` if there is none.
+    ///
+    /// `n` starts at `initialN` and only grows, so it is never below `0x80` and `value >= n`
+    /// already implies the scalar is not ASCII. `UInt32.max` is min's identity and is not a valid
+    /// scalar value, so it can never be the answer.
+    @usableFromInline
+    static func smallestScalar(
+        atLeast n: UInt32,
+        in decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
+    ) -> UInt32 {
+        let scalarsCount = decodedUnicodeScalars.count
+        guard scalarsCount > 0 else {
+            return .max
+        }
+        let laneCount = HighwayUInt32.laneCount
+        let identity = HighwayUInt32.repeating(.max)
+        let threshold = HighwayUInt32.repeating(n)
+        var accumulator = identity
+
+        return unsafe decodedUnicodeScalars.withUnsafeScalarValues { values in
+            var idx = 0
+            while idx &+ laneCount <= scalarsCount {
+                let loaded = unsafe HighwayUInt32.load(from: values + idx)
+                let isBelow = HighwayUInt32.lessThan(loaded, threshold)
+                accumulator = HighwayUInt32.minimum(
+                    accumulator,
+                    HighwayUInt32.selecting(isBelow, identity, loaded)
+                )
+                idx &+= laneCount
+            }
+            if idx < scalarsCount {
+                let loaded = unsafe HighwayUInt32.loadFirst(
+                    from: values + idx,
+                    count: scalarsCount &- idx
+                )
+                /// `loadFirst` zero-fills the lanes past `count`, and zero is below `n`, so the
+                /// padding selects the identity and cannot win the reduction.
+                let isBelow = HighwayUInt32.lessThan(loaded, threshold)
+                accumulator = HighwayUInt32.minimum(
+                    accumulator,
+                    HighwayUInt32.selecting(isBelow, identity, loaded)
+                )
+            }
+            return HighwayUInt32.smallest(accumulator)
+        } ?? .max
     }
 
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Bias adaptation function](https://datatracker.ietf.org/doc/html/rfc3492#section-6.1)

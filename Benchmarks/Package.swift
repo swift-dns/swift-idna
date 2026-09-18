@@ -10,7 +10,8 @@ let package = Package(
         .library(name: "SwiftIDNA", targets: ["SwiftIDNA"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-collections.git", from: "1.3.0")
+        .package(url: "https://github.com/apple/swift-collections.git", from: "1.3.0"),
+        .package(url: "https://github.com/swift-dns/swift-highway.git", exact: "1.0.0-alpha.2"),
     ],
     targets: [
         .target(
@@ -18,6 +19,7 @@ let package = Package(
             dependencies: [
                 "CSwiftIDNA",
                 .product(name: "BasicContainers", package: "swift-collections"),
+                .product(name: "Highway", package: "swift-highway"),
             ],
             swiftSettings: settings
         ),
@@ -39,6 +41,7 @@ let package = Package(
 
 var settings: [SwiftSetting] {
     [
+        .interoperabilityMode(.Cxx),
         .swiftLanguageMode(.v6),
         .strictMemorySafety(),
         .enableUpcomingFeature("MemberImportVisibility"),
