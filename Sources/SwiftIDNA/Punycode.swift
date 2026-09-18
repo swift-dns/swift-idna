@@ -1,4 +1,6 @@
+#if !($Embedded || os(WASI))
 public import Highway
+#endif
 
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
 @available(SwiftStdlib 5.1, *)
