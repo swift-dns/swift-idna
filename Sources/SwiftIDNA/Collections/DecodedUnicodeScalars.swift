@@ -114,8 +114,8 @@ extension DecodedUnicodeScalars {
         /// reinterpretation of identical storage, not a conversion.
         @inlinable
         func withUnsafeScalarValues<R>(_ body: (UnsafePointer<UInt32>) -> R) -> R? {
-            unsafe self.scalars.withUnsafeBufferPointer { buffer -> R? in
-                guard let base = unsafe buffer.baseAddress else {
+            self.scalars.withUnsafeBufferPointer { buffer -> R? in
+                guard let base = buffer.baseAddress else {
                     return nil
                 }
                 return unsafe base.withMemoryRebound(
