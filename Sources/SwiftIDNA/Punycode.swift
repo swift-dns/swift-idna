@@ -346,7 +346,12 @@ package enum Punycode {
     }
 
     #if $Embedded || os(WASI)
-    /// Intentionally `@inline(never)`, so LLVM auto-vectorizes it (otherwise it refuses to).
+    /// Intentionally `@inline(never)`, so LLVM auto-vectorizes it.
+    /// Otherwise it refuses to, with the following analysis which I couldn't easily bypass:
+    /// ```
+    /// [Analysis] NonReductionValueUsedOutsideLoop
+    ///   loop not vectorized: value that could not be identified as reduction is used outside the loop
+    /// ```
     @inline(never)
     @inlinable
     static func smallestScalar_SlowPath(
