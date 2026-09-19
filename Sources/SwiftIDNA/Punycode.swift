@@ -330,11 +330,9 @@ package enum Punycode {
     }
 
     /// The smallest non-ASCII scalar that is not below `n`, or `UInt32.max` if there is none.
-    ///
-    /// `n` starts at `initialN` and only grows, so it is never below `0x80` and `value >= n`
-    /// already implies the scalar is not ASCII. `UInt32.max` is min's identity and is not a valid
-    /// scalar value, so it can never be the answer.
-    @inline(always)
+    @usableFromInline
+    /// Intentionally `@inline(__always)`, so Swift compiler doesn't inconsistently complain about usage of both it and `@usableFromInline`.
+    @inline(__always)
     static func smallestScalar(
         atLeast n: UInt32,
         in decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
