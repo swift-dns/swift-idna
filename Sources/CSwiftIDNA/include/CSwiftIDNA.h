@@ -1,6 +1,7 @@
 #ifndef CSWIFT_DNS_IDNA_H
 #define CSWIFT_DNS_IDNA_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -126,7 +127,7 @@ extern const uint16_t cswift_idna_mark_block_offsets[];
 extern const uint64_t cswift_idna_mark_bits[];
 
 // Returns whether the given valid Unicode scalar value has General_Category=Mark.
-static inline _Bool cswift_idna_is_mark(uint32_t code_point) {
+static inline bool cswift_idna_is_mark(uint32_t code_point) {
     if (code_point >= CSWIFT_IDNA_MARK_TRIE_LIMIT) {
         return code_point >= CSWIFT_IDNA_MARK_TAIL_START
             && code_point <= CSWIFT_IDNA_MARK_TAIL_END;

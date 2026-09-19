@@ -8,7 +8,8 @@ let package = Package(
         .library(name: "SwiftIDNA", targets: ["SwiftIDNA"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-collections.git", from: "1.6.0")
+        .package(url: "https://github.com/apple/swift-collections.git", from: "1.6.0"),
+        .package(url: "https://github.com/swift-dns/swift-highway.git", exact: "1.0.0-alpha.3"),
     ],
     targets: [
         .target(
@@ -16,6 +17,7 @@ let package = Package(
             dependencies: [
                 "CSwiftIDNA",
                 .product(name: "BasicContainers", package: "swift-collections"),
+                .product(name: "Highway", package: "swift-highway"),
             ],
             swiftSettings: settings
         ),
@@ -35,8 +37,30 @@ let package = Package(
     ]
 )
 
+/// The platforms swift-highway supports, which is every one but WASI, whose SDK cycles through the
+/// libc++ module map under C++ interoperability. Conditioning the setting on them also keeps
+/// SwiftPM's synthesized test runner from turning interoperability on there.
+var highwayPlatforms: [Platform] {
+    [
+        .macOS,
+        .macCatalyst,
+        .iOS,
+        .tvOS,
+        .watchOS,
+        .visionOS,
+        .driverKit,
+        .linux,
+        .android,
+        .windows,
+        .openbsd,
+        // `Platform.freebsd` is not available to any released tools version yet.
+        .custom("freebsd"),
+    ]
+}
+
 var settings: [SwiftSetting] {
     [
+        .interoperabilityMode(.Cxx, .when(platforms: highwayPlatforms)),
         .swiftLanguageMode(.v6),
         .strictMemorySafety(),
         .enableUpcomingFeature("MemberImportVisibility"),

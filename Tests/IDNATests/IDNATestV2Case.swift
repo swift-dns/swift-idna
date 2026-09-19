@@ -178,6 +178,32 @@ struct IDNATestV2Case {
                 toAsciiN: nil,
                 toAsciiNStatus: []
             ),
+            /// `xn--99999a` finishes its delta in 6 digits but lands on `0x48A3C1`, so decoding
+            /// has to reject it for leaving the Unicode scalar range rather than trust the delta.
+            IDNATestV2Case(
+                source: [UInt8]("xn--99999a".utf8),
+                toUnicode: [UInt8]("xn--99999a".utf8),
+                toUnicodeStatus: [.V2, .X4_2],
+                toAsciiN: nil,
+                toAsciiNStatus: []
+            ),
+            /// At the initial bias only the first two positions accept any digit; from the third
+            /// on a delta continues only while the byte is `0...9`. So `bb` plus seven digits is a
+            /// ten-position delta, which no valid label can need, and decoding stops on the length.
+            IDNATestV2Case(
+                source: [UInt8]("xn--bb0000000a".utf8),
+                toUnicode: [UInt8]("xn--bb0000000a".utf8),
+                toUnicodeStatus: [.V2, .X4_2],
+                toAsciiN: nil,
+                toAsciiNStatus: []
+            ),
+            IDNATestV2Case(
+                source: [UInt8]("xn--\(String(repeating: "0", count: 58))a".utf8),
+                toUnicode: [UInt8]("xn--\(String(repeating: "0", count: 58))a".utf8),
+                toUnicodeStatus: [.V2, .X4_2],
+                toAsciiN: nil,
+                toAsciiNStatus: []
+            ),
         ]
         return customCases
     }

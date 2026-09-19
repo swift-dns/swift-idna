@@ -1,3 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/swift-dns/shared/refs/heads/main/.github/schemas/ci-config.schema.yml
 
 integration-tests: false
+
+# The android SDK aims clang's resource dir at the NDK's clang, whose builtin headers ours rejects.
+android-swift-build-flags: -Xswiftc -Xcc -Xswiftc -resource-dir -Xswiftc -Xcc -Xswiftc ${SWIFT_INSTALLATION}/lib/swift/clang
