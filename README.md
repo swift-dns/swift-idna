@@ -48,8 +48,10 @@ A high performance, highly optimized multi-platform implementation of Punycode a
 
 ## Notes
 
-- The only dependency of `swift-idna` is `swift-collections`, and it does not depend on `Foundation`.
-- Unit tests extensively run against 6400+ Unicode 18 test cases.
+- Unit tests run extensively against 6400+ Unicode 18 test cases.
+- Does not depend on `Foundation`.
+  - Only depends on `swift-highway` for writing portable SIMD code.
+  - And depends on `swift-collections` for some data structures.
 - The C code is all auto-generated from some Unicode files.
 
 ## Usage
