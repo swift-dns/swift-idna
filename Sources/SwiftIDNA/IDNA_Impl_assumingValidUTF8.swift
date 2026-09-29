@@ -14,7 +14,7 @@ extension IDNA {
 
         // 2., 3.
         let outputReuseCapacityHint = convertedBytes.count
-        convertedBytes.removeAll(keepingCapacity: true)
+        convertedBytes.removeAll()
 
         return TinyBuffer.withInlineAllocation(preferredCapacity: outputReuseCapacityHint) {
             (outputBufferForReuse) -> ConversionResult in

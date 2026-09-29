@@ -61,7 +61,7 @@ struct TinyBufferSubsequence: ~Copyable, ~Escapable {
     mutating func removeAll() {
         /// Technically we should only remove the sub-range, but for this specific library
         /// it doesn't matter according to the tests, so we don't bother.
-        self.base.removeAll(keepingCapacity: true)
+        self.base.removeAll()
     }
 }
 
