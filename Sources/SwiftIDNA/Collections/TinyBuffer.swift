@@ -186,13 +186,13 @@ package enum TinyBuffer: ~Copyable, ~Escapable {
 
     /// Removes all the bytes from the buffer.
     @inlinable
-    mutating func removeAll(keepingCapacity: Bool) {
+    mutating func removeAll() {
         switch consume self {
         case .inline(var elements):
             elements.removeAll()
             self = .inline(elements)
         case .heap(var array):
-            array.removeAll(keepingCapacity: keepingCapacity)
+            array.removeAll()
             self = .heap(array)
         }
     }

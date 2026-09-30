@@ -116,7 +116,7 @@ package enum Punycode {
         var n = Constants.initialN
         var delta: UInt32 = 0
         var bias = Constants.initialBias
-        output.removeAll(keepingCapacity: true)
+        output.removeAll()
 
         for idx in inputBytesSpan.indices {
             let byte = inputBytesSpan[idx]

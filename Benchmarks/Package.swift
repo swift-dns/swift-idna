@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-collections.git", from: "1.3.0"),
-        .package(url: "https://github.com/swift-dns/swift-highway.git", exact: "1.0.0-alpha.3"),
+        .package(url: "https://github.com/swift-dns/swift-highway.git", exact: "1.0.0-alpha.4"),
     ],
     targets: [
         .target(
