@@ -530,6 +530,7 @@ jobs:
           free-disk-space: true
           android-emulator-test-folder: /data/local/tmp/android-xctest
           android-emulator-options: >-
+            -no-snapshot-load
             -no-window
             -noaudio
             -no-boot-anim
