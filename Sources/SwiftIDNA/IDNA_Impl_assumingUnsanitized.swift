@@ -1,3 +1,7 @@
+#if !($Embedded || os(WASI))
+internal import Highway
+#endif
+
 /// The implementations below in this file, do not pass the un-sanitized user-input `span` to
 /// any functions outside this file.
 /// The other functions outside this file can assume they are operating on UTF8-only bytes.
@@ -85,7 +89,7 @@ extension IDNA {
                 /// Main `Processing` IDNA implementation.
                 /// https://www.unicode.org/reports/tr46/#Processing
                 /// 1. Map
-                self.mapToIDNAMappings_SIMD(
+                self.mapToIDNAMappings(
                     span: span,
                     into: &reuseBuffer,
                     errors: &errors
@@ -166,9 +170,25 @@ extension IDNA {
         }
     }
 
+    @usableFromInline
+    /// Intentionally `@inline(__always)`, so Swift compiler doesn't inconsistently complain about usage of both it and `@usableFromInline`.
+    @inline(__always)
+    func mapToIDNAMappings(
+        span: Span<UInt8>,
+        into newBytes: inout TinyBuffer,
+        errors: inout MappingErrors
+    ) {
+        #if $Embedded || os(WASI)
+        self.mapToIDNAMappings_SlowPath(span: span, into: &newBytes, errors: &errors)
+        #else
+        self.mapToIDNAMappings_FastPath(span: span, into: &newBytes, errors: &errors)
+        #endif
+    }
+
+    #if $Embedded || os(WASI)
     @inlinable
     @inline(__always)
-    func mapToIDNAMappings_SIMD(
+    func mapToIDNAMappings_SlowPath(
         span: Span<UInt8>,
         into newBytes: inout TinyBuffer,
         errors: inout MappingErrors
@@ -182,60 +202,159 @@ extension IDNA {
             var startIdx = 0
             while startIdx < count {
                 decoder.decodeNextWindow(of: span, startIdx: startIdx)
-                let scalarCount = decoder.scalarCount
-
-                var requiredCapacity = 0
-                let range = unsafe Range<Int>(uncheckedBounds: (0, scalarCount))
-                for scalarIdx in range {
-                    let offset = decoder.scalarStartOffset(at: scalarIdx)
-                    let scalarUTF8Length = decoder.scalarUTF8Length(at: scalarIdx)
-                    let uncheckedScalar = unsafe decoder.uncheckedScalarValues[unchecked: offset]
-
-                    /// Invalid scalar values resolve to `ignored`, so they contribute no capacity.
-                    /// The error for them is appended in the second pass below.
-                    let mapping = IDNAMapping.for(uncheckedScalar: uncheckedScalar)
-                    let isMapped = mapping.tag == .mapped
-                    let isIgnored = mapping.tag == .ignored
-                    let mappedScalarsCount = mapping.mappedScalars.utf8BytesSpan.count
-                    let _toAdd = isIgnored ? 0 : scalarUTF8Length
-                    let toAdd = isMapped ? mappedScalarsCount : _toAdd
-                    requiredCapacity &+= toAdd
-                }
-
-                newBytes.append(extraRequiredCapacity: requiredCapacity) { output in
-                    for scalarIdx in range {
-                        let offset = decoder.scalarStartOffset(at: scalarIdx)
-                        let scalarUTF8Length = decoder.scalarUTF8Length(at: scalarIdx)
-                        let uncheckedScalar = unsafe decoder.uncheckedScalarValues[
-                            unchecked: offset
-                        ]
-
-                        guard let scalar = UnicodeScalarValue(uncheckedScalar) else {
-                            errors.append(
-                                .labelContainsInvalidUnicode(
-                                    uncheckedScalar,
-                                    label: String(span: span)
-                                )
-                            )
-                            continue
-                        }
-
-                        let mapping = IDNAMapping.for(scalar: scalar)
-                        if mapping.tag == .ignored {
-                            continue
-                        }
-                        let isMapped = mapping.tag == .mapped
-                        let scalarStartIdx = startIdx &+ offset
-                        let scalarRange = unsafe Range<Int>(
-                            uncheckedBounds: (scalarStartIdx, scalarStartIdx &+ scalarUTF8Length)
-                        )
-                        let scalarBytesSpan = unsafe span.extracting(unchecked: scalarRange)
-                        let mappedScalarsSpan = mapping.mappedScalars.utf8BytesSpan
-                        let span = isMapped ? mappedScalarsSpan : scalarBytesSpan
-                        output.swift_idna_append(copying: span)
-                    }
-                }
+                self.mapToIDNAMappings(
+                    decodedWindow: decoder,
+                    startIdx: startIdx,
+                    span: span,
+                    into: &newBytes,
+                    errors: &errors
+                )
                 startIdx &+= decoder.windowEndOffset()
+            }
+        }
+    }
+    #else
+    /// `mapToIDNAMappings_SlowPath`, but with windows that are all ASCII mapped without decoding.
+    /// Every ASCII scalar is valid except A-Z, which are each mapped to their lowercase.
+    @inline(always)
+    func mapToIDNAMappings_FastPath(
+        span: Span<UInt8>,
+        into newBytes: inout TinyBuffer,
+        errors: inout MappingErrors
+    ) {
+        let count = span.count
+        guard count > 0 else {
+            return
+        }
+
+        assert(newBytes.isEmpty)
+
+        let laneCount = HighwayUInt8.laneCount
+        span.withUnsafeBufferPointer { bytes in
+            let base = unsafe bytes.baseAddress.unsafelyUnwrapped
+            SIMDUnicodeScalarDecoder.withTemporaryDecoder { decoder in
+                var startIdx = 0
+                while startIdx < count {
+                    let windowLength = min(laneCount, count &- startIdx)
+                    let window =
+                        if windowLength == laneCount {
+                            unsafe HighwayUInt8.load(from: base + startIdx)
+                        } else {
+                            unsafe HighwayUInt8.loadFirst(
+                                from: base + startIdx,
+                                count: windowLength
+                            )
+                        }
+                    if HighwayUInt8.allFalse(
+                        HighwayUInt8.greaterThan(window, HighwayUInt8.repeating(0x7F))
+                    ) {
+                        let isUppercasedLetter = HighwayUInt8.lessThan(
+                            HighwayUInt8.subtracting(window, HighwayUInt8.repeating(0x41)),
+                            HighwayUInt8.repeating(26)
+                        )
+                        let lowercased = HighwayUInt8.bitwiseOr(
+                            window,
+                            HighwayUInt8.selectingOrZero(
+                                isUppercasedLetter,
+                                HighwayUInt8.repeating(0b0010_0000)
+                            )
+                        )
+                        newBytes.append(extraRequiredCapacity: windowLength) { output in
+                            unsafe output.withUnsafeMutableBufferPointer {
+                                buffer,
+                                initializedCount in
+                                let target =
+                                    unsafe buffer.baseAddress.unsafelyUnwrapped + initializedCount
+                                if windowLength == laneCount {
+                                    unsafe HighwayUInt8.store(lowercased, to: target)
+                                } else {
+                                    unsafe HighwayUInt8.storeFirst(
+                                        lowercased,
+                                        to: target,
+                                        count: windowLength
+                                    )
+                                }
+                                initializedCount &+= windowLength
+                            }
+                        }
+                        startIdx &+= windowLength
+                        continue
+                    }
+
+                    decoder.decodeNextWindow(of: span, startIdx: startIdx)
+                    self.mapToIDNAMappings(
+                        decodedWindow: decoder,
+                        startIdx: startIdx,
+                        span: span,
+                        into: &newBytes,
+                        errors: &errors
+                    )
+                    startIdx &+= decoder.windowEndOffset()
+                }
+            }
+        }
+    }
+    #endif
+
+    /// Maps the scalars `decoder` decoded out of the window of `span` at `startIdx`.
+    @inlinable
+    @inline(__always)
+    func mapToIDNAMappings(
+        decodedWindow decoder: borrowing SIMDUnicodeScalarDecoder,
+        startIdx: Int,
+        span: Span<UInt8>,
+        into newBytes: inout TinyBuffer,
+        errors: inout MappingErrors
+    ) {
+        let scalarCount = decoder.scalarCount
+
+        var requiredCapacity = 0
+        let range = unsafe Range<Int>(uncheckedBounds: (0, scalarCount))
+        for scalarIdx in range {
+            let offset = decoder.scalarStartOffset(at: scalarIdx)
+            let scalarUTF8Length = decoder.scalarUTF8Length(at: scalarIdx)
+            let uncheckedScalar = unsafe decoder.uncheckedScalarValues[unchecked: offset]
+
+            /// Invalid scalar values resolve to `ignored`, so they contribute no capacity.
+            /// The error for them is appended in the second pass below.
+            let mapping = IDNAMapping.for(uncheckedScalar: uncheckedScalar)
+            let isMapped = mapping.tag == .mapped
+            let isIgnored = mapping.tag == .ignored
+            let mappedScalarsCount = mapping.mappedScalars.utf8BytesSpan.count
+            let _toAdd = isIgnored ? 0 : scalarUTF8Length
+            let toAdd = isMapped ? mappedScalarsCount : _toAdd
+            requiredCapacity &+= toAdd
+        }
+
+        newBytes.append(extraRequiredCapacity: requiredCapacity) { output in
+            for scalarIdx in range {
+                let offset = decoder.scalarStartOffset(at: scalarIdx)
+                let scalarUTF8Length = decoder.scalarUTF8Length(at: scalarIdx)
+                let uncheckedScalar = unsafe decoder.uncheckedScalarValues[unchecked: offset]
+
+                guard let scalar = UnicodeScalarValue(uncheckedScalar) else {
+                    errors.append(
+                        .labelContainsInvalidUnicode(
+                            uncheckedScalar,
+                            label: String(span: span)
+                        )
+                    )
+                    continue
+                }
+
+                let mapping = IDNAMapping.for(scalar: scalar)
+                if mapping.tag == .ignored {
+                    continue
+                }
+                let isMapped = mapping.tag == .mapped
+                let scalarStartIdx = startIdx &+ offset
+                let scalarRange = unsafe Range<Int>(
+                    uncheckedBounds: (scalarStartIdx, scalarStartIdx &+ scalarUTF8Length)
+                )
+                let scalarBytesSpan = unsafe span.extracting(unchecked: scalarRange)
+                let mappedScalarsSpan = mapping.mappedScalars.utf8BytesSpan
+                let span = isMapped ? mappedScalarsSpan : scalarBytesSpan
+                output.swift_idna_append(copying: span)
             }
         }
     }

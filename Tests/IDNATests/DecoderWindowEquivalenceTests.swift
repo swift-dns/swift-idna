@@ -15,6 +15,33 @@ struct DecoderWindowEquivalenceTests {
                 while startIdx < count {
                     decoder.decodeNextWindow(of: span, startIdx: startIdx)
 
+                    /// Every position must decode exactly as `UnicodeScalarIterator.decodeScalar`.
+                    let lengthsPadding =
+                        decoder.paddedScalarUTF8Lengths.count &- SIMDUnicodeScalarDecoder.windowSize
+                    var expectedLengths: [UInt8] = []
+                    var decodedLengths: [UInt8] = []
+                    var expectedScalars: [UInt32] = []
+                    var decodedScalars: [UInt32] = []
+                    for idx in 0..<SIMDUnicodeScalarDecoder.windowSize {
+                        let leadByte = decoder.tempBytes[idx]
+                        let leadingOnes = Swift.min(4, (~leadByte).leadingZeroBitCount)
+                        let scalarUTF8Length = Swift.max(1, leadingOnes)
+                        let leadNoLengthBits =
+                            UInt32(leadByte & (0b0111_1111 &>> leadingOnes)) &<< 18
+                        let c1 = UInt32(decoder.tempBytes[idx &+ 1] & 0b0011_1111) &<< 12
+                        let c2 = UInt32(decoder.tempBytes[idx &+ 2] & 0b0011_1111) &<< 6
+                        let c3 = UInt32(decoder.tempBytes[idx &+ 3] & 0b0011_1111)
+                        let shift = 6 &* (4 &- scalarUTF8Length)
+                        expectedLengths.append(UInt8(scalarUTF8Length))
+                        expectedScalars.append((leadNoLengthBits | c1 | c2 | c3) &>> shift)
+                        decodedLengths.append(
+                            decoder.paddedScalarUTF8Lengths[lengthsPadding &+ idx]
+                        )
+                        decodedScalars.append(decoder.uncheckedScalarValues[idx])
+                    }
+                    #expect(decodedLengths == expectedLengths, "\(label()) at startIdx \(startIdx)")
+                    #expect(decodedScalars == expectedScalars, "\(label()) at startIdx \(startIdx)")
+
                     var chosen: [UInt8] = []
                     for idx in 0...decoder.scalarCount {
                         chosen.append(decoder.scalarStartOffsets[idx])
@@ -58,6 +85,24 @@ struct DecoderWindowEquivalenceTests {
                 }
             }
         }
+    }
+
+    @Test func everyLeadAndContinuationBytePair() {
+        let continuationBytes2And3: [(UInt8, UInt8)] = [
+            (0x80, 0xBF),
+            (0xBF, 0x80),
+            (0x3F, 0xC0),
+            (0xFF, 0x00),
+        ]
+        var bytes: [UInt8] = []
+        for leadByte in UInt8.min...UInt8.max {
+            for continuationByte1 in UInt8.min...UInt8.max {
+                for (continuationByte2, continuationByte3) in continuationBytes2And3 {
+                    bytes += [leadByte, continuationByte1, continuationByte2, continuationByte3]
+                }
+            }
+        }
+        checkAllWindows(bytes, "every lead and continuation byte pair")
     }
 
     @Test func randomizedLongByteStrings() {

@@ -271,7 +271,7 @@ package enum Punycode {
                 }
 
                 let byte = unsafe inputBytesSpan[unchecked: offset]
-                /// This is safe because `ensureAllDigits` would reject the label otherwise.
+                /// This is safe because `ensureAllDigits` would've rejected the label otherwise.
                 let digit = UInt32(Punycode.uncheckedMapUTF8ByteToDigit(byte))
                 offset &+= 1
 
