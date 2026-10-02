@@ -367,9 +367,10 @@ package enum Punycode {
             var largestDigit = HighwayUInt8.zero()
             var idx = 0
             while idx &+ laneCount <= count {
+                let loaded = unsafe HighwayUInt8.load(from: base + idx)
                 largestDigit = HighwayUInt8.maximum(
                     largestDigit,
-                    Punycode.mapCodePointsToDigits(ofUTF8Bytes: unsafe HighwayUInt8.load(from: base + idx))
+                    Punycode.mapCodePointsToDigits(bytes: loaded)
                 )
                 idx &+= laneCount
             }
@@ -382,7 +383,7 @@ package enum Punycode {
                     largestDigit,
                     HighwayUInt8.selectingOrZero(
                         HighwayUInt8.firstLanes(count: remaining),
-                        Punycode.mapCodePointsToDigits(ofUTF8Bytes: loaded)
+                        Punycode.mapCodePointsToDigits(bytes: loaded)
                     )
                 )
             }
@@ -395,7 +396,7 @@ package enum Punycode {
     /// Vectorized `mapCodePointToDigit`.
     /// Maps every byte that is not a digit to a value above 35 instead of to nothing.
     @inline(always)
-    static func mapCodePointsToDigits(ofUTF8Bytes bytes: HighwayUInt8.Vector) -> HighwayUInt8.Vector {
+    static func mapCodePointsToDigits(bytes: HighwayUInt8.Vector) -> HighwayUInt8.Vector {
         let letterDigits = HighwayUInt8.subtracting(bytes, HighwayUInt8.repeating(0x61))
         let numberDigits = HighwayUInt8.adding(
             HighwayUInt8.minimum(
