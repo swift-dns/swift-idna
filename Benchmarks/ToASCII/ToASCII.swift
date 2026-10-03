@@ -18,14 +18,14 @@ let benchmarks: @Sendable () -> Void = {
     /// Mark: - Lowercased_google.com
 
     Benchmark(
-        "To_ASCII_Lowercased_google_dot_com_CPU_8M",
+        "To_ASCII_Lowercased_google_dot_com_CPU_6M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<8_000_000 {
+        for _ in 0..<6_000_000 {
             var domainName = "google.com"
             domainName = try! strictConfig.toASCII(domainName: domainName)
             blackHole(domainName)
@@ -102,14 +102,14 @@ let benchmarks: @Sendable () -> Void = {
     /// Mark: - Uppercased_google.com
 
     Benchmark(
-        "To_ASCII_Uppercased_google_dot_com_CPU_8M",
+        "To_ASCII_Uppercased_google_dot_com_CPU_5M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<8_000_000 {
+        for _ in 0..<5_000_000 {
             var domainName = "GOOGLE.COM"
             domainName = try! strictConfig.toASCII(domainName: domainName)
             blackHole(domainName)
@@ -186,14 +186,14 @@ let benchmarks: @Sendable () -> Void = {
     /// Mark: - Lowercased_app-analytics-services.com
 
     Benchmark(
-        "To_ASCII_Lowercased_app-analytics-services_dot_com_CPU_8M",
+        "To_ASCII_Lowercased_app-analytics-services_dot_com_CPU_6M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<8_000_000 {
+        for _ in 0..<6_000_000 {
             var domainName = "app-analytics-services.com"
             domainName = try! strictConfig.toASCII(domainName: domainName)
             blackHole(domainName)
@@ -682,15 +682,18 @@ let benchmarks: @Sendable () -> Void = {
         /// Mark: - 生命之花.中国
         /// Grabbed from Cloudflare top 100K domains
 
+        let singleDomainCount = namePrefix.lowercased() == "lax" ? 300_000 : 250_000
+        let singleDomainCountLabel = namePrefix.lowercased() == "lax" ? "300K" : "250K"
+
         Benchmark(
-            "To_ASCII_\(namePrefix)_生命之花_dot_中国_CPU_200K",
+            "To_ASCII_\(namePrefix)_生命之花_dot_中国_CPU_\(singleDomainCountLabel)",
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 15,
                 maxIterations: 1000,
             )
         ) { benchmark in
-            for _ in 0..<200_000 {
+            for _ in 0..<singleDomainCount {
                 var domainName = "生命之花.中国"
                 domainName = try! idnaConfig.toASCII(domainName: domainName)
                 blackHole(domainName)
@@ -725,14 +728,14 @@ let benchmarks: @Sendable () -> Void = {
 
         if namePrefix.lowercased() == "lax" {
             Benchmark(
-                "To_ASCII_\(namePrefix)_生命之花_dot_中国_CPU_200K_ICU",
+                "To_ASCII_\(namePrefix)_生命之花_dot_中国_CPU_250K_ICU",
                 configuration: .init(
                     metrics: [.cpuUser],
                     warmupIterations: 15,
                     maxIterations: 1000,
                 )
             ) { benchmark in
-                for _ in 0..<200_000 {
+                for _ in 0..<250_000 {
                     var domainName = "生命之花.中国"
                     domainName = UIDNAHookICU.encode(domainName)!
                     blackHole(domainName)
@@ -826,7 +829,7 @@ let benchmarks: @Sendable () -> Void = {
 
         if namePrefix.lowercased() == "lax" {
             Benchmark(
-                "To_ASCII_\(namePrefix)_Multiple_Domains_CPU_\(multipleDomainsCountLabel)_ICU",
+                "To_ASCII_\(namePrefix)_Multiple_Domains_CPU_250K_ICU",
                 configuration: .init(
                     metrics: [.cpuUser],
                     warmupIterations: 15,
@@ -834,7 +837,7 @@ let benchmarks: @Sendable () -> Void = {
                 )
             ) { benchmark in
                 var rng = FastRNG()
-                for _ in 0..<multipleDomainsCount {
+                for _ in 0..<250_000 {
                     let idx = Int(rng.next() % UInt64(multipleDomainsICU.count))
                     let domainName = UIDNAHookICU.encode(multipleDomainsICU[idx])!
                     blackHole(domainName)
