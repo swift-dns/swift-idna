@@ -18,14 +18,14 @@ let benchmarks: @Sendable () -> Void = {
     /// Mark: - Lowercased_google.com
 
     Benchmark(
-        "To_Unicode_Lowercased_google_dot_com_CPU_8M",
+        "To_Unicode_Lowercased_google_dot_com_CPU_5M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<8_000_000 {
+        for _ in 0..<5_000_000 {
             var domainName = "google.com"
             domainName = try! strictConfig.toUnicode(domainName: domainName)
             blackHole(domainName)
@@ -102,14 +102,14 @@ let benchmarks: @Sendable () -> Void = {
     /// Mark: - Uppercased_google.com
 
     Benchmark(
-        "To_Unicode_Uppercased_google_dot_com_CPU_5M",
+        "To_Unicode_Uppercased_google_dot_com_CPU_4M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<5_000_000 {
+        for _ in 0..<4_000_000 {
             var domainName = "GOOGLE.COM"
             domainName = try! strictConfig.toUnicode(domainName: domainName)
             blackHole(domainName)
@@ -186,14 +186,14 @@ let benchmarks: @Sendable () -> Void = {
     /// Mark: - Lowercased_app-analytics-services.com
 
     Benchmark(
-        "To_Unicode_Lowercased_app-analytics-services_dot_com_CPU_6M",
+        "To_Unicode_Lowercased_app-analytics-services_dot_com_CPU_4M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<6_000_000 {
+        for _ in 0..<4_000_000 {
             var domainName = "app-analytics-services.com"
             domainName = try! strictConfig.toUnicode(domainName: domainName)
             blackHole(domainName)
@@ -270,14 +270,14 @@ let benchmarks: @Sendable () -> Void = {
     /// Mark: - Uppercased_app-analytics-services.com
 
     Benchmark(
-        "To_Unicode_Uppercased_app-analytics-services_dot_com_CPU_3M",
+        "To_Unicode_Uppercased_app-analytics-services_dot_com_CPU_2M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<3_000_000 {
+        for _ in 0..<2_000_000 {
             var domainName = "APP-ANALYTICS-SERVICES.COM"
             domainName = try! strictConfig.toUnicode(domainName: domainName)
             blackHole(domainName)
@@ -692,15 +692,18 @@ let benchmarks: @Sendable () -> Void = {
         /// Mark: - 生命之花.中国
         /// Grabbed from Cloudflare top 100K domains
 
+        let singleDomainCount = namePrefix.lowercased() == "lax" ? 500_000 : 350_000
+        let singleDomainCountLabel = namePrefix.lowercased() == "lax" ? "500K" : "350K"
+
         Benchmark(
-            "To_Unicode_\(namePrefix)_生命之花_dot_中国_CPU_200K",
+            "To_Unicode_\(namePrefix)_生命之花_dot_中国_CPU_\(singleDomainCountLabel)",
             configuration: .init(
                 metrics: [.cpuUser],
                 warmupIterations: 15,
                 maxIterations: 1000,
             )
         ) { benchmark in
-            for _ in 0..<200_000 {
+            for _ in 0..<singleDomainCount {
                 var domainName = "xn--9iqv4mb85adml.xn--fiqs8s"
                 domainName = try! idnaConfig.toUnicode(domainName: domainName)
                 blackHole(domainName)
@@ -778,8 +781,8 @@ let benchmarks: @Sendable () -> Void = {
 
         /// Mark: - Multiple_Domains
 
-        let multipleDomainsCount = namePrefix.lowercased() == "lax" ? 300_000 : 200_000
-        let multipleDomainsCountLabel = namePrefix.lowercased() == "lax" ? "300K" : "200K"
+        let multipleDomainsCount = namePrefix.lowercased() == "lax" ? 600_000 : 400_000
+        let multipleDomainsCountLabel = namePrefix.lowercased() == "lax" ? "600K" : "400K"
 
         Benchmark(
             "To_Unicode_\(namePrefix)_Multiple_Domains_CPU_\(multipleDomainsCountLabel)",
@@ -836,7 +839,7 @@ let benchmarks: @Sendable () -> Void = {
 
         if namePrefix.lowercased() == "lax" {
             Benchmark(
-                "To_Unicode_\(namePrefix)_Multiple_Domains_CPU_\(multipleDomainsCountLabel)_ICU",
+                "To_Unicode_\(namePrefix)_Multiple_Domains_CPU_250K_ICU",
                 configuration: .init(
                     metrics: [.cpuUser],
                     warmupIterations: 15,
@@ -844,7 +847,7 @@ let benchmarks: @Sendable () -> Void = {
                 )
             ) { benchmark in
                 var rng = FastRNG()
-                for _ in 0..<multipleDomainsCount {
+                for _ in 0..<250_000 {
                     let idx = Int(rng.next() % UInt64(multipleDomainsICU.count))
                     let domainName = UIDNAHookICU.decode(multipleDomainsICU[idx])!
                     blackHole(domainName)

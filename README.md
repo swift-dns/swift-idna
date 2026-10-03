@@ -112,12 +112,12 @@ The C code is all automatically generated using the scripts in `utils/`:
 * swift-foundation applies short-circuits of its own for ascii domain names so it _should_ perform better than ICU (but likely still not as good as swift-idna).
 * The benchmarks below are run in deterministically random order over multiple domains.
   * This is to simulate a real-world workload, and so the CPU can't over-fit over specific patterns.
-* Last update: Sep 17, 2026
+* Last update: Oct 3, 2026
 
 ### Summary
 
 > [!NOTE]
-> * swift-idna wins 6 of the 8 benchmarks, ties 1, loses 1.
+> * swift-idna wins 7 of the 8 benchmarks, loses 1.
 > * swift-idna commits considerably less heap allocations.
 > * swift-idna is much faster for the vast majority of the domain names in the wild, which are ASCII.
 
@@ -131,7 +131,7 @@ The C code is all automatically generated using the scripts in `utils/`:
 | Domain     | Operation  | swift-idna (ns/op) | ICU (ns/op) | Speedup |
 | ---------- | ---------- | ------------------ | ----------- | ------- |
 | 20 domains | To ASCII   | 26.0               | 120.0       | 4.62x   |
-| 20 domains | To Unicode | 35.0               | 120.0       | 3.43x   |
+| 20 domains | To Unicode | 32.5               | 120.0       | 3.69x   |
 
 #### Malloc Count
 
@@ -148,8 +148,8 @@ The C code is all automatically generated using the scripts in `utils/`:
 
 | Domain     | Operation  | swift-idna (ns/op) | ICU (ns/op) | Speedup |
 | ---------- | ---------- | ------------------ | ----------- | ------- |
-| 13 domains | To ASCII   | 533.3              | 533.3       | 1x      |
-| 13 domains | To Unicode | 500.0              | 600.0       | 1.20x   |
+| 13 domains | To ASCII   | 500.0              | 533.3       | 1.07x   |
+| 13 domains | To Unicode | 233.3              | 600.0       | 2.57x   |
 
 #### Malloc Count
 

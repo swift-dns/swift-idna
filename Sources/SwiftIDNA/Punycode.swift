@@ -253,6 +253,10 @@ package enum Punycode {
             inputBytesSpan = unsafe inputBytesSpan.extracting(unchecked: inputBytesRange)
         }
 
+        guard Punycode.ensureAllDigits(inputBytesSpan) else {
+            return false
+        }
+
         var offset = 0
         while offset != inputBytesSpan.count {
             let oldi = i
@@ -267,10 +271,8 @@ package enum Punycode {
                 }
 
                 let byte = unsafe inputBytesSpan[unchecked: offset]
-                guard let _digit = Punycode.mapCodePointToDigit(byte) else {
-                    return false
-                }
-                let digit = UInt32(_digit)
+                /// This is safe because `ensureAllDigits` would've rejected the label otherwise.
+                let digit = UInt32(Punycode.uncheckedMapUTF8ByteToDigit(byte))
                 offset &+= 1
 
                 i &+= (digit &* w)
@@ -328,6 +330,88 @@ package enum Punycode {
 
         return true
     }
+
+    /// Whether every byte of `inputBytesSpan` is one of Punycode's valid digits.
+    @usableFromInline
+    /// Intentionally `@inline(__always)`, so Swift compiler doesn't inconsistently complain about usage of both it and `@usableFromInline`.
+    @inline(__always)
+    static func ensureAllDigits(_ inputBytesSpan: Span<UInt8>) -> Bool {
+        #if $Embedded || os(WASI)
+        return ensureAllDigits_SlowPath(inputBytesSpan)
+        #else
+        return ensureAllDigits_FastPath(inputBytesSpan)
+        #endif
+    }
+
+    #if $Embedded || os(WASI)
+    static func ensureAllDigits_SlowPath(_ inputBytesSpan: Span<UInt8>) -> Bool {
+        for idx in inputBytesSpan.indices {
+            let byte = unsafe inputBytesSpan[unchecked: idx]
+            guard Punycode.mapCodePointToDigit(byte) != nil else {
+                return false
+            }
+        }
+        return true
+    }
+    #else
+    @inline(always)
+    static func ensureAllDigits_FastPath(_ inputBytesSpan: Span<UInt8>) -> Bool {
+        let count = inputBytesSpan.count
+        guard count > 0 else {
+            return true
+        }
+
+        let laneCount = HighwayUInt8.laneCount
+        return inputBytesSpan.withUnsafeBufferPointer { bytes -> Bool in
+            let base = unsafe bytes.baseAddress.unsafelyUnwrapped
+            var largestDigit = HighwayUInt8.zero()
+            var idx = 0
+            while idx &+ laneCount <= count {
+                let loaded = unsafe HighwayUInt8.load(from: base + idx)
+                largestDigit = HighwayUInt8.maximum(
+                    largestDigit,
+                    Punycode.mapCodePointsToDigits(bytes: loaded)
+                )
+                idx &+= laneCount
+            }
+            if idx < count {
+                let remaining = count &- idx
+                let loaded = unsafe HighwayUInt8.loadFirst(from: base + idx, count: remaining)
+                /// `loadFirst` zero-fills the lanes past `remaining`, and a zero byte is not a
+                /// digit, so they are zeroed back out rather than allowed to fail the label.
+                largestDigit = HighwayUInt8.maximum(
+                    largestDigit,
+                    HighwayUInt8.selectingOrZero(
+                        HighwayUInt8.firstLanes(count: remaining),
+                        Punycode.mapCodePointsToDigits(bytes: loaded)
+                    )
+                )
+            }
+            return HighwayUInt8.allFalse(
+                HighwayUInt8.greaterThan(largestDigit, HighwayUInt8.repeating(35))
+            )
+        }
+    }
+
+    /// Vectorized `mapCodePointToDigit`.
+    /// Maps every byte that is not a digit to a value above 35 instead of to nothing.
+    @inline(always)
+    static func mapCodePointsToDigits(bytes: HighwayUInt8.Vector) -> HighwayUInt8.Vector {
+        let letterDigits = HighwayUInt8.subtracting(bytes, HighwayUInt8.repeating(0x61))
+        let numberDigits = HighwayUInt8.adding(
+            HighwayUInt8.minimum(
+                HighwayUInt8.subtracting(bytes, HighwayUInt8.repeating(0x30)),
+                HighwayUInt8.repeating(36)
+            ),
+            HighwayUInt8.repeating(26)
+        )
+        return HighwayUInt8.selecting(
+            HighwayUInt8.lessThan(letterDigits, HighwayUInt8.repeating(26)),
+            letterDigits,
+            numberDigits
+        )
+    }
+    #endif
 
     /// The smallest non-ASCII scalar that is not below `n`, or `UInt32.max` if there is none.
     @usableFromInline
@@ -444,6 +528,23 @@ package enum Punycode {
         }
         /// Assume digit <= 35
         return UInt8(truncatingIfNeeded: 0x30 &+ digit &- 26)
+    }
+
+    /// [Punycode: A Bootstring encoding of Unicode for IDNA: Parameter values for Punycode](https://datatracker.ietf.org/doc/html/rfc3492#section-5)
+    /// a-z -> 0-25; 0-9 -> 26-35
+    /// This function assumes the byte is one of those, which `ensureAllDigits` establishes.
+    @inlinable
+    static func uncheckedMapUTF8ByteToDigit(_ byte: UInt8) -> UInt8 {
+        assert(
+            (byte >= 0x61 && byte <= 0x7a) || (byte >= 0x30 && byte <= 0x39),
+            "Invalid byte: \(byte)"
+        )
+
+        if byte >= 0x61 {
+            return byte &- 0x61
+        }
+
+        return byte &- 0x30 &+ 26
     }
 
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Parameter values for Punycode](https://datatracker.ietf.org/doc/html/rfc3492#section-5)
