@@ -362,35 +362,37 @@ package enum Punycode {
         }
 
         let laneCount = HighwayUInt8.laneCount
-        return inputBytesSpan.withUnsafeBufferPointer { bytes -> Bool in
-            let base = unsafe bytes.baseAddress.unsafelyUnwrapped
-            var largestDigit = HighwayUInt8.zero()
-            var idx = 0
-            while idx &+ laneCount <= count {
-                let loaded = unsafe HighwayUInt8.load(from: base + idx)
-                largestDigit = HighwayUInt8.maximum(
-                    largestDigit,
-                    Punycode.mapCodePointsToDigits(bytes: loaded)
-                )
-                idx &+= laneCount
-            }
-            if idx < count {
-                let remaining = count &- idx
-                let loaded = unsafe HighwayUInt8.loadFirst(from: base + idx, count: remaining)
-                /// `loadFirst` zero-fills the lanes past `remaining`, and a zero byte is not a
-                /// digit, so they are zeroed back out rather than allowed to fail the label.
-                largestDigit = HighwayUInt8.maximum(
-                    largestDigit,
-                    HighwayUInt8.selectingOrZero(
-                        HighwayUInt8.firstLanes(count: remaining),
-                        Punycode.mapCodePointsToDigits(bytes: loaded)
-                    )
-                )
-            }
-            return HighwayUInt8.allFalse(
-                HighwayUInt8.greaterThan(largestDigit, HighwayUInt8.repeating(35))
+        var remainingBytesSpan = inputBytesSpan
+        var largestDigit = HighwayUInt8.zero()
+        while remainingBytesSpan.count >= laneCount {
+            let loaded = HighwayUInt8.load(from: remainingBytesSpan)
+            largestDigit = HighwayUInt8.maximum(
+                largestDigit,
+                Punycode.mapCodePointsToDigits(bytes: loaded)
+            )
+            let remainingBytesRange = unsafe Range<Int>(
+                uncheckedBounds: (laneCount, remainingBytesSpan.count)
+            )
+            remainingBytesSpan = unsafe remainingBytesSpan.extracting(
+                unchecked: remainingBytesRange
             )
         }
+        if !remainingBytesSpan.isEmpty {
+            let remaining = remainingBytesSpan.count
+            let loaded = HighwayUInt8.loadFirst(from: remainingBytesSpan)
+            /// `loadFirst` zero-fills the lanes past `remaining`, and a zero byte is not a
+            /// digit, so they are zeroed back out rather than allowed to fail the label.
+            largestDigit = HighwayUInt8.maximum(
+                largestDigit,
+                HighwayUInt8.selectingOrZero(
+                    HighwayUInt8.firstLanes(count: remaining),
+                    Punycode.mapCodePointsToDigits(bytes: loaded)
+                )
+            )
+        }
+        return HighwayUInt8.allFalse(
+            HighwayUInt8.greaterThan(largestDigit, HighwayUInt8.repeating(35))
+        )
     }
 
     /// Vectorized `mapCodePointToDigit`.
@@ -471,23 +473,26 @@ package enum Punycode {
         var accumulator = identity
 
         return unsafe decodedUnicodeScalars.withUnsafeScalarValues { values in
-            var idx = 0
-            while idx &+ laneCount <= scalarsCount {
-                let loaded = unsafe HighwayUInt32.load(from: values + idx)
+            let valuesBuffer = unsafe UnsafeBufferPointer(start: values, count: scalarsCount)
+            var remainingValuesSpan = unsafe valuesBuffer.span
+            while remainingValuesSpan.count >= laneCount {
+                let loaded = HighwayUInt32.load(from: remainingValuesSpan)
                 let isBelow = HighwayUInt32.lessThan(loaded, threshold)
                 accumulator = HighwayUInt32.minimum(
                     accumulator,
                     HighwayUInt32.selecting(isBelow, identity, loaded)
                 )
-                idx &+= laneCount
-            }
-            if idx < scalarsCount {
-                let loaded = unsafe HighwayUInt32.loadFirst(
-                    from: values + idx,
-                    count: scalarsCount &- idx
+                let remainingValuesRange = unsafe Range<Int>(
+                    uncheckedBounds: (laneCount, remainingValuesSpan.count)
                 )
-                /// `loadFirst` zero-fills the lanes past `count`, and zero is below `n`, so the
-                /// padding selects the identity and cannot win the reduction.
+                remainingValuesSpan = unsafe remainingValuesSpan.extracting(
+                    unchecked: remainingValuesRange
+                )
+            }
+            if !remainingValuesSpan.isEmpty {
+                let loaded = HighwayUInt32.loadFirst(from: remainingValuesSpan)
+                /// `loadFirst` zero-fills the lanes past `remainingValuesSpan`, and zero is below
+                /// `n`, so the padding selects the identity and cannot win the reduction.
                 let isBelow = HighwayUInt32.lessThan(loaded, threshold)
                 accumulator = HighwayUInt32.minimum(
                     accumulator,
