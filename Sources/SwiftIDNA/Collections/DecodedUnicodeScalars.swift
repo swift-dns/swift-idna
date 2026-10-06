@@ -113,7 +113,7 @@ extension DecodedUnicodeScalars {
         /// `UnicodeScalarValue` is `@frozen` around a single `UInt32`, so the rebind is a
         /// reinterpretation of identical storage, not a conversion.
         @inlinable
-        func withUnsafeScalarValues(_ block: (Span<UInt32>) -> Void) -> Void {
+        func withUnsafeScalarValues(_ block: (Span<UInt32>) -> Void) {
             self.scalars.withUnsafeBufferPointer { buffer -> Void in
                 guard let base = buffer.baseAddress else {
                     return
