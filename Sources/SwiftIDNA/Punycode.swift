@@ -382,8 +382,6 @@ package enum Punycode {
         if !remainingBytesSpan.isEmpty {
             let remaining = remainingBytesSpan.count
             let loaded = HighwayUInt8.loadFirst(from: remainingBytesSpan)
-            /// `loadFirst` zero-fills the lanes past `remaining`, and a zero byte is not a
-            /// digit, so they are zeroed back out rather than allowed to fail the label.
             largestDigit = HighwayUInt8.maximum(
                 largestDigit,
                 HighwayUInt8.selectingOrZero(
@@ -479,8 +477,6 @@ package enum Punycode {
         }
         if !remainingValuesSpan.isEmpty {
             let loaded = HighwayUInt32.loadFirst(from: remainingValuesSpan)
-            /// `loadFirst` zero-fills the lanes past `remainingValuesSpan`, and zero is below
-            /// `n`, so the padding selects the identity and cannot win the reduction.
             let isBelow = HighwayUInt32.lessThan(loaded, threshold)
             accumulator = HighwayUInt32.minimum(
                 accumulator,
