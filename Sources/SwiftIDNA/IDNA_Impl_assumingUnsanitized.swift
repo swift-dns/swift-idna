@@ -230,67 +230,66 @@ extension IDNA {
         assert(newBytes.isEmpty)
 
         let laneCount = HighwayUInt8.laneCount
-        span.withUnsafeBufferPointer { bytes in
-            let base = unsafe bytes.baseAddress.unsafelyUnwrapped
-            SIMDUnicodeScalarDecoder.withTemporaryDecoder { decoder in
-                var startIdx = 0
-                while startIdx < count {
-                    let windowLength = min(laneCount, count &- startIdx)
-                    let window =
-                        if windowLength == laneCount {
-                            unsafe HighwayUInt8.load(from: base + startIdx)
-                        } else {
-                            unsafe HighwayUInt8.loadFirst(
-                                from: base + startIdx,
-                                count: windowLength
-                            )
-                        }
-                    if HighwayUInt8.allFalse(
-                        HighwayUInt8.greaterThan(window, HighwayUInt8.repeating(0x7F))
-                    ) {
-                        let isUppercasedLetter = HighwayUInt8.lessThan(
-                            HighwayUInt8.subtracting(window, HighwayUInt8.repeating(0x41)),
-                            HighwayUInt8.repeating(26)
-                        )
-                        let lowercased = HighwayUInt8.bitwiseOr(
-                            window,
-                            HighwayUInt8.selectingOrZero(
-                                isUppercasedLetter,
-                                HighwayUInt8.repeating(0b0010_0000)
-                            )
-                        )
-                        newBytes.append(extraRequiredCapacity: windowLength) { output in
-                            unsafe output.withUnsafeMutableBufferPointer {
-                                buffer,
-                                initializedCount in
-                                let target =
-                                    unsafe buffer.baseAddress.unsafelyUnwrapped + initializedCount
-                                if windowLength == laneCount {
-                                    unsafe HighwayUInt8.store(lowercased, to: target)
-                                } else {
-                                    unsafe HighwayUInt8.storeFirst(
-                                        lowercased,
-                                        to: target,
-                                        count: windowLength
-                                    )
-                                }
-                                initializedCount &+= windowLength
-                            }
-                        }
-                        startIdx &+= windowLength
-                        continue
+        SIMDUnicodeScalarDecoder.withTemporaryDecoder { decoder in
+            var remainingBytesSpan = span
+            while !remainingBytesSpan.isEmpty {
+                let windowLength = min(laneCount, remainingBytesSpan.count)
+                let window =
+                    if windowLength == laneCount {
+                        HighwayUInt8.load(from: remainingBytesSpan)
+                    } else {
+                        HighwayUInt8.loadFirst(from: remainingBytesSpan)
                     }
-
-                    decoder.decodeNextWindow(of: span, startIdx: startIdx)
-                    self.mapToIDNAMappings(
-                        decodedWindow: decoder,
-                        startIdx: startIdx,
-                        span: span,
-                        into: &newBytes,
-                        errors: &errors
+                if HighwayUInt8.allFalse(
+                    HighwayUInt8.greaterThan(window, HighwayUInt8.repeating(0x7F))
+                ) {
+                    let isUppercasedLetter = HighwayUInt8.lessThan(
+                        HighwayUInt8.subtracting(window, HighwayUInt8.repeating(0x41)),
+                        HighwayUInt8.repeating(26)
                     )
-                    startIdx &+= decoder.windowEndOffset()
+                    let lowercased = HighwayUInt8.bitwiseOr(
+                        window,
+                        HighwayUInt8.selectingOrZero(
+                            isUppercasedLetter,
+                            HighwayUInt8.repeating(0b0010_0000)
+                        )
+                    )
+                    newBytes.append(extraRequiredCapacity: windowLength) { output in
+                        if windowLength == laneCount {
+                            unsafe HighwayUInt8.append(lowercased, toUnchecked: &output)
+                        } else {
+                            unsafe HighwayUInt8.append(
+                                lowercased,
+                                addingCount: windowLength,
+                                toUnchecked: &output
+                            )
+                        }
+                    }
+                    let remainingBytesRange = unsafe Range<Int>(
+                        uncheckedBounds: (windowLength, remainingBytesSpan.count)
+                    )
+                    remainingBytesSpan = unsafe remainingBytesSpan.extracting(
+                        unchecked: remainingBytesRange
+                    )
+                    continue
                 }
+
+                let startIdx = count &- remainingBytesSpan.count
+                decoder.decodeNextWindow(of: span, startIdx: startIdx)
+                self.mapToIDNAMappings(
+                    decodedWindow: decoder,
+                    startIdx: startIdx,
+                    span: span,
+                    into: &newBytes,
+                    errors: &errors
+                )
+                let windowEndOffset = min(decoder.windowEndOffset(), remainingBytesSpan.count)
+                let remainingBytesRange = unsafe Range<Int>(
+                    uncheckedBounds: (windowEndOffset, remainingBytesSpan.count)
+                )
+                remainingBytesSpan = unsafe remainingBytesSpan.extracting(
+                    unchecked: remainingBytesRange
+                )
             }
         }
     }

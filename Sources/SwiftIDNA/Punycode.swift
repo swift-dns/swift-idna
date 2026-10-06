@@ -133,59 +133,61 @@ package enum Punycode {
 
         var loopIdx = h
         let scalarsCount = decodedUnicodeScalars.count
-        while loopIdx < scalarsCount {
-            let m = Punycode.smallestScalar(atLeast: n, in: decodedUnicodeScalars)
+        decodedUnicodeScalars.withUnsafeScalarValues { values in
+            while loopIdx < scalarsCount {
+                let m = Punycode.smallestScalar(atLeast: n, in: values)
 
-            delta &+= ((m &- n) &* (h &+ 1))
+                delta &+= ((m &- n) &* (h &+ 1))
 
-            n = m
-            var idx = 0
-            while idx < scalarsCount {
-                let codePoint = decodedUnicodeScalars[idx]
-                if codePoint.value < n || codePoint.isASCII {
-                    delta &+= 1
-                }
+                n = m
+                var idx = 0
+                while idx < scalarsCount {
+                    let codePoint = decodedUnicodeScalars[idx]
+                    if codePoint.value < n || codePoint.isASCII {
+                        delta &+= 1
+                    }
 
-                if codePoint.value == n {
-                    var q = delta
+                    if codePoint.value == n {
+                        var q = delta
 
-                    for idx in 1..<Constants.maximumEncodedDigitsPerDelta {
-                        let k = Constants.base &* idx
+                        for idx in 1..<Constants.maximumEncodedDigitsPerDelta {
+                            let k = Constants.base &* idx
 
-                        let t =
-                            if k <= (bias &+ Constants.tMin) {
-                                Constants.tMin
-                            } else if k >= (bias &+ Constants.tMax) {
-                                Constants.tMax
-                            } else {
-                                k &- bias
+                            let t =
+                                if k <= (bias &+ Constants.tMin) {
+                                    Constants.tMin
+                                } else if k >= (bias &+ Constants.tMax) {
+                                    Constants.tMax
+                                } else {
+                                    k &- bias
+                                }
+
+                            if q < t {
+                                break
                             }
 
-                        if q < t {
-                            break
-                        }
+                            let digit = t &+ ((q &- t) % (Constants.base &- t))
+                            /// Logically this is safe because we know that digit is in the range 0...35
+                            /// There are also extensive tests for this in the IDNATests.swift.
+                            output.append(Punycode.uncheckedMapDigitToUTF8Byte(digit))
 
-                        let digit = t &+ ((q &- t) % (Constants.base &- t))
+                            q = (q &- t) / (Constants.base &- t)
+                        }
                         /// Logically this is safe because we know that digit is in the range 0...35
                         /// There are also extensive tests for this in the IDNATests.swift.
-                        output.append(Punycode.uncheckedMapDigitToUTF8Byte(digit))
+                        output.append(Punycode.uncheckedMapDigitToUTF8Byte(q))
 
-                        q = (q &- t) / (Constants.base &- t)
+                        bias = adapt(delta: delta, codePointCount: h &+ 1, isFirstTime: h == b)
+                        delta = 0
+                        h &+= 1
+                        /// Skip one unicode scalar
+                        loopIdx &+= 1
                     }
-                    /// Logically this is safe because we know that digit is in the range 0...35
-                    /// There are also extensive tests for this in the IDNATests.swift.
-                    output.append(Punycode.uncheckedMapDigitToUTF8Byte(q))
-
-                    bias = adapt(delta: delta, codePointCount: h &+ 1, isFirstTime: h == b)
-                    delta = 0
-                    h &+= 1
-                    /// Skip one unicode scalar
-                    loopIdx &+= 1
+                    idx &+= 1
                 }
-                idx &+= 1
+                delta &+= 1
+                n &+= 1
             }
-            delta &+= 1
-            n &+= 1
         }
     }
 
@@ -362,35 +364,35 @@ package enum Punycode {
         }
 
         let laneCount = HighwayUInt8.laneCount
-        return inputBytesSpan.withUnsafeBufferPointer { bytes -> Bool in
-            let base = unsafe bytes.baseAddress.unsafelyUnwrapped
-            var largestDigit = HighwayUInt8.zero()
-            var idx = 0
-            while idx &+ laneCount <= count {
-                let loaded = unsafe HighwayUInt8.load(from: base + idx)
-                largestDigit = HighwayUInt8.maximum(
-                    largestDigit,
-                    Punycode.mapCodePointsToDigits(bytes: loaded)
-                )
-                idx &+= laneCount
-            }
-            if idx < count {
-                let remaining = count &- idx
-                let loaded = unsafe HighwayUInt8.loadFirst(from: base + idx, count: remaining)
-                /// `loadFirst` zero-fills the lanes past `remaining`, and a zero byte is not a
-                /// digit, so they are zeroed back out rather than allowed to fail the label.
-                largestDigit = HighwayUInt8.maximum(
-                    largestDigit,
-                    HighwayUInt8.selectingOrZero(
-                        HighwayUInt8.firstLanes(count: remaining),
-                        Punycode.mapCodePointsToDigits(bytes: loaded)
-                    )
-                )
-            }
-            return HighwayUInt8.allFalse(
-                HighwayUInt8.greaterThan(largestDigit, HighwayUInt8.repeating(35))
+        var remainingBytesSpan = inputBytesSpan
+        var largestDigit = HighwayUInt8.zero()
+        while remainingBytesSpan.count >= laneCount {
+            let loaded = HighwayUInt8.load(from: remainingBytesSpan)
+            largestDigit = HighwayUInt8.maximum(
+                largestDigit,
+                Punycode.mapCodePointsToDigits(bytes: loaded)
+            )
+            let remainingBytesRange = unsafe Range<Int>(
+                uncheckedBounds: (laneCount, remainingBytesSpan.count)
+            )
+            remainingBytesSpan = unsafe remainingBytesSpan.extracting(
+                unchecked: remainingBytesRange
             )
         }
+        if !remainingBytesSpan.isEmpty {
+            let remaining = remainingBytesSpan.count
+            let loaded = HighwayUInt8.loadFirst(from: remainingBytesSpan)
+            largestDigit = HighwayUInt8.maximum(
+                largestDigit,
+                HighwayUInt8.selectingOrZero(
+                    HighwayUInt8.firstLanes(count: remaining),
+                    Punycode.mapCodePointsToDigits(bytes: loaded)
+                )
+            )
+        }
+        return HighwayUInt8.allFalse(
+            HighwayUInt8.greaterThan(largestDigit, HighwayUInt8.repeating(35))
+        )
     }
 
     /// Vectorized `mapCodePointToDigit`.
@@ -419,12 +421,12 @@ package enum Punycode {
     @inline(__always)
     static func smallestScalar(
         atLeast n: UInt32,
-        in decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
+        in values: Span<UInt32>
     ) -> UInt32 {
         #if $Embedded || os(WASI)
-        return smallestScalar_SlowPath(atLeast: n, in: decodedUnicodeScalars)
+        return smallestScalar_SlowPath(atLeast: n, in: values)
         #else
-        return smallestScalar_FastPath(atLeast: n, in: decodedUnicodeScalars)
+        return smallestScalar_FastPath(atLeast: n, in: values)
         #endif
     }
 
@@ -438,64 +440,50 @@ package enum Punycode {
     @inline(never)
     static func smallestScalar_SlowPath(
         atLeast n: UInt32,
-        in decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
+        in values: Span<UInt32>
     ) -> UInt32 {
-        let scalarsCount = decodedUnicodeScalars.count
-        guard scalarsCount > 0 else {
-            return .max
+        var smallest = UInt32.max
+        for idx in values.indices {
+            let value = unsafe values[unchecked: idx]
+            smallest = min(smallest, value < n ? .max : value)
         }
-
-        return unsafe decodedUnicodeScalars.withUnsafeScalarValues { values in
-            var smallest = UInt32.max
-            for idx in 0..<scalarsCount {
-                let value = unsafe values[idx]
-                smallest = min(smallest, value < n ? .max : value)
-            }
-            return smallest
-        } ?? .max
+        return smallest
     }
     #else
     @inline(always)
     static func smallestScalar_FastPath(
         atLeast n: UInt32,
-        in decodedUnicodeScalars: borrowing DecodedUnicodeScalars.Subsequence
+        in values: Span<UInt32>
     ) -> UInt32 {
-        let scalarsCount = decodedUnicodeScalars.count
-        guard scalarsCount > 0 else {
-            return .max
-        }
-
         let laneCount = HighwayUInt32.laneCount
         let identity = HighwayUInt32.repeating(.max)
         let threshold = HighwayUInt32.repeating(n)
         var accumulator = identity
 
-        return unsafe decodedUnicodeScalars.withUnsafeScalarValues { values in
-            var idx = 0
-            while idx &+ laneCount <= scalarsCount {
-                let loaded = unsafe HighwayUInt32.load(from: values + idx)
-                let isBelow = HighwayUInt32.lessThan(loaded, threshold)
-                accumulator = HighwayUInt32.minimum(
-                    accumulator,
-                    HighwayUInt32.selecting(isBelow, identity, loaded)
-                )
-                idx &+= laneCount
-            }
-            if idx < scalarsCount {
-                let loaded = unsafe HighwayUInt32.loadFirst(
-                    from: values + idx,
-                    count: scalarsCount &- idx
-                )
-                /// `loadFirst` zero-fills the lanes past `count`, and zero is below `n`, so the
-                /// padding selects the identity and cannot win the reduction.
-                let isBelow = HighwayUInt32.lessThan(loaded, threshold)
-                accumulator = HighwayUInt32.minimum(
-                    accumulator,
-                    HighwayUInt32.selecting(isBelow, identity, loaded)
-                )
-            }
-            return HighwayUInt32.smallest(accumulator)
-        } ?? .max
+        var remainingValuesSpan = values
+        while remainingValuesSpan.count >= laneCount {
+            let loaded = HighwayUInt32.load(from: remainingValuesSpan)
+            let isBelow = HighwayUInt32.lessThan(loaded, threshold)
+            accumulator = HighwayUInt32.minimum(
+                accumulator,
+                HighwayUInt32.selecting(isBelow, identity, loaded)
+            )
+            let remainingValuesRange = unsafe Range<Int>(
+                uncheckedBounds: (laneCount, remainingValuesSpan.count)
+            )
+            remainingValuesSpan = unsafe remainingValuesSpan.extracting(
+                unchecked: remainingValuesRange
+            )
+        }
+        if !remainingValuesSpan.isEmpty {
+            let loaded = HighwayUInt32.loadFirst(from: remainingValuesSpan)
+            let isBelow = HighwayUInt32.lessThan(loaded, threshold)
+            accumulator = HighwayUInt32.minimum(
+                accumulator,
+                HighwayUInt32.selecting(isBelow, identity, loaded)
+            )
+        }
+        return HighwayUInt32.smallest(accumulator)
     }
     #endif
 
