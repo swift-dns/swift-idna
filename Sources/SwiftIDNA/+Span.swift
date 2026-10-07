@@ -122,39 +122,12 @@ extension Span<UInt8> {
     }
 
     /// Returns true if the span contains only valid UTF-8 bytes.
-    @inlinable
-    func checkUTF8() -> Bool {
-        if self.isASCII {
-            return true
-        }
-
-        var seenInvalidUTF8 = false
-
-        SIMDUnicodeScalarDecoder.withTemporaryDecoder { decoder in
-            /// Process windows of size `SIMDUnicodeScalarDecoder.windowSize`, one by one.
-            var startIdx = 0
-            outerLoop: while startIdx < count {
-                decoder.decodeNextWindow(of: self, startIdx: startIdx)
-                let scalarCount = decoder.scalarCount
-
-                var scalarIdx = 0
-                while scalarIdx < scalarCount {
-                    let offset = decoder.scalarStartOffset(at: scalarIdx)
-                    let uncheckedScalar = unsafe decoder.uncheckedScalarValues[unchecked: offset]
-
-                    if !UnicodeScalarValue.isValid(uncheckedScalar) {
-                        seenInvalidUTF8 = true
-                        break outerLoop
-                    }
-
-                    scalarIdx &+= 1
-                }
-
-                startIdx &+= decoder.windowEndOffset()
-            }
-        }
-
-        return !seenInvalidUTF8
+    /// [Unicode Standard, Table 3-7. Well-Formed UTF-8 Byte Sequences](https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-3/#G27506)
+    @usableFromInline
+    /// Intentionally `@inline(__always)`, so Swift compiler doesn't inconsistently complain about usage of both it and `@usableFromInline`.
+    @inline(__always)
+    package func checkUTF8() -> Bool {
+        UTF8Checker.isWellFormed(self)
     }
 }
 

@@ -133,7 +133,7 @@ extension String {
         ) throws -> Int
     ) rethrows {
         try self.init(unsafeUninitializedCapacity: capacity) { buffer in
-            try initializer(buffer)
+            unsafe try initializer(buffer)
         }
     }
     #endif

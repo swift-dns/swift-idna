@@ -181,3 +181,5 @@ Finally, add `import SwiftIDNA` to your source code.
 
 This package was initially a part of [swift-dns](https://github.com/MahdiBM/swift-dns) which I decided to decouple from that project.
 Currently it's used in [swift-endpoint](https://github.com/MahdiBM/swift-endpoint), which [swift-dns](https://github.com/MahdiBM/swift-dns) relies on.
+
+UTF-8 validation of `Span` inputs is a port of [simdutf](https://github.com/simdutf/simdutf)'s [lookup algorithm](https://github.com/simdutf/simdutf/blob/v9.2.1/src/generic/utf8_validation/utf8_lookup4_algorithm.h), used under the Apache License 2.0. The algorithm is described in [Validating UTF-8 In Less Than One Instruction Per Byte](https://arxiv.org/abs/2010.03090) by John Keiser and Daniel Lemire.

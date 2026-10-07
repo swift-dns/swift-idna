@@ -41,13 +41,10 @@ struct LinkedListTests {
     @available(SwiftStdlib 5.1, *)
     @Test(arguments: [1, 63, 64, 65, 127, 128, 129, 300])
     func randomizedInsertionsGrowTheStorage(count: Int) {
-        var generator = SystemRandomNumberGenerator()
         for _ in 0..<20 {
             var insertions: [(value: UInt32, position: Int)] = []
             for idx in 0..<count {
-                insertions.append(
-                    (value: UInt32(idx), position: Int.random(in: 0...idx, using: &generator))
-                )
+                insertions.append((value: UInt32(idx), position: Int.random(in: 0...idx)))
             }
             checkAgainstArray(insertions: insertions)
         }
@@ -74,18 +71,16 @@ struct LinkedListTests {
     /// count also passes the initial buffer capacity, so the tracked node has to survive a move.
     @available(SwiftStdlib 5.1, *)
     @Test func appendsInterleavedWithInsertsInTheMiddle() {
-        var generator = SystemRandomNumberGenerator()
-
         for _ in 0..<50 {
             var list = LinkedList<UInt32>()
             var expected: [UInt32] = []
 
             for value in 0..<80 as Range<UInt32> {
-                if expected.isEmpty || Bool.random(using: &generator) {
+                if expected.isEmpty || Bool.random() {
                     list.append(value)
                     expected.append(value)
                 } else {
-                    let position = Int.random(in: 0...expected.count, using: &generator)
+                    let position = Int.random(in: 0...expected.count)
                     list.insert(value, at: position)
                     expected.insert(value, at: position)
                 }
@@ -106,7 +101,6 @@ struct LinkedListTests {
     @available(SwiftStdlib 5.1, *)
     @Test func reusesTheStorageAfterRemoveAll() {
         var list = LinkedList<UInt32>()
-        var generator = SystemRandomNumberGenerator()
 
         for round in 0..<50 {
             list.removeAll()
@@ -117,7 +111,7 @@ struct LinkedListTests {
 
             var expected: [UInt32] = []
             for idx in 0..<(round &+ 1) {
-                let position = Int.random(in: 0...idx, using: &generator)
+                let position = Int.random(in: 0...idx)
                 list.insert(UInt32(idx), at: position)
                 expected.insert(UInt32(idx), at: position)
             }

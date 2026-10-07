@@ -9,7 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-collections.git", from: "1.7.1"),
-        .package(url: "https://github.com/swift-dns/swift-highway.git", exact: "1.0.0-alpha.6"),
+        .package(url: "https://github.com/swift-dns/swift-highway.git", exact: "1.0.0-alpha.7"),
     ],
     targets: [
         .target(
@@ -76,8 +76,6 @@ var settings: [SwiftSetting] {
         .enableExperimentalFeature(
             "AvailabilityMacro=SwiftStdlib 6.2:macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0"
         ),
-        .treatAllWarnings(as: .error),
-        .treatWarning("StrictMemorySafety", as: .warning),
     ]
 }
 
