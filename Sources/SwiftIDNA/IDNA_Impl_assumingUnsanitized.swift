@@ -11,7 +11,10 @@ extension IDNA {
     /// `ToASCII` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToASCII
     @inlinable
-    func _toASCII(span: Span<UInt8>) throws(CollectedMappingErrors) -> ConversionResult {
+    func _toASCII(
+        span: Span<UInt8>,
+        checkUTF8: Bool
+    ) throws(CollectedMappingErrors) -> ConversionResult {
         switch IDNA.performByteCheck(on: span) {
         case .containsOnlyIDNANoOpCharacters:
             return .noChangesNeeded
@@ -20,7 +23,13 @@ extension IDNA {
             let string = convertToLowercasedASCII(_uncheckedAssumingValidUTF8: span)
             return .string(string)
         case .mightChangeAfterIDNAConversion:
-            break
+            if checkUTF8, !span.checkUTF8() {
+                let domainName = String(span: span)
+                throw CollectedMappingErrors(
+                    domainName: domainName,
+                    errors: [.labelContainsInvalidUnicode(0xFFFD, label: domainName)]
+                )
+            }
         }
 
         var errors = MappingErrors(domainNameSpan: span)
@@ -64,7 +73,10 @@ extension IDNA {
     /// `ToUnicode` IDNA implementation.
     /// https://www.unicode.org/reports/tr46/#ToUnicode
     @inlinable
-    func _toUnicode(span: Span<UInt8>) throws(CollectedMappingErrors) -> ConversionResult {
+    func _toUnicode(
+        span: Span<UInt8>,
+        checkUTF8: Bool
+    ) throws(CollectedMappingErrors) -> ConversionResult {
         switch IDNA.performByteCheck(on: span) {
         case .containsOnlyIDNANoOpCharacters:
             if !span.containsIDNADomainNameMarkerLabelPrefix {
@@ -77,7 +89,13 @@ extension IDNA {
                 return .string(string)
             }
         case .mightChangeAfterIDNAConversion:
-            break
+            if checkUTF8, !span.checkUTF8() {
+                let domainName = String(span: span)
+                throw CollectedMappingErrors(
+                    domainName: domainName,
+                    errors: [.labelContainsInvalidUnicode(0xFFFD, label: domainName)]
+                )
+            }
         }
 
         var errors = MappingErrors(domainNameSpan: span)

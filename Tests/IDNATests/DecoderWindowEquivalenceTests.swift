@@ -114,13 +114,12 @@ struct DecoderWindowEquivalenceTests {
             0xF0, 0xF3, 0xF4, 0xF5,
             0xFD, 0xFE, 0xFF,
         ]
-        var generator = SystemRandomNumberGenerator()
         for length in 1...120 {
             for _ in 0..<500 {
                 var bytes: [UInt8] = []
                 bytes.reserveCapacity(length)
                 for _ in 0..<length {
-                    bytes.append(alphabet.randomElement(using: &generator)!)
+                    bytes.append(alphabet.randomElement()!)
                 }
                 checkAllWindows(bytes, "\(bytes)")
             }
@@ -136,7 +135,6 @@ struct DecoderWindowEquivalenceTests {
             "a𝕏b日ｃ😀d語e𝕏f",
             "ⅨⅩⅪ-ﬀﬁﬂ-ǅǆǇ",
         ]
-        var generator = SystemRandomNumberGenerator()
         for sample in samples {
             let full = Array(sample.utf8)
             for prefixLength in 0...20 {
@@ -150,8 +148,8 @@ struct DecoderWindowEquivalenceTests {
             }
             for _ in 0..<20_000 {
                 var bytes = full
-                let idx = Int.random(in: 0..<bytes.count, using: &generator)
-                bytes[idx] = UInt8.random(in: 0...255, using: &generator)
+                let idx = Int.random(in: 0..<bytes.count)
+                bytes[idx] = UInt8.random(in: 0...255)
                 checkAllWindows(bytes, "\(sample) corrupted at \(idx)")
             }
         }
