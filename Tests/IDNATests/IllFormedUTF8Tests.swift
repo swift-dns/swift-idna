@@ -260,21 +260,4 @@ struct IllFormedUTF8Tests {
         }
         #expect(mismatches.isEmpty, "\(mismatches.prefix(10))")
     }
-
-    #if !($Embedded || os(WASI))
-    /// Vectors wider than 128 bits use the rows after the first, which only those targets read.
-    @Test(
-        arguments: [
-            UTF8Checker.lookupByte1High,
-            UTF8Checker.lookupByte1Low,
-            UTF8Checker.lookupByte2High,
-        ]
-    )
-    func utf8LookupTableRepeatsPer128Bits(table: [UInt8]) {
-        let firstRow = Array(table[0..<16])
-        for rowStart in stride(from: 16, to: table.count, by: 16) {
-            #expect(Array(table[rowStart..<(rowStart + 16)]) == firstRow)
-        }
-    }
-    #endif
 }

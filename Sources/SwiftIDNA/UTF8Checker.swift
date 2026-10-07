@@ -40,7 +40,7 @@ extension UTF8Checker {
                     unsafe paddedBytesBuffer.copyMemory(from: rawBytes)
                 }
                 /// The zero bytes after `bytes` also catch a sequence that is cut off at the end.
-                let lastWindowStart = (count &+ 2) / windowSize &* windowSize &+ 3
+                let lastWindowStart = count / windowSize &* windowSize &+ 3
                 let errorBits = unsafe Self.errorBits_RequiringThreeToeroomBytes(
                     ofWindowsIn: paddedBytes.span,
                     from: 3,
@@ -180,26 +180,19 @@ extension UTF8Checker {
         }
 
         let laneCount = HighwayUInt8.laneCount
-        guard _fastPath(laneCount <= LookupTables.maximumLaneCount) else {
+        guard _fastPath(laneCount >= LookupTables.minimumLaneCount) else {
             return Self.isWellFormed_SlowPath(bytes)
         }
 
         let tables = LookupTables()
-        var errors = withUnsafeTemporaryAllocation(
-            of: UInt8.self,
-            capacity: laneCount &+ 3
-        ) { headBytes in
-            unsafe headBytes.initialize(repeating: 0)
-            let headBytesBase = unsafe headBytes.baseAddress.unsafelyUnwrapped
-            unsafe HighwayUInt8.store(HighwayUInt8.loadFirst(from: bytes), to: headBytesBase + 3)
-            return unsafe Self.lookupErrors(
-                input: HighwayUInt8.load(from: headBytesBase + 3),
-                prev1: HighwayUInt8.load(from: headBytesBase + 2),
-                prev2: HighwayUInt8.load(from: headBytesBase + 1),
-                prev3: HighwayUInt8.load(from: headBytesBase),
-                tables: tables
-            )
-        }
+        let headBytes = HighwayUInt8.loadFirst(from: bytes)
+        var errors = Self.lookupErrors(
+            input: headBytes,
+            prev1: HighwayUInt8.slide1Up(headBytes),
+            prev2: HighwayUInt8.slideUpLanes(headBytes, by: 2),
+            prev3: HighwayUInt8.slideUpLanes(headBytes, by: 3),
+            tables: tables
+        )
 
         if count > laneCount {
             var remainingBytesSpan = unsafe bytes.extracting(
@@ -320,54 +313,76 @@ extension UTF8Checker {
 
     /// The lookup tables of [simdutf's `check_special_cases`](https://github.com/simdutf/simdutf/blob/v9.2.1/src/generic/utf8_validation/utf8_lookup4_algorithm.h).
     /// Copyright 2021 The simdutf authors, used under the [Apache License 2.0](https://github.com/simdutf/simdutf/blob/v9.2.1/LICENSE-APACHE).
-    ///
-    /// `tableLookupBytes` looks up in each 128 bits separately, so each table repeats per 128 bits.
     struct LookupTables {
-        /// The lanes of the widest vector the tables cover.
-        static var maximumLaneCount: Int {
-            64
+        /// The lanes of the 128-bit blocks that `tableLookupBytes` looks up in.
+        static var minimumLaneCount: Int {
+            16
         }
 
+        /// Indexed by the high nibble of the previous byte.
         let byte1High: HighwayUInt8.Vector
+        /// Indexed by the low nibble of the previous byte.
         let byte1Low: HighwayUInt8.Vector
+        /// Indexed by the high nibble of the current byte.
         let byte2High: HighwayUInt8.Vector
 
         @inline(always)
         init() {
-            self.byte1High = UTF8Checker.lookupByte1High.withUnsafeBufferPointer {
-                unsafe HighwayUInt8.load(from: $0.baseAddress.unsafelyUnwrapped)
-            }
-            self.byte1Low = UTF8Checker.lookupByte1Low.withUnsafeBufferPointer {
-                unsafe HighwayUInt8.load(from: $0.baseAddress.unsafelyUnwrapped)
-            }
-            self.byte2High = UTF8Checker.lookupByte2High.withUnsafeBufferPointer {
-                unsafe HighwayUInt8.load(from: $0.baseAddress.unsafelyUnwrapped)
-            }
+            self.byte1High = HighwayUInt8.repeatingBlock(
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                128,
+                128,
+                128,
+                128,
+                33,
+                1,
+                21,
+                73
+            )
+            self.byte1Low = HighwayUInt8.repeatingBlock(
+                231,
+                163,
+                131,
+                131,
+                139,
+                203,
+                203,
+                203,
+                203,
+                203,
+                203,
+                203,
+                203,
+                219,
+                203,
+                203
+            )
+            self.byte2High = HighwayUInt8.repeatingBlock(
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                230,
+                174,
+                186,
+                186,
+                1,
+                1,
+                1,
+                1
+            )
         }
     }
-
-    /// Indexed by the high nibble of the previous byte.
-    package static let lookupByte1High: [UInt8] = [
-        2, 2, 2, 2, 2, 2, 2, 2, 128, 128, 128, 128, 33, 1, 21, 73,
-        2, 2, 2, 2, 2, 2, 2, 2, 128, 128, 128, 128, 33, 1, 21, 73,
-        2, 2, 2, 2, 2, 2, 2, 2, 128, 128, 128, 128, 33, 1, 21, 73,
-        2, 2, 2, 2, 2, 2, 2, 2, 128, 128, 128, 128, 33, 1, 21, 73,
-    ]
-
-    /// Indexed by the low nibble of the previous byte.
-    package static let lookupByte1Low: [UInt8] = [
-        231, 163, 131, 131, 139, 203, 203, 203, 203, 203, 203, 203, 203, 219, 203, 203,
-        231, 163, 131, 131, 139, 203, 203, 203, 203, 203, 203, 203, 203, 219, 203, 203,
-        231, 163, 131, 131, 139, 203, 203, 203, 203, 203, 203, 203, 203, 219, 203, 203,
-        231, 163, 131, 131, 139, 203, 203, 203, 203, 203, 203, 203, 203, 219, 203, 203,
-    ]
-
-    /// Indexed by the high nibble of the current byte.
-    package static let lookupByte2High: [UInt8] = [
-        1, 1, 1, 1, 1, 1, 1, 1, 230, 174, 186, 186, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 230, 174, 186, 186, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 230, 174, 186, 186, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 230, 174, 186, 186, 1, 1, 1, 1,
-    ]
 }
 #endif
