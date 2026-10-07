@@ -6,8 +6,11 @@ internal import Highway
 /// [Unicode Standard, Table 3-7. Well-Formed UTF-8 Byte Sequences](https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-3/#G27506)
 @available(SwiftStdlib 5.1, *)
 package enum UTF8Checker {
+
+    static var windowSize: Int { 16 }
+
     /// Returns true if `bytes` contains only valid UTF-8 bytes.
-    @inline(__always)
+    @inline(always)
     static func isWellFormed(_ bytes: Span<UInt8>) -> Bool {
         #if $Embedded || os(WASI)
         return Self.isWellFormed_SlowPath(bytes)
@@ -15,7 +18,10 @@ package enum UTF8Checker {
         return Self.isWellFormed_FastPath(bytes)
         #endif
     }
+}
 
+@available(SwiftStdlib 5.1, *)
+extension UTF8Checker {
     /// Checks windows of `windowSize` bytes, each byte along with its 3 preceding bytes, in a way
     /// that LLVM auto-vectorizes.
     package static func isWellFormed_SlowPath(_ bytes: Span<UInt8>) -> Bool {
@@ -35,7 +41,7 @@ package enum UTF8Checker {
                 }
                 /// The zero bytes after `bytes` also catch a sequence that is cut off at the end.
                 let lastWindowStart = (count &+ 2) / windowSize &* windowSize &+ 3
-                let errorBits = unsafe Self.errorBits(
+                let errorBits = unsafe Self.errorBits_RequiringThreeToeroomBytes(
                     ofWindowsIn: paddedBytes.span,
                     from: 3,
                     through: lastWindowStart
@@ -57,9 +63,13 @@ package enum UTF8Checker {
                     from: UnsafeRawBufferPointer(rebasing: rawBytes[..<windowSize])
                 )
             }
-            return unsafe Self.errorBits(ofWindowsIn: headBytes.span, from: 3, through: 3)
+            return unsafe Self.errorBits_RequiringThreeToeroomBytes(
+                ofWindowsIn: headBytes.span,
+                from: 3,
+                through: 3
+            )
         }
-        errorBits |= Self.errorBits(
+        errorBits |= Self.errorBits_RequiringThreeToeroomBytes(
             ofWindowsIn: bytes,
             from: windowSize,
             through: count &- windowSize
@@ -73,33 +83,37 @@ package enum UTF8Checker {
         return errorBits & 0x80 == 0
     }
 
-    static var windowSize: Int {
-        16
-    }
-
     /// Ors the `errorBits(ofWindowIn:at:)` of the windows at `start`, `start + windowSize` and so
     /// on, plus the one at `lastStart`, which can overlap the window before it.
     /// Intentionally `@inline(never)`, so LLVM vectorizes the windows the same way for every caller.
     @inline(never)
-    static func errorBits(
+    static func errorBits_RequiringThreeToeroomBytes(
         ofWindowsIn bytes: Span<UInt8>,
         from start: Int,
         through lastStart: Int
     ) -> UInt8 {
+        assert(start >= 3)
         var errorBits: UInt8 = 0
         var windowStart = start
         while windowStart < lastStart {
-            errorBits |= Self.errorBits(ofWindowIn: bytes, at: windowStart)
+            errorBits |= Self.errorBits_RequiringThreeToeroomBytes(
+                ofWindowIn: bytes,
+                at: windowStart
+            )
             windowStart &+= Self.windowSize
         }
-        errorBits |= Self.errorBits(ofWindowIn: bytes, at: lastStart)
+        errorBits |= Self.errorBits_RequiringThreeToeroomBytes(ofWindowIn: bytes, at: lastStart)
         return errorBits
     }
 
     /// Ors the `errorBits(byte:prev1:prev2:prev3:)` of the `windowSize` bytes from `start`, each
     /// with its 3 preceding bytes.
-    @inline(__always)
-    static func errorBits(ofWindowIn bytes: Span<UInt8>, at start: Int) -> UInt8 {
+    @inline(always)
+    static func errorBits_RequiringThreeToeroomBytes(
+        ofWindowIn bytes: Span<UInt8>,
+        at start: Int
+    ) -> UInt8 {
+        assert(bytes.count >= start &+ Self.windowSize)
         var errorBits: UInt8 = 0
         /// This loop is auto-vectorized by LLVM.
         for offset in 0..<Self.windowSize {
@@ -117,6 +131,8 @@ package enum UTF8Checker {
     /// The highest bit is set if `byte` can't follow `prev1`, `prev2` and `prev3` in well-formed
     /// UTF-8. Other bits are meaningless.
     /// Branchless, so LLVM can vectorize the loops calling it.
+    /// Intentionally `@inline(__always)`, since with `@inline(always)` LLVM doesn't vectorize the
+    /// loops calling it.
     @inline(__always)
     static func errorBits(byte: UInt8, prev1: UInt8, prev2: UInt8, prev3: UInt8) -> UInt8 {
         let isContinuation = byte & ~(byte &<< 1)
@@ -136,13 +152,13 @@ package enum UTF8Checker {
         return (isContinuation ^ mustBeContinuation) | isInvalidLead | isOutOfSecondByteRange
     }
 
-    @inline(__always)
+    @inline(always)
     static func saturatingSubtract(_ lhs: UInt8, _ rhs: UInt8) -> UInt8 {
         lhs &- Swift.min(lhs, rhs)
     }
 
     /// `0x80` if `lhs == rhs`, otherwise `0`.
-    @inline(__always)
+    @inline(always)
     static func isEqual(_ lhs: UInt8, _ rhs: UInt8) -> UInt8 {
         Self.saturatingSubtract(1, lhs ^ rhs) &<< 7
     }
@@ -164,7 +180,7 @@ extension UTF8Checker {
         }
 
         let laneCount = HighwayUInt8.laneCount
-        guard laneCount <= LookupTables.maximumLaneCount else {
+        guard _fastPath(laneCount <= LookupTables.maximumLaneCount) else {
             return Self.isWellFormed_SlowPath(bytes)
         }
 
@@ -318,13 +334,13 @@ extension UTF8Checker {
 
         @inline(always)
         init() {
-            self.byte1High = unsafe UTF8Checker.lookupByte1High.withUnsafeBufferPointer {
+            self.byte1High = UTF8Checker.lookupByte1High.withUnsafeBufferPointer {
                 unsafe HighwayUInt8.load(from: $0.baseAddress.unsafelyUnwrapped)
             }
-            self.byte1Low = unsafe UTF8Checker.lookupByte1Low.withUnsafeBufferPointer {
+            self.byte1Low = UTF8Checker.lookupByte1Low.withUnsafeBufferPointer {
                 unsafe HighwayUInt8.load(from: $0.baseAddress.unsafelyUnwrapped)
             }
-            self.byte2High = unsafe UTF8Checker.lookupByte2High.withUnsafeBufferPointer {
+            self.byte2High = UTF8Checker.lookupByte2High.withUnsafeBufferPointer {
                 unsafe HighwayUInt8.load(from: $0.baseAddress.unsafelyUnwrapped)
             }
         }
