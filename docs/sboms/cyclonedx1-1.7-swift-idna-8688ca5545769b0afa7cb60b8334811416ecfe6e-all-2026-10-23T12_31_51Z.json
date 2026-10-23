@@ -1,0 +1,262 @@
+{
+  "$schema" : "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat" : "CycloneDX",
+  "components" : [
+    {
+      "bom-ref" : "swift-collections",
+      "externalReferences" : [
+
+      ],
+      "name" : "swift-collections",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "98ef3c98609a1e31b7e157b5b619579001a789d6",
+            "url" : "https://github.com/apple/swift-collections.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-package"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/apple/swift-collections@1.7.1",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "1.7.1"
+    },
+    {
+      "bom-ref" : "swift-collections:BasicContainers",
+      "externalReferences" : [
+
+      ],
+      "name" : "BasicContainers",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "98ef3c98609a1e31b7e157b5b619579001a789d6",
+            "url" : "https://github.com/apple/swift-collections.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/apple/swift-collections:BasicContainers@1.7.1",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "1.7.1"
+    },
+    {
+      "bom-ref" : "swift-highway",
+      "externalReferences" : [
+
+      ],
+      "name" : "swift-highway",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "2f1fb97f363e2e1b629b734e6155d1cd83316a79",
+            "url" : "https://github.com/swift-dns/swift-highway.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-package"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/swift-dns/swift-highway@1.0.0-alpha.7",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "1.0.0-alpha.7"
+    },
+    {
+      "bom-ref" : "swift-highway:Highway",
+      "externalReferences" : [
+
+      ],
+      "name" : "Highway",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "2f1fb97f363e2e1b629b734e6155d1cd83316a79",
+            "url" : "https://github.com/swift-dns/swift-highway.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/swift-dns/swift-highway:Highway@1.0.0-alpha.7",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "1.0.0-alpha.7"
+    },
+    {
+      "bom-ref" : "swift-idna",
+      "externalReferences" : [
+
+      ],
+      "name" : "swift-idna",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "8688ca5545769b0afa7cb60b8334811416ecfe6e",
+            "url" : "https://github.com/swift-dns/swift-idna.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-package"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/swift-dns/swift-idna@8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "8688ca5545769b0afa7cb60b8334811416ecfe6e"
+    },
+    {
+      "bom-ref" : "swift-idna:IDNATests",
+      "externalReferences" : [
+
+      ],
+      "name" : "IDNATests",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "8688ca5545769b0afa7cb60b8334811416ecfe6e",
+            "url" : "https://github.com/swift-dns/swift-idna.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/swift-dns/swift-idna:IDNATests@8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "scope" : "excluded",
+      "type" : "library",
+      "version" : "8688ca5545769b0afa7cb60b8334811416ecfe6e"
+    },
+    {
+      "bom-ref" : "swift-idna:SwiftIDNA",
+      "externalReferences" : [
+
+      ],
+      "name" : "SwiftIDNA",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "8688ca5545769b0afa7cb60b8334811416ecfe6e",
+            "url" : "https://github.com/swift-dns/swift-idna.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/swift-dns/swift-idna:SwiftIDNA@8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "8688ca5545769b0afa7cb60b8334811416ecfe6e"
+    }
+  ],
+  "dependencies" : [
+    {
+      "dependsOn" : [
+        "swift-collections:BasicContainers"
+      ],
+      "ref" : "swift-collections"
+    },
+    {
+      "dependsOn" : [
+        "swift-highway:Highway"
+      ],
+      "ref" : "swift-highway"
+    },
+    {
+      "dependsOn" : [
+        "swift-collections",
+        "swift-highway",
+        "swift-idna:IDNATests",
+        "swift-idna:SwiftIDNA"
+      ],
+      "ref" : "swift-idna"
+    },
+    {
+      "dependsOn" : [
+        "swift-collections:BasicContainers",
+        "swift-highway:Highway"
+      ],
+      "ref" : "swift-idna:SwiftIDNA"
+    }
+  ],
+  "metadata" : {
+    "component" : {
+      "bom-ref" : "swift-idna",
+      "externalReferences" : [
+
+      ],
+      "name" : "swift-idna",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "8688ca5545769b0afa7cb60b8334811416ecfe6e",
+            "url" : "https://github.com/swift-dns/swift-idna.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-package"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/swift-dns/swift-idna@8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "8688ca5545769b0afa7cb60b8334811416ecfe6e"
+    },
+    "timestamp" : "2026-10-23T12:31:51Z",
+    "tools" : {
+      "components" : [
+        {
+          "bom-ref" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97",
+          "licenses" : [
+            {
+              "license" : {
+                "id" : "Apache-2.0",
+                "url" : "http://swift.org/LICENSE.txt"
+              }
+            }
+          ],
+          "name" : "swift-package-manager",
+          "purl" : "pkg:swift/github.com/swiftlang/swift-package-manager@6.4.0-dev",
+          "scope" : "excluded",
+          "type" : "application",
+          "version" : "6.4.0-dev"
+        }
+      ]
+    }
+  },
+  "serialNumber" : "urn:uuid:e2a5ecc2-f791-4fbe-a321-fe67e74e56e2",
+  "specVersion" : "1.7",
+  "version" : 1
+}

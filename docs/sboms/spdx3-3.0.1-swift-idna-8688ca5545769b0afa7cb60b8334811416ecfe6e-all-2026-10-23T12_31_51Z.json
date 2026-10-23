@@ -1,0 +1,264 @@
+{
+  "@context" : "https://spdx.org/rdf/3.0.1/spdx-context.jsonld",
+  "@graph" : [
+    {
+      "creationInfo" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97:creationInfo",
+      "from" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97",
+      "relationshipType" : "hasDeclaredLicense",
+      "spdxId" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97-hasDeclaredLicense-urn:spdx:Apache-2.0",
+      "to" : [
+        "urn:spdx:Apache-2.0"
+      ],
+      "type" : "Relationship"
+    },
+    {
+      "creationInfo" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97:creationInfo",
+      "simplelicensing_licenseExpression" : "Apache-2.0",
+      "spdxId" : "urn:spdx:Apache-2.0",
+      "type" : "simplelicensing_LicenseExpression"
+    },
+    {
+      "@id" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97:creationInfo",
+      "created" : "2026-10-23T12:31:51Z",
+      "createdBy" : [
+        "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97"
+      ],
+      "specVersion" : "6.4.0-dev",
+      "type" : "CreationInfo"
+    },
+    {
+      "creationInfo" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97:creationInfo",
+      "name" : "swift-package-manager",
+      "spdxId" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97",
+      "type" : "Agent"
+    },
+    {
+      "@id" : "_:creationInfo",
+      "created" : "2026-10-23T12:31:51Z",
+      "createdBy" : [
+        "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97"
+      ],
+      "specVersion" : "3.0.1",
+      "type" : "CreationInfo"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "profileConformance" : [
+        "core",
+        "software"
+      ],
+      "rootElement" : [
+        "urn:spdx:swift-idna"
+      ],
+      "spdxId" : "urn:uuid:2d25fd5f-f954-4530-884b-558ff352e6e4",
+      "type" : "software_Sbom"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "from" : "urn:uuid:2d25fd5f-f954-4530-884b-558ff352e6e4",
+      "relationshipType" : "describes",
+      "spdxId" : "urn:uuid:2d25fd5f-f954-4530-884b-558ff352e6e4-describes-urn:spdx:swift-idna",
+      "to" : [
+        "urn:spdx:swift-idna"
+      ],
+      "type" : "Relationship"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "profileConformance" : [
+        "core",
+        "software"
+      ],
+      "rootElement" : [
+        "urn:uuid:2d25fd5f-f954-4530-884b-558ff352e6e4"
+      ],
+      "spdxId" : "urn:uuid:e2a5ecc2-f791-4fbe-a321-fe67e74e56e2",
+      "type" : "SpdxDocument"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "description" : "<ResolvedPackage: swift-collections>",
+      "externalUrl" : "pkg:swift/github.com/apple/swift-collections@1.7.1",
+      "name" : "swift-collections",
+      "software_internalVersion" : "1.7.1",
+      "software_primaryPurpose" : "library",
+      "spdxId" : "urn:spdx:swift-collections",
+      "summary" : "swift-package",
+      "type" : "software_Package"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "externalUrl" : "pkg:swift/github.com/apple/swift-collections:BasicContainers@1.7.1",
+      "name" : "BasicContainers",
+      "software_internalVersion" : "1.7.1",
+      "software_primaryPurpose" : "library",
+      "spdxId" : "urn:spdx:swift-collections:BasicContainers",
+      "summary" : "swift-product",
+      "type" : "software_Package"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "description" : "<ResolvedPackage: swift-highway>",
+      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-highway@1.0.0-alpha.7",
+      "name" : "swift-highway",
+      "software_internalVersion" : "1.0.0-alpha.7",
+      "software_primaryPurpose" : "library",
+      "spdxId" : "urn:spdx:swift-highway",
+      "summary" : "swift-package",
+      "type" : "software_Package"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-highway:Highway@1.0.0-alpha.7",
+      "name" : "Highway",
+      "software_internalVersion" : "1.0.0-alpha.7",
+      "software_primaryPurpose" : "library",
+      "spdxId" : "urn:spdx:swift-highway:Highway",
+      "summary" : "swift-product",
+      "type" : "software_Package"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "description" : "<ResolvedPackage: swift-idna>",
+      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-idna@8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "name" : "swift-idna",
+      "software_internalVersion" : "8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "software_primaryPurpose" : "library",
+      "spdxId" : "urn:spdx:swift-idna",
+      "summary" : "swift-package",
+      "type" : "software_Package"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-idna:IDNATests@8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "name" : "IDNATests",
+      "software_internalVersion" : "8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "software_primaryPurpose" : "library",
+      "spdxId" : "urn:spdx:swift-idna:IDNATests",
+      "summary" : "swift-product",
+      "type" : "software_Package"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-idna:SwiftIDNA@8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "name" : "SwiftIDNA",
+      "software_internalVersion" : "8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "software_primaryPurpose" : "library",
+      "spdxId" : "urn:spdx:swift-idna:SwiftIDNA",
+      "summary" : "swift-product",
+      "type" : "software_Package"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "from" : "urn:spdx:swift-collections",
+      "relationshipType" : "dependsOn",
+      "spdxId" : "urn:spdx:swift-collections-dependsOn",
+      "to" : [
+        "urn:spdx:swift-collections:BasicContainers"
+      ],
+      "type" : "Relationship"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "from" : "urn:spdx:swift-highway",
+      "relationshipType" : "dependsOn",
+      "spdxId" : "urn:spdx:swift-highway-dependsOn",
+      "to" : [
+        "urn:spdx:swift-highway:Highway"
+      ],
+      "type" : "Relationship"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "from" : "urn:spdx:swift-idna",
+      "relationshipType" : "dependsOn",
+      "spdxId" : "urn:spdx:swift-idna-dependsOn",
+      "to" : [
+        "urn:spdx:swift-collections",
+        "urn:spdx:swift-highway",
+        "urn:spdx:swift-idna:IDNATests",
+        "urn:spdx:swift-idna:SwiftIDNA"
+      ],
+      "type" : "Relationship"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "from" : "urn:spdx:swift-idna",
+      "relationshipType" : "hasTest",
+      "spdxId" : "urn:spdx:swift-idna-hasTest",
+      "to" : [
+        "urn:spdx:swift-idna:IDNATests"
+      ],
+      "type" : "Relationship"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "from" : "urn:spdx:swift-idna:SwiftIDNA",
+      "relationshipType" : "dependsOn",
+      "spdxId" : "urn:spdx:swift-idna:SwiftIDNA-dependsOn",
+      "to" : [
+        "urn:spdx:swift-collections:BasicContainers",
+        "urn:spdx:swift-highway:Highway"
+      ],
+      "type" : "Relationship"
+    },
+    {
+      "externalIdentifierType" : "gitoid",
+      "identifier" : "urn:spdx:2f1fb97f363e2e1b629b734e6155d1cd83316a79",
+      "identifierLocator" : [
+        "https://github.com/swift-dns/swift-highway.git"
+      ],
+      "type" : "ExternalIdentifier"
+    },
+    {
+      "externalIdentifierType" : "gitoid",
+      "identifier" : "urn:spdx:8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "identifierLocator" : [
+        "https://github.com/swift-dns/swift-idna.git"
+      ],
+      "type" : "ExternalIdentifier"
+    },
+    {
+      "externalIdentifierType" : "gitoid",
+      "identifier" : "urn:spdx:98ef3c98609a1e31b7e157b5b619579001a789d6",
+      "identifierLocator" : [
+        "https://github.com/apple/swift-collections.git"
+      ],
+      "type" : "ExternalIdentifier"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "from" : "urn:spdx:2f1fb97f363e2e1b629b734e6155d1cd83316a79",
+      "relationshipType" : "generates",
+      "spdxId" : "urn:spdx:2f1fb97f363e2e1b629b734e6155d1cd83316a79-generates",
+      "to" : [
+        "urn:spdx:swift-highway",
+        "urn:spdx:swift-highway:Highway"
+      ],
+      "type" : "Relationship"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "from" : "urn:spdx:8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "relationshipType" : "generates",
+      "spdxId" : "urn:spdx:8688ca5545769b0afa7cb60b8334811416ecfe6e-generates",
+      "to" : [
+        "urn:spdx:swift-idna",
+        "urn:spdx:swift-idna:IDNATests",
+        "urn:spdx:swift-idna:SwiftIDNA"
+      ],
+      "type" : "Relationship"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "from" : "urn:spdx:98ef3c98609a1e31b7e157b5b619579001a789d6",
+      "relationshipType" : "generates",
+      "spdxId" : "urn:spdx:98ef3c98609a1e31b7e157b5b619579001a789d6-generates",
+      "to" : [
+        "urn:spdx:swift-collections",
+        "urn:spdx:swift-collections:BasicContainers"
+      ],
+      "type" : "Relationship"
+    }
+  ]
+}
