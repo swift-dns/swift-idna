@@ -2,41 +2,41 @@
   "@context" : "https://spdx.org/rdf/3.0.1/spdx-context.jsonld",
   "@graph" : [
     {
-      "creationInfo" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97:creationInfo",
-      "from" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97",
+      "creationInfo" : "urn:uuid:464d07ca-8d97-4c4f-bcaa-c364c677e456:creationInfo",
+      "from" : "urn:uuid:464d07ca-8d97-4c4f-bcaa-c364c677e456",
       "relationshipType" : "hasDeclaredLicense",
-      "spdxId" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97-hasDeclaredLicense-urn:spdx:Apache-2.0",
+      "spdxId" : "urn:uuid:464d07ca-8d97-4c4f-bcaa-c364c677e456-hasDeclaredLicense-urn:spdx:Apache-2.0",
       "to" : [
         "urn:spdx:Apache-2.0"
       ],
       "type" : "Relationship"
     },
     {
-      "creationInfo" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97:creationInfo",
+      "creationInfo" : "urn:uuid:464d07ca-8d97-4c4f-bcaa-c364c677e456:creationInfo",
       "simplelicensing_licenseExpression" : "Apache-2.0",
       "spdxId" : "urn:spdx:Apache-2.0",
       "type" : "simplelicensing_LicenseExpression"
     },
     {
-      "@id" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97:creationInfo",
-      "created" : "2026-10-23T12:31:51Z",
+      "@id" : "urn:uuid:464d07ca-8d97-4c4f-bcaa-c364c677e456:creationInfo",
+      "created" : "2026-10-23T12:37:43Z",
       "createdBy" : [
-        "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97"
+        "urn:uuid:464d07ca-8d97-4c4f-bcaa-c364c677e456"
       ],
       "specVersion" : "6.4.0-dev",
       "type" : "CreationInfo"
     },
     {
-      "creationInfo" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97:creationInfo",
+      "creationInfo" : "urn:uuid:464d07ca-8d97-4c4f-bcaa-c364c677e456:creationInfo",
       "name" : "swift-package-manager",
-      "spdxId" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97",
+      "spdxId" : "urn:uuid:464d07ca-8d97-4c4f-bcaa-c364c677e456",
       "type" : "Agent"
     },
     {
       "@id" : "_:creationInfo",
-      "created" : "2026-10-23T12:31:51Z",
+      "created" : "2026-10-23T12:37:43Z",
       "createdBy" : [
-        "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97"
+        "urn:uuid:464d07ca-8d97-4c4f-bcaa-c364c677e456"
       ],
       "specVersion" : "3.0.1",
       "type" : "CreationInfo"
@@ -50,14 +50,14 @@
       "rootElement" : [
         "urn:spdx:swift-idna"
       ],
-      "spdxId" : "urn:uuid:2d25fd5f-f954-4530-884b-558ff352e6e4",
+      "spdxId" : "urn:uuid:0595ef47-4089-453f-bcec-498ed3a0f930",
       "type" : "software_Sbom"
     },
     {
       "creationInfo" : "_:creationInfo",
-      "from" : "urn:uuid:2d25fd5f-f954-4530-884b-558ff352e6e4",
+      "from" : "urn:uuid:0595ef47-4089-453f-bcec-498ed3a0f930",
       "relationshipType" : "describes",
-      "spdxId" : "urn:uuid:2d25fd5f-f954-4530-884b-558ff352e6e4-describes-urn:spdx:swift-idna",
+      "spdxId" : "urn:uuid:0595ef47-4089-453f-bcec-498ed3a0f930-describes-urn:spdx:swift-idna",
       "to" : [
         "urn:spdx:swift-idna"
       ],
@@ -70,9 +70,9 @@
         "software"
       ],
       "rootElement" : [
-        "urn:uuid:2d25fd5f-f954-4530-884b-558ff352e6e4"
+        "urn:uuid:0595ef47-4089-453f-bcec-498ed3a0f930"
       ],
-      "spdxId" : "urn:uuid:e2a5ecc2-f791-4fbe-a321-fe67e74e56e2",
+      "spdxId" : "urn:uuid:8a9b4104-73ca-45c6-b965-be57d52a3947",
       "type" : "SpdxDocument"
     },
     {
@@ -120,9 +120,9 @@
     {
       "creationInfo" : "_:creationInfo",
       "description" : "<ResolvedPackage: swift-idna>",
-      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-idna@8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-idna@4885a06f1ac7884f64cb73b5748ca6e9f2443025-modified",
       "name" : "swift-idna",
-      "software_internalVersion" : "8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "software_internalVersion" : "4885a06f1ac7884f64cb73b5748ca6e9f2443025-modified",
       "software_primaryPurpose" : "library",
       "spdxId" : "urn:spdx:swift-idna",
       "summary" : "swift-package",
@@ -130,9 +130,9 @@
     },
     {
       "creationInfo" : "_:creationInfo",
-      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-idna:IDNATests@8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-idna:IDNATests@4885a06f1ac7884f64cb73b5748ca6e9f2443025-modified",
       "name" : "IDNATests",
-      "software_internalVersion" : "8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "software_internalVersion" : "4885a06f1ac7884f64cb73b5748ca6e9f2443025-modified",
       "software_primaryPurpose" : "library",
       "spdxId" : "urn:spdx:swift-idna:IDNATests",
       "summary" : "swift-product",
@@ -140,9 +140,9 @@
     },
     {
       "creationInfo" : "_:creationInfo",
-      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-idna:SwiftIDNA@8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-idna:SwiftIDNA@4885a06f1ac7884f64cb73b5748ca6e9f2443025-modified",
       "name" : "SwiftIDNA",
-      "software_internalVersion" : "8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "software_internalVersion" : "4885a06f1ac7884f64cb73b5748ca6e9f2443025-modified",
       "software_primaryPurpose" : "library",
       "spdxId" : "urn:spdx:swift-idna:SwiftIDNA",
       "summary" : "swift-product",
@@ -212,7 +212,7 @@
     },
     {
       "externalIdentifierType" : "gitoid",
-      "identifier" : "urn:spdx:8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "identifier" : "urn:spdx:4885a06f1ac7884f64cb73b5748ca6e9f2443025",
       "identifierLocator" : [
         "https://github.com/swift-dns/swift-idna.git"
       ],
@@ -239,9 +239,9 @@
     },
     {
       "creationInfo" : "_:creationInfo",
-      "from" : "urn:spdx:8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "from" : "urn:spdx:4885a06f1ac7884f64cb73b5748ca6e9f2443025",
       "relationshipType" : "generates",
-      "spdxId" : "urn:spdx:8688ca5545769b0afa7cb60b8334811416ecfe6e-generates",
+      "spdxId" : "urn:spdx:4885a06f1ac7884f64cb73b5748ca6e9f2443025-generates",
       "to" : [
         "urn:spdx:swift-idna",
         "urn:spdx:swift-idna:IDNATests",

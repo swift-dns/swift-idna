@@ -111,7 +111,7 @@
       "pedigree" : {
         "commits" : [
           {
-            "uid" : "8688ca5545769b0afa7cb60b8334811416ecfe6e",
+            "uid" : "4885a06f1ac7884f64cb73b5748ca6e9f2443025",
             "url" : "https://github.com/swift-dns/swift-idna.git"
           }
         ]
@@ -122,10 +122,10 @@
           "value" : "swift-package"
         }
       ],
-      "purl" : "pkg:swift/github.com/swift-dns/swift-idna@8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "purl" : "pkg:swift/github.com/swift-dns/swift-idna@4885a06f1ac7884f64cb73b5748ca6e9f2443025-modified",
       "scope" : "required",
       "type" : "library",
-      "version" : "8688ca5545769b0afa7cb60b8334811416ecfe6e"
+      "version" : "4885a06f1ac7884f64cb73b5748ca6e9f2443025-modified"
     },
     {
       "bom-ref" : "swift-idna:IDNATests",
@@ -136,7 +136,7 @@
       "pedigree" : {
         "commits" : [
           {
-            "uid" : "8688ca5545769b0afa7cb60b8334811416ecfe6e",
+            "uid" : "4885a06f1ac7884f64cb73b5748ca6e9f2443025",
             "url" : "https://github.com/swift-dns/swift-idna.git"
           }
         ]
@@ -147,10 +147,10 @@
           "value" : "swift-product"
         }
       ],
-      "purl" : "pkg:swift/github.com/swift-dns/swift-idna:IDNATests@8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "purl" : "pkg:swift/github.com/swift-dns/swift-idna:IDNATests@4885a06f1ac7884f64cb73b5748ca6e9f2443025-modified",
       "scope" : "excluded",
       "type" : "library",
-      "version" : "8688ca5545769b0afa7cb60b8334811416ecfe6e"
+      "version" : "4885a06f1ac7884f64cb73b5748ca6e9f2443025-modified"
     },
     {
       "bom-ref" : "swift-idna:SwiftIDNA",
@@ -161,7 +161,7 @@
       "pedigree" : {
         "commits" : [
           {
-            "uid" : "8688ca5545769b0afa7cb60b8334811416ecfe6e",
+            "uid" : "4885a06f1ac7884f64cb73b5748ca6e9f2443025",
             "url" : "https://github.com/swift-dns/swift-idna.git"
           }
         ]
@@ -172,10 +172,10 @@
           "value" : "swift-product"
         }
       ],
-      "purl" : "pkg:swift/github.com/swift-dns/swift-idna:SwiftIDNA@8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "purl" : "pkg:swift/github.com/swift-dns/swift-idna:SwiftIDNA@4885a06f1ac7884f64cb73b5748ca6e9f2443025-modified",
       "scope" : "required",
       "type" : "library",
-      "version" : "8688ca5545769b0afa7cb60b8334811416ecfe6e"
+      "version" : "4885a06f1ac7884f64cb73b5748ca6e9f2443025-modified"
     }
   ],
   "dependencies" : [
@@ -218,7 +218,7 @@
       "pedigree" : {
         "commits" : [
           {
-            "uid" : "8688ca5545769b0afa7cb60b8334811416ecfe6e",
+            "uid" : "4885a06f1ac7884f64cb73b5748ca6e9f2443025",
             "url" : "https://github.com/swift-dns/swift-idna.git"
           }
         ]
@@ -229,16 +229,16 @@
           "value" : "swift-package"
         }
       ],
-      "purl" : "pkg:swift/github.com/swift-dns/swift-idna@8688ca5545769b0afa7cb60b8334811416ecfe6e",
+      "purl" : "pkg:swift/github.com/swift-dns/swift-idna@4885a06f1ac7884f64cb73b5748ca6e9f2443025-modified",
       "scope" : "required",
       "type" : "library",
-      "version" : "8688ca5545769b0afa7cb60b8334811416ecfe6e"
+      "version" : "4885a06f1ac7884f64cb73b5748ca6e9f2443025-modified"
     },
-    "timestamp" : "2026-10-23T12:31:51Z",
+    "timestamp" : "2026-10-23T12:37:43Z",
     "tools" : {
       "components" : [
         {
-          "bom-ref" : "urn:uuid:e5bf017c-cdc9-46fe-b2c2-e633919dcb97",
+          "bom-ref" : "urn:uuid:464d07ca-8d97-4c4f-bcaa-c364c677e456",
           "licenses" : [
             {
               "license" : {
@@ -256,7 +256,7 @@
       ]
     }
   },
-  "serialNumber" : "urn:uuid:e2a5ecc2-f791-4fbe-a321-fe67e74e56e2",
+  "serialNumber" : "urn:uuid:8a9b4104-73ca-45c6-b965-be57d52a3947",
   "specVersion" : "1.7",
   "version" : 1
 }
