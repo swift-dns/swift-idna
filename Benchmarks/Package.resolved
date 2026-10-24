@@ -1,5 +1,5 @@
 {
-  "originHash" : "01150dc07322fc22957ca3b45648aa6472324ca0fed7a4fd81defb4aed6aef99",
+  "originHash" : "6837257a811a0bcdc072ed2263dae4d2efddcdf6df83823a6134867bfe3bbaad",
   "pins" : [
     {
       "identity" : "hdrhistogram-swift",
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "98ef3c98609a1e31b7e157b5b619579001a789d6",
-        "version" : "1.7.1"
+        "revision" : "844289ac455816e193f1dbbe014f3c4dbe429410",
+        "version" : "1.7.4"
       }
     },
     {
