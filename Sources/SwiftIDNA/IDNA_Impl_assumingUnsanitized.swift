@@ -1,6 +1,4 @@
-#if !($Embedded || os(WASI))
 internal import Highway
-#endif
 
 /// The implementations below in this file, do not pass the un-sanitized user-input `span` to
 /// any functions outside this file.
@@ -188,54 +186,12 @@ extension IDNA {
         }
     }
 
+    /// Maps `span` window by window, decoding only the windows that are not all ASCII.
+    /// Every ASCII scalar is valid except A-Z, which are each mapped to their lowercase.
     @usableFromInline
     /// Intentionally `@inline(__always)`, so Swift compiler doesn't inconsistently complain about usage of both it and `@usableFromInline`.
     @inline(__always)
     func mapToIDNAMappings(
-        span: Span<UInt8>,
-        into newBytes: inout TinyBuffer,
-        errors: inout MappingErrors
-    ) {
-        #if $Embedded || os(WASI)
-        self.mapToIDNAMappings_SlowPath(span: span, into: &newBytes, errors: &errors)
-        #else
-        self.mapToIDNAMappings_FastPath(span: span, into: &newBytes, errors: &errors)
-        #endif
-    }
-
-    #if $Embedded || os(WASI)
-    @inlinable
-    @inline(__always)
-    func mapToIDNAMappings_SlowPath(
-        span: Span<UInt8>,
-        into newBytes: inout TinyBuffer,
-        errors: inout MappingErrors
-    ) {
-        let count = span.count
-
-        assert(newBytes.isEmpty)
-
-        SIMDUnicodeScalarDecoder.withTemporaryDecoder { decoder in
-            /// Process windows of size `SIMDUnicodeScalarDecoder.windowSize`, one by one.
-            var startIdx = 0
-            while startIdx < count {
-                decoder.decodeNextWindow(of: span, startIdx: startIdx)
-                self.mapToIDNAMappings(
-                    decodedWindow: decoder,
-                    startIdx: startIdx,
-                    span: span,
-                    into: &newBytes,
-                    errors: &errors
-                )
-                startIdx &+= decoder.windowEndOffset()
-            }
-        }
-    }
-    #else
-    /// `mapToIDNAMappings_SlowPath`, but with windows that are all ASCII mapped without decoding.
-    /// Every ASCII scalar is valid except A-Z, which are each mapped to their lowercase.
-    @inline(always)
-    func mapToIDNAMappings_FastPath(
         span: Span<UInt8>,
         into newBytes: inout TinyBuffer,
         errors: inout MappingErrors
@@ -311,7 +267,6 @@ extension IDNA {
             }
         }
     }
-    #endif
 
     /// Maps the scalars `decoder` decoded out of the window of `span` at `startIdx`.
     @inlinable
