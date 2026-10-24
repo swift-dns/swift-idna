@@ -130,7 +130,7 @@ The C code is all automatically generated using the scripts in `utils/`:
 
 | Domain     | Operation  | swift-idna (ns/op) | ICU (ns/op) | Speedup |
 | ---------- | ---------- | ------------------ | ----------- | ------- |
-| 20 domains | To ASCII   | 28.0               | 90.0        | 3.21x   |
+| 20 domains | To ASCII   | 26.0               | 90.0        | 3.46x   |
 | 20 domains | To Unicode | 32.5               | 90.0        | 2.77x   |
 
 #### Malloc Count
