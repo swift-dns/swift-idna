@@ -18,14 +18,14 @@ let benchmarks: @Sendable () -> Void = {
     /// Mark: - Lowercased_google.com
 
     Benchmark(
-        "To_Unicode_Lowercased_google_dot_com_CPU_5M",
+        "To_Unicode_Lowercased_google_dot_com_CPU_6M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<5_000_000 {
+        for _ in 0..<6_000_000 {
             var domainName = "google.com"
             domainName = try! strictConfig.toUnicode(domainName: domainName)
             blackHole(domainName)
@@ -59,14 +59,14 @@ let benchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "To_Unicode_Lowercased_google_dot_com_CPU_1M_ICU",
+        "To_Unicode_Lowercased_google_dot_com_CPU_1500K_ICU",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<1_000_000 {
+        for _ in 0..<1_500_000 {
             var domainName = "google.com"
             domainName = UIDNAHookICU.decode(domainName)!
             blackHole(domainName)
@@ -143,14 +143,14 @@ let benchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "To_Unicode_Uppercased_google_dot_com_CPU_1M_ICU",
+        "To_Unicode_Uppercased_google_dot_com_CPU_1500K_ICU",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<1_000_000 {
+        for _ in 0..<1_500_000 {
             var domainName = "GOOGLE.COM"
             domainName = UIDNAHookICU.decode(domainName)!
             blackHole(domainName)
@@ -186,14 +186,14 @@ let benchmarks: @Sendable () -> Void = {
     /// Mark: - Lowercased_app-analytics-services.com
 
     Benchmark(
-        "To_Unicode_Lowercased_app-analytics-services_dot_com_CPU_4M",
+        "To_Unicode_Lowercased_app-analytics-services_dot_com_CPU_6M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 15,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<4_000_000 {
+        for _ in 0..<6_000_000 {
             var domainName = "app-analytics-services.com"
             domainName = try! strictConfig.toUnicode(domainName: domainName)
             blackHole(domainName)
