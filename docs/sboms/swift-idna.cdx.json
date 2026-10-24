@@ -61,7 +61,7 @@
       "pedigree" : {
         "commits" : [
           {
-            "uid" : "2f1fb97f363e2e1b629b734e6155d1cd83316a79",
+            "uid" : "20c4de124f4893d030155778c308159e8113b239",
             "url" : "https://github.com/swift-dns/swift-highway.git"
           }
         ]
@@ -72,10 +72,10 @@
           "value" : "swift-package"
         }
       ],
-      "purl" : "pkg:swift/github.com/swift-dns/swift-highway@1.0.0-alpha.7",
+      "purl" : "pkg:swift/github.com/swift-dns/swift-highway@1.0.0-alpha.8",
       "scope" : "required",
       "type" : "library",
-      "version" : "1.0.0-alpha.7"
+      "version" : "1.0.0-alpha.8"
     },
     {
       "bom-ref" : "swift-highway:Highway",
@@ -86,7 +86,7 @@
       "pedigree" : {
         "commits" : [
           {
-            "uid" : "2f1fb97f363e2e1b629b734e6155d1cd83316a79",
+            "uid" : "20c4de124f4893d030155778c308159e8113b239",
             "url" : "https://github.com/swift-dns/swift-highway.git"
           }
         ]
@@ -97,10 +97,10 @@
           "value" : "swift-product"
         }
       ],
-      "purl" : "pkg:swift/github.com/swift-dns/swift-highway:Highway@1.0.0-alpha.7",
+      "purl" : "pkg:swift/github.com/swift-dns/swift-highway:Highway@1.0.0-alpha.8",
       "scope" : "required",
       "type" : "library",
-      "version" : "1.0.0-alpha.7"
+      "version" : "1.0.0-alpha.8"
     },
     {
       "bom-ref" : "swift-idna",

@@ -1,6 +1,4 @@
-#if !($Embedded || os(WASI))
 internal import Highway
-#endif
 
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
 @available(SwiftStdlib 5.1, *)
@@ -338,26 +336,6 @@ package enum Punycode {
     /// Intentionally `@inline(__always)`, so Swift compiler doesn't inconsistently complain about usage of both it and `@usableFromInline`.
     @inline(__always)
     static func ensureAllDigits(_ inputBytesSpan: Span<UInt8>) -> Bool {
-        #if $Embedded || os(WASI)
-        return ensureAllDigits_SlowPath(inputBytesSpan)
-        #else
-        return ensureAllDigits_FastPath(inputBytesSpan)
-        #endif
-    }
-
-    #if $Embedded || os(WASI)
-    static func ensureAllDigits_SlowPath(_ inputBytesSpan: Span<UInt8>) -> Bool {
-        for idx in inputBytesSpan.indices {
-            let byte = unsafe inputBytesSpan[unchecked: idx]
-            guard Punycode.mapCodePointToDigit(byte) != nil else {
-                return false
-            }
-        }
-        return true
-    }
-    #else
-    @inline(always)
-    static func ensureAllDigits_FastPath(_ inputBytesSpan: Span<UInt8>) -> Bool {
         let count = inputBytesSpan.count
         guard count > 0 else {
             return true
@@ -395,8 +373,8 @@ package enum Punycode {
         )
     }
 
-    /// Vectorized `mapCodePointToDigit`.
-    /// Maps every byte that is not a digit to a value above 35 instead of to nothing.
+    /// Vectorized `uncheckedMapUTF8ByteToDigit`.
+    /// Maps every byte that is not a digit to a value above 35 instead of asserting.
     @inline(always)
     static func mapCodePointsToDigits(bytes: HighwayUInt8.Vector) -> HighwayUInt8.Vector {
         let letterDigits = HighwayUInt8.subtracting(bytes, HighwayUInt8.repeating(0x61))
@@ -413,45 +391,12 @@ package enum Punycode {
             numberDigits
         )
     }
-    #endif
 
     /// The smallest non-ASCII scalar that is not below `n`, or `UInt32.max` if there is none.
     @usableFromInline
     /// Intentionally `@inline(__always)`, so Swift compiler doesn't inconsistently complain about usage of both it and `@usableFromInline`.
     @inline(__always)
     static func smallestScalar(
-        atLeast n: UInt32,
-        in values: Span<UInt32>
-    ) -> UInt32 {
-        #if $Embedded || os(WASI)
-        return smallestScalar_SlowPath(atLeast: n, in: values)
-        #else
-        return smallestScalar_FastPath(atLeast: n, in: values)
-        #endif
-    }
-
-    #if $Embedded || os(WASI)
-    /// Intentionally `@inline(never)`, so LLVM auto-vectorizes it.
-    /// Otherwise it refuses to, with the following analysis which I couldn't easily bypass:
-    /// ```
-    /// [Analysis] NonReductionValueUsedOutsideLoop
-    ///   loop not vectorized: value that could not be identified as reduction is used outside the loop
-    /// ```
-    @inline(never)
-    static func smallestScalar_SlowPath(
-        atLeast n: UInt32,
-        in values: Span<UInt32>
-    ) -> UInt32 {
-        var smallest = UInt32.max
-        for idx in values.indices {
-            let value = unsafe values[unchecked: idx]
-            smallest = min(smallest, value < n ? .max : value)
-        }
-        return smallest
-    }
-    #else
-    @inline(always)
-    static func smallestScalar_FastPath(
         atLeast n: UInt32,
         in values: Span<UInt32>
     ) -> UInt32 {
@@ -485,7 +430,6 @@ package enum Punycode {
         }
         return HighwayUInt32.smallest(accumulator)
     }
-    #endif
 
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Bias adaptation function](https://datatracker.ietf.org/doc/html/rfc3492#section-6.1)
     @inlinable
@@ -533,25 +477,5 @@ package enum Punycode {
         }
 
         return byte &- 0x30 &+ 26
-    }
-
-    /// [Punycode: A Bootstring encoding of Unicode for IDNA: Parameter values for Punycode](https://datatracker.ietf.org/doc/html/rfc3492#section-5)
-    /// A-Z -> 0-25; a-z -> 0-25; 0-9 -> 26-35
-    @inlinable
-    static func mapCodePointToDigit(_ byte: UInt8) -> UInt8? {
-        let value = byte
-
-        /// An uppercase ASCII letter should not make it through to Punycode conversion.
-        assert(!(value >= 0x41 && value <= 0x5a))
-
-        if value >= 0x61, value <= 0x7a {
-            return value &- 0x61
-        }
-
-        if value <= 0x39, value >= 0x30 {
-            return value &- 0x30 &+ 26
-        }
-
-        return nil
     }
 }

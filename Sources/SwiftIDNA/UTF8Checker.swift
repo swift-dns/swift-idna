@@ -1,6 +1,4 @@
-#if !($Embedded || os(WASI))
 internal import Highway
-#endif
 
 /// Checks if bytes are well-formed UTF-8.
 /// [Unicode Standard, Table 3-7. Well-Formed UTF-8 Byte Sequences](https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-3/#G27506)
@@ -8,16 +6,6 @@ internal import Highway
 package enum UTF8Checker {
 
     static var windowSize: Int { 16 }
-
-    /// Returns true if `bytes` contains only valid UTF-8 bytes.
-    @inline(always)
-    static func isWellFormed(_ bytes: Span<UInt8>) -> Bool {
-        #if $Embedded || os(WASI)
-        return Self.isWellFormed_SlowPath(bytes)
-        #else
-        return Self.isWellFormed_FastPath(bytes)
-        #endif
-    }
 }
 
 @available(SwiftStdlib 5.1, *)
@@ -164,16 +152,17 @@ extension UTF8Checker {
     }
 }
 
-#if !($Embedded || os(WASI))
 @available(SwiftStdlib 5.1, *)
 extension UTF8Checker {
+    /// Returns true if `bytes` contains only valid UTF-8 bytes.
+    ///
     /// A port of [simdutf's lookup algorithm](https://github.com/simdutf/simdutf/blob/v9.2.1/src/generic/utf8_validation/utf8_lookup4_algorithm.h).
     /// Copyright 2021 The simdutf authors, used under the [Apache License 2.0](https://github.com/simdutf/simdutf/blob/v9.2.1/LICENSE-APACHE).
     /// The algorithm is described in [Validating UTF-8 In Less Than One Instruction Per Byte](https://arxiv.org/abs/2010.03090).
     ///
     /// Intentionally `@inline(never)`, so the vector code is not copied into every caller.
     @inline(never)
-    static func isWellFormed_FastPath(_ bytes: Span<UInt8>) -> Bool {
+    static func isWellFormed(_ bytes: Span<UInt8>) -> Bool {
         let count = bytes.count
         guard count > 0 else {
             return true
@@ -385,4 +374,3 @@ extension UTF8Checker {
         }
     }
 }
-#endif

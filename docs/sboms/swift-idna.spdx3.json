@@ -99,9 +99,9 @@
     {
       "creationInfo" : "_:creationInfo",
       "description" : "<ResolvedPackage: swift-highway>",
-      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-highway@1.0.0-alpha.7",
+      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-highway@1.0.0-alpha.8",
       "name" : "swift-highway",
-      "software_internalVersion" : "1.0.0-alpha.7",
+      "software_internalVersion" : "1.0.0-alpha.8",
       "software_primaryPurpose" : "library",
       "spdxId" : "urn:spdx:swift-highway",
       "summary" : "swift-package",
@@ -109,9 +109,9 @@
     },
     {
       "creationInfo" : "_:creationInfo",
-      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-highway:Highway@1.0.0-alpha.7",
+      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-highway:Highway@1.0.0-alpha.8",
       "name" : "Highway",
-      "software_internalVersion" : "1.0.0-alpha.7",
+      "software_internalVersion" : "1.0.0-alpha.8",
       "software_primaryPurpose" : "library",
       "spdxId" : "urn:spdx:swift-highway:Highway",
       "summary" : "swift-product",
@@ -204,7 +204,7 @@
     },
     {
       "externalIdentifierType" : "gitoid",
-      "identifier" : "urn:spdx:2f1fb97f363e2e1b629b734e6155d1cd83316a79",
+      "identifier" : "urn:spdx:20c4de124f4893d030155778c308159e8113b239",
       "identifierLocator" : [
         "https://github.com/swift-dns/swift-highway.git"
       ],
@@ -220,9 +220,9 @@
     },
     {
       "creationInfo" : "_:creationInfo",
-      "from" : "urn:spdx:2f1fb97f363e2e1b629b734e6155d1cd83316a79",
+      "from" : "urn:spdx:20c4de124f4893d030155778c308159e8113b239",
       "relationshipType" : "generates",
-      "spdxId" : "urn:spdx:2f1fb97f363e2e1b629b734e6155d1cd83316a79-generates",
+      "spdxId" : "urn:spdx:20c4de124f4893d030155778c308159e8113b239-generates",
       "to" : [
         "urn:spdx:swift-highway",
         "urn:spdx:swift-highway:Highway"
