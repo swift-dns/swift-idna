@@ -11,7 +11,7 @@
       "pedigree" : {
         "commits" : [
           {
-            "uid" : "98ef3c98609a1e31b7e157b5b619579001a789d6",
+            "uid" : "844289ac455816e193f1dbbe014f3c4dbe429410",
             "url" : "https://github.com/apple/swift-collections.git"
           }
         ]
@@ -22,10 +22,10 @@
           "value" : "swift-package"
         }
       ],
-      "purl" : "pkg:swift/github.com/apple/swift-collections@1.7.1",
+      "purl" : "pkg:swift/github.com/apple/swift-collections@1.7.4",
       "scope" : "required",
       "type" : "library",
-      "version" : "1.7.1"
+      "version" : "1.7.4"
     },
     {
       "bom-ref" : "swift-collections:BasicContainers",
@@ -36,7 +36,7 @@
       "pedigree" : {
         "commits" : [
           {
-            "uid" : "98ef3c98609a1e31b7e157b5b619579001a789d6",
+            "uid" : "844289ac455816e193f1dbbe014f3c4dbe429410",
             "url" : "https://github.com/apple/swift-collections.git"
           }
         ]
@@ -47,10 +47,10 @@
           "value" : "swift-product"
         }
       ],
-      "purl" : "pkg:swift/github.com/apple/swift-collections:BasicContainers@1.7.1",
+      "purl" : "pkg:swift/github.com/apple/swift-collections:BasicContainers@1.7.4",
       "scope" : "required",
       "type" : "library",
-      "version" : "1.7.1"
+      "version" : "1.7.4"
     },
     {
       "bom-ref" : "swift-highway",
@@ -61,7 +61,7 @@
       "pedigree" : {
         "commits" : [
           {
-            "uid" : "2f1fb97f363e2e1b629b734e6155d1cd83316a79",
+            "uid" : "4144bf67e20f584e67b374545b58e35752826f67",
             "url" : "https://github.com/swift-dns/swift-highway.git"
           }
         ]
@@ -72,10 +72,10 @@
           "value" : "swift-package"
         }
       ],
-      "purl" : "pkg:swift/github.com/swift-dns/swift-highway@1.0.0-alpha.7",
+      "purl" : "pkg:swift/github.com/swift-dns/swift-highway@1.0.0-alpha.9",
       "scope" : "required",
       "type" : "library",
-      "version" : "1.0.0-alpha.7"
+      "version" : "1.0.0-alpha.9"
     },
     {
       "bom-ref" : "swift-highway:Highway",
@@ -86,7 +86,7 @@
       "pedigree" : {
         "commits" : [
           {
-            "uid" : "2f1fb97f363e2e1b629b734e6155d1cd83316a79",
+            "uid" : "4144bf67e20f584e67b374545b58e35752826f67",
             "url" : "https://github.com/swift-dns/swift-highway.git"
           }
         ]
@@ -97,10 +97,10 @@
           "value" : "swift-product"
         }
       ],
-      "purl" : "pkg:swift/github.com/swift-dns/swift-highway:Highway@1.0.0-alpha.7",
+      "purl" : "pkg:swift/github.com/swift-dns/swift-highway:Highway@1.0.0-alpha.9",
       "scope" : "required",
       "type" : "library",
-      "version" : "1.0.0-alpha.7"
+      "version" : "1.0.0-alpha.9"
     },
     {
       "bom-ref" : "swift-idna",
@@ -214,11 +214,11 @@
       "type" : "library",
       "version" : "unknown"
     },
-    "timestamp" : "2026-10-23T12:50:17Z",
+    "timestamp" : "2026-10-28T18:56:23Z",
     "tools" : {
       "components" : [
         {
-          "bom-ref" : "urn:uuid:1efe7b49-ead9-4a86-acd5-bb59497be332",
+          "bom-ref" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c",
           "licenses" : [
             {
               "license" : {
@@ -236,7 +236,7 @@
       ]
     }
   },
-  "serialNumber" : "urn:uuid:7ad7d2b4-232b-44d2-b8fa-9895d3c14e05",
+  "serialNumber" : "urn:uuid:7960682b-26e8-4c58-a5e2-476b7d394018",
   "specVersion" : "1.7",
   "version" : 1
 }

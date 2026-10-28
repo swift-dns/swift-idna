@@ -1,5 +1,5 @@
 {
-  "originHash" : "e3b8c69ff3ffb19c646032f40a095b22e95f1e7c6bc88215ee9f38f47ebf4d97",
+  "originHash" : "77b9550b2239c4997537b117f59a22c1d49c80effe3d12f34acefb111cac1242",
   "pins" : [
     {
       "identity" : "hdrhistogram-swift",
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "98ef3c98609a1e31b7e157b5b619579001a789d6",
-        "version" : "1.7.1"
+        "revision" : "844289ac455816e193f1dbbe014f3c4dbe429410",
+        "version" : "1.7.4"
       }
     },
     {
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-dns/swift-highway.git",
       "state" : {
-        "revision" : "2f1fb97f363e2e1b629b734e6155d1cd83316a79",
-        "version" : "1.0.0-alpha.7"
+        "revision" : "4144bf67e20f584e67b374545b58e35752826f67",
+        "version" : "1.0.0-alpha.9"
       }
     },
     {

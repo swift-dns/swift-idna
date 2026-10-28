@@ -1,0 +1,216 @@
+name: highway-codegen
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths: [Package.resolved]
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -Eeuo pipefail {0}
+
+env:
+  RUN_LINK: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+jobs:
+  check-highway-pin:
+    runs-on: ubuntu-26.04
+
+    timeout-minutes: 5
+
+    outputs:
+      changed: ${{ steps.pins.outputs.changed }}
+      old-revision: ${{ steps.pins.outputs.old-revision }}
+      new-revision: ${{ steps.pins.outputs.new-revision }}
+
+    steps:
+      - name: Check out ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: Package.resolved
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Check out the Package.resolved of the base branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base-ref
+          sparse-checkout: Package.resolved
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Read the swift-highway pins
+        id: pins
+        run: |
+          QUERY='[.pins[] | select(.identity == "swift-highway") | .state.revision] | first // ""'
+          OLD_REVISION="$(jq --raw-output "${QUERY}" base-ref/Package.resolved)"
+          NEW_REVISION="$(jq --raw-output "${QUERY}" Package.resolved)"
+
+          CHANGED='false'
+          if [[ -n "${OLD_REVISION}" && -n "${NEW_REVISION}" && "${OLD_REVISION}" != "${NEW_REVISION}" ]]; then
+            CHANGED='true'
+          fi
+
+          printf '%s\n' "changed=${CHANGED}" >> "${GITHUB_OUTPUT}"
+          printf '%s\n' "old-revision=${OLD_REVISION}" >> "${GITHUB_OUTPUT}"
+          printf '%s\n' "new-revision=${NEW_REVISION}" >> "${GITHUB_OUTPUT}"
+
+  compare-codegen:
+    needs: check-highway-pin
+    if: ${{ needs.check-highway-pin.outputs.changed == 'true' }}
+
+    name: compare-codegen (${{ matrix.target.name }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - name: NEON
+            runner: ubuntu-24.04-arm
+          - name: SSE2
+            runner: ubuntu-26.04
+
+    runs-on: ${{ matrix.target.runner }}
+
+    container: swift:6.4-resolute
+
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Configure git
+        run: git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y jq rsync
+
+      - name: Compare the codegen of SwiftIDNA with each swift-highway
+        id: comparison
+        env:
+          OLD_REVISION: ${{ needs.check-highway-pin.outputs.old-revision }}
+          NEW_REVISION: ${{ needs.check-highway-pin.outputs.new-revision }}
+          REPORT_PATH: highway-codegen/${{ matrix.target.name }}.txt
+        run: |
+          mkdir -p highway-codegen
+
+          # Disable 'set -e' to prevent the script from exiting on non-zero exit codes
+          set +e
+          scripts/compare-highway-codegen.sh --verbose "${OLD_REVISION}" "${NEW_REVISION}" > "${REPORT_PATH}"
+          EXIT_STATUS=$?
+          set -e
+
+          printf '%s\n' "${EXIT_STATUS}" > "highway-codegen/${{ matrix.target.name }}.status"
+          printf '%s\n' "exit-status=${EXIT_STATUS}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: highway-codegen-${{ matrix.target.name }}
+          path: highway-codegen/
+          if-no-files-found: error
+
+      - name: Exit with correct status
+        env:
+          EXIT_STATUS: ${{ steps.comparison.outputs.exit-status }}
+        run: exit "${EXIT_STATUS:?The comparison did not report its exit status}"
+
+  report:
+    needs: [check-highway-pin, compare-codegen]
+    if: ${{ always() && needs.check-highway-pin.outputs.changed == 'true' }}
+
+    runs-on: ubuntu-26.04
+
+    timeout-minutes: 5
+
+    permissions:
+      pull-requests: write # For the comment action
+
+    steps:
+      - name: Generate swift-dns-helper token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.SWIFT_DNS_HELPER_CLIENT_ID }}
+          private-key: ${{ secrets.SWIFT_DNS_HELPER_PRIVATE_KEY }}
+
+      - name: Download the reports
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          pattern: highway-codegen-*
+          path: highway-codegen
+          merge-multiple: true
+
+      - name: Construct the comment
+        if: ${{ !cancelled() }}
+        env:
+          OLD_REVISION: ${{ needs.check-highway-pin.outputs.old-revision }}
+          NEW_REVISION: ${{ needs.check-highway-pin.outputs.new-revision }}
+        run: |
+          HIGHWAY_LINK="https://github.com/swift-dns/swift-highway/compare/${OLD_REVISION}...${NEW_REVISION}"
+          printf '%s\n' "## [Highway Codegen](${RUN_LINK}) Report for [swift-highway ${OLD_REVISION:0:7}...${NEW_REVISION:0:7}](${HIGHWAY_LINK})" >> comment.md
+
+          for TARGET in NEON SSE2; do
+            STATUS="$(cat "highway-codegen/${TARGET}.status" 2>/dev/null || printf '%s' 'missing')"
+            case "${STATUS}" in
+                0)
+                    printf '%s\n' "**✅ ${TARGET}: the codegen of SwiftIDNA is identical ✅**" >> comment.md
+                    ;;
+                1)
+                    printf '%s\n' "**❌ ${TARGET}: the codegen of SwiftIDNA differs ❌**" >> comment.md
+                    ;;
+                *)
+                    printf '%s\n' "**🛑 ${TARGET}: the comparison failed to complete with status ${STATUS} 🛑**" >> comment.md
+                    ;;
+            esac
+          done
+
+          for TARGET in NEON SSE2; do
+            if [[ ! -f "highway-codegen/${TARGET}.txt" ]]; then
+              continue
+            fi
+            printf '\n' >> comment.md
+            printf '%s\n' '<details>' >> comment.md
+            printf '%s\n' "  <summary> Click to expand the ${TARGET} summary </summary>" >> comment.md
+            printf '\n' >> comment.md
+            printf '%s\n' '```text' >> comment.md
+            grep -E '^(== |Changed |  base=|Summary |  (same|shorter|longer|different|only in) |(NEON|SSE2) +(identical|differs))' \
+              "highway-codegen/${TARGET}.txt" >> comment.md || true
+            printf '%s\n' '```' >> comment.md
+            printf '%s\n' '</details>' >> comment.md
+          done
+
+          printf '\n' >> comment.md
+          printf '%s\n' "The diff of every changed function is in the artifacts of the [run](${RUN_LINK})." >> comment.md
+
+      - name: Construct the comment if the comparison was cancelled
+        if: cancelled()
+        run: |
+          printf '%s\n' "## [Highway Codegen](${RUN_LINK}) Report" > comment.md
+          printf '%s\n' '**🔕 The comparison was cancelled 🔕**' >> comment.md
+
+      - name: Comment in PR
+        if: always()
+        id: pr-comment
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          pr-number: ${{ github.event.pull_request.number }}
+          file-path: comment.md
+          comment-tag: highway-codegen-ci-comment
+
+      - name: Output the comment as job summary
+        if: always()
+        run: |
+          cat comment.md >> "${GITHUB_STEP_SUMMARY}"
+          printf '%s\n' 'Commented at ${{ steps.pr-comment.outputs.html-url }}' >> "${GITHUB_STEP_SUMMARY}"

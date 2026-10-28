@@ -2,41 +2,41 @@
   "@context" : "https://spdx.org/rdf/3.0.1/spdx-context.jsonld",
   "@graph" : [
     {
-      "creationInfo" : "urn:uuid:1efe7b49-ead9-4a86-acd5-bb59497be332:creationInfo",
-      "from" : "urn:uuid:1efe7b49-ead9-4a86-acd5-bb59497be332",
+      "creationInfo" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c:creationInfo",
+      "from" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c",
       "relationshipType" : "hasDeclaredLicense",
-      "spdxId" : "urn:uuid:1efe7b49-ead9-4a86-acd5-bb59497be332-hasDeclaredLicense-urn:spdx:Apache-2.0",
+      "spdxId" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c-hasDeclaredLicense-urn:spdx:Apache-2.0",
       "to" : [
         "urn:spdx:Apache-2.0"
       ],
       "type" : "Relationship"
     },
     {
-      "creationInfo" : "urn:uuid:1efe7b49-ead9-4a86-acd5-bb59497be332:creationInfo",
+      "creationInfo" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c:creationInfo",
       "simplelicensing_licenseExpression" : "Apache-2.0",
       "spdxId" : "urn:spdx:Apache-2.0",
       "type" : "simplelicensing_LicenseExpression"
     },
     {
-      "@id" : "urn:uuid:1efe7b49-ead9-4a86-acd5-bb59497be332:creationInfo",
-      "created" : "2026-10-23T12:50:17Z",
+      "@id" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c:creationInfo",
+      "created" : "2026-10-28T18:56:23Z",
       "createdBy" : [
-        "urn:uuid:1efe7b49-ead9-4a86-acd5-bb59497be332"
+        "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c"
       ],
       "specVersion" : "6.4.1",
       "type" : "CreationInfo"
     },
     {
-      "creationInfo" : "urn:uuid:1efe7b49-ead9-4a86-acd5-bb59497be332:creationInfo",
+      "creationInfo" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c:creationInfo",
       "name" : "swift-package-manager",
-      "spdxId" : "urn:uuid:1efe7b49-ead9-4a86-acd5-bb59497be332",
+      "spdxId" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c",
       "type" : "Agent"
     },
     {
       "@id" : "_:creationInfo",
-      "created" : "2026-10-23T12:50:17Z",
+      "created" : "2026-10-28T18:56:23Z",
       "createdBy" : [
-        "urn:uuid:1efe7b49-ead9-4a86-acd5-bb59497be332"
+        "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c"
       ],
       "specVersion" : "3.0.1",
       "type" : "CreationInfo"
@@ -50,14 +50,14 @@
       "rootElement" : [
         "urn:spdx:swift-idna"
       ],
-      "spdxId" : "urn:uuid:42e7e5a3-b256-4d4c-a878-f4d5d63bc0e5",
+      "spdxId" : "urn:uuid:a76f864f-960d-408c-a1ea-0c23a79db61f",
       "type" : "software_Sbom"
     },
     {
       "creationInfo" : "_:creationInfo",
-      "from" : "urn:uuid:42e7e5a3-b256-4d4c-a878-f4d5d63bc0e5",
+      "from" : "urn:uuid:a76f864f-960d-408c-a1ea-0c23a79db61f",
       "relationshipType" : "describes",
-      "spdxId" : "urn:uuid:42e7e5a3-b256-4d4c-a878-f4d5d63bc0e5-describes-urn:spdx:swift-idna",
+      "spdxId" : "urn:uuid:a76f864f-960d-408c-a1ea-0c23a79db61f-describes-urn:spdx:swift-idna",
       "to" : [
         "urn:spdx:swift-idna"
       ],
@@ -70,17 +70,17 @@
         "software"
       ],
       "rootElement" : [
-        "urn:uuid:42e7e5a3-b256-4d4c-a878-f4d5d63bc0e5"
+        "urn:uuid:a76f864f-960d-408c-a1ea-0c23a79db61f"
       ],
-      "spdxId" : "urn:uuid:7ad7d2b4-232b-44d2-b8fa-9895d3c14e05",
+      "spdxId" : "urn:uuid:7960682b-26e8-4c58-a5e2-476b7d394018",
       "type" : "SpdxDocument"
     },
     {
       "creationInfo" : "_:creationInfo",
       "description" : "<ResolvedPackage: swift-collections>",
-      "externalUrl" : "pkg:swift/github.com/apple/swift-collections@1.7.1",
+      "externalUrl" : "pkg:swift/github.com/apple/swift-collections@1.7.4",
       "name" : "swift-collections",
-      "software_internalVersion" : "1.7.1",
+      "software_internalVersion" : "1.7.4",
       "software_primaryPurpose" : "library",
       "spdxId" : "urn:spdx:swift-collections",
       "summary" : "swift-package",
@@ -88,9 +88,9 @@
     },
     {
       "creationInfo" : "_:creationInfo",
-      "externalUrl" : "pkg:swift/github.com/apple/swift-collections:BasicContainers@1.7.1",
+      "externalUrl" : "pkg:swift/github.com/apple/swift-collections:BasicContainers@1.7.4",
       "name" : "BasicContainers",
-      "software_internalVersion" : "1.7.1",
+      "software_internalVersion" : "1.7.4",
       "software_primaryPurpose" : "library",
       "spdxId" : "urn:spdx:swift-collections:BasicContainers",
       "summary" : "swift-product",
@@ -99,9 +99,9 @@
     {
       "creationInfo" : "_:creationInfo",
       "description" : "<ResolvedPackage: swift-highway>",
-      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-highway@1.0.0-alpha.7",
+      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-highway@1.0.0-alpha.9",
       "name" : "swift-highway",
-      "software_internalVersion" : "1.0.0-alpha.7",
+      "software_internalVersion" : "1.0.0-alpha.9",
       "software_primaryPurpose" : "library",
       "spdxId" : "urn:spdx:swift-highway",
       "summary" : "swift-package",
@@ -109,9 +109,9 @@
     },
     {
       "creationInfo" : "_:creationInfo",
-      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-highway:Highway@1.0.0-alpha.7",
+      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-highway:Highway@1.0.0-alpha.9",
       "name" : "Highway",
-      "software_internalVersion" : "1.0.0-alpha.7",
+      "software_internalVersion" : "1.0.0-alpha.9",
       "software_primaryPurpose" : "library",
       "spdxId" : "urn:spdx:swift-highway:Highway",
       "summary" : "swift-product",
@@ -204,7 +204,7 @@
     },
     {
       "externalIdentifierType" : "gitoid",
-      "identifier" : "urn:spdx:2f1fb97f363e2e1b629b734e6155d1cd83316a79",
+      "identifier" : "urn:spdx:4144bf67e20f584e67b374545b58e35752826f67",
       "identifierLocator" : [
         "https://github.com/swift-dns/swift-highway.git"
       ],
@@ -212,7 +212,7 @@
     },
     {
       "externalIdentifierType" : "gitoid",
-      "identifier" : "urn:spdx:98ef3c98609a1e31b7e157b5b619579001a789d6",
+      "identifier" : "urn:spdx:844289ac455816e193f1dbbe014f3c4dbe429410",
       "identifierLocator" : [
         "https://github.com/apple/swift-collections.git"
       ],
@@ -220,9 +220,9 @@
     },
     {
       "creationInfo" : "_:creationInfo",
-      "from" : "urn:spdx:2f1fb97f363e2e1b629b734e6155d1cd83316a79",
+      "from" : "urn:spdx:4144bf67e20f584e67b374545b58e35752826f67",
       "relationshipType" : "generates",
-      "spdxId" : "urn:spdx:2f1fb97f363e2e1b629b734e6155d1cd83316a79-generates",
+      "spdxId" : "urn:spdx:4144bf67e20f584e67b374545b58e35752826f67-generates",
       "to" : [
         "urn:spdx:swift-highway",
         "urn:spdx:swift-highway:Highway"
@@ -231,9 +231,9 @@
     },
     {
       "creationInfo" : "_:creationInfo",
-      "from" : "urn:spdx:98ef3c98609a1e31b7e157b5b619579001a789d6",
+      "from" : "urn:spdx:844289ac455816e193f1dbbe014f3c4dbe429410",
       "relationshipType" : "generates",
-      "spdxId" : "urn:spdx:98ef3c98609a1e31b7e157b5b619579001a789d6-generates",
+      "spdxId" : "urn:spdx:844289ac455816e193f1dbbe014f3c4dbe429410-generates",
       "to" : [
         "urn:spdx:swift-collections",
         "urn:spdx:swift-collections:BasicContainers"
