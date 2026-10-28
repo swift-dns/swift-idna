@@ -1,5 +1,5 @@
 {
-  "originHash" : "525d43b3f3fd8a995081663fd61f2ccec6ba82c092cde5233ddebc5246bf7c54",
+  "originHash" : "3c293b785f025c6fc1ae024d7e1cbaa3c11ad37d61e51cf6329e6bc0e9200bf3",
   "pins" : [
     {
       "identity" : "swift-collections",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-dns/swift-highway.git",
       "state" : {
-        "revision" : "20c4de124f4893d030155778c308159e8113b239",
-        "version" : "1.0.0-alpha.8"
+        "revision" : "4144bf67e20f584e67b374545b58e35752826f67",
+        "version" : "1.0.0-alpha.9"
       }
     }
   ],
