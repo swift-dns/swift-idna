@@ -1,6 +1,4 @@
-#if !($Embedded || os(WASI))
-internal import Highway
-#endif
+internal import Vectorization
 
 /// Checks if bytes are well-formed UTF-8.
 /// [Unicode Standard, Table 3-7. Well-Formed UTF-8 Byte Sequences](https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-3/#G27506)
@@ -8,16 +6,6 @@ internal import Highway
 package enum UTF8Checker {
 
     static var windowSize: Int { 16 }
-
-    /// Returns true if `bytes` contains only valid UTF-8 bytes.
-    @inline(always)
-    static func isWellFormed(_ bytes: Span<UInt8>) -> Bool {
-        #if $Embedded || os(WASI)
-        return Self.isWellFormed_SlowPath(bytes)
-        #else
-        return Self.isWellFormed_FastPath(bytes)
-        #endif
-    }
 }
 
 @available(SwiftStdlib 5.1, *)
@@ -164,33 +152,34 @@ extension UTF8Checker {
     }
 }
 
-#if !($Embedded || os(WASI))
 @available(SwiftStdlib 5.1, *)
 extension UTF8Checker {
+    /// Returns true if `bytes` contains only valid UTF-8 bytes.
+    ///
     /// A port of [simdutf's lookup algorithm](https://github.com/simdutf/simdutf/blob/v9.2.1/src/generic/utf8_validation/utf8_lookup4_algorithm.h).
     /// Copyright 2021 The simdutf authors, used under the [Apache License 2.0](https://github.com/simdutf/simdutf/blob/v9.2.1/LICENSE-APACHE).
     /// The algorithm is described in [Validating UTF-8 In Less Than One Instruction Per Byte](https://arxiv.org/abs/2010.03090).
     ///
     /// Intentionally `@inline(never)`, so the vector code is not copied into every caller.
     @inline(never)
-    static func isWellFormed_FastPath(_ bytes: Span<UInt8>) -> Bool {
+    static func isWellFormed(_ bytes: Span<UInt8>) -> Bool {
         let count = bytes.count
         guard count > 0 else {
             return true
         }
 
-        let laneCount = HighwayUInt8.laneCount
+        let laneCount = SIMDUInt8.laneCount
         guard _fastPath(laneCount >= LookupTables.minimumLaneCount) else {
             return Self.isWellFormed_SlowPath(bytes)
         }
 
         let tables = LookupTables()
-        let headBytes = HighwayUInt8.loadFirst(from: bytes)
+        let headBytes = SIMDUInt8.loadFirst(from: bytes)
         var errors = Self.lookupErrors(
             input: headBytes,
-            prev1: HighwayUInt8.slide1Up(headBytes),
-            prev2: HighwayUInt8.slideUpLanes(headBytes, by: 2),
-            prev3: HighwayUInt8.slideUpLanes(headBytes, by: 3),
+            prev1: SIMDUInt8.slide1Up(headBytes),
+            prev2: SIMDUInt8.slideUpLanes(headBytes, by: 2),
+            prev3: SIMDUInt8.slideUpLanes(headBytes, by: 3),
             tables: tables
         )
 
@@ -199,7 +188,7 @@ extension UTF8Checker {
                 unchecked: Range<Int>(uncheckedBounds: (laneCount &- 3, count))
             )
             while remainingBytesSpan.count >= laneCount &+ 3 {
-                errors = HighwayUInt8.bitwiseOr(
+                errors = SIMDUInt8.bitwiseOr(
                     errors,
                     Self.lookupErrors(window: remainingBytesSpan, tables: tables)
                 )
@@ -211,7 +200,7 @@ extension UTF8Checker {
                 )
             }
             if remainingBytesSpan.count > 3 {
-                errors = HighwayUInt8.bitwiseOr(
+                errors = SIMDUInt8.bitwiseOr(
                     errors,
                     Self.lookupErrors(lastWindow: remainingBytesSpan, tables: tables)
                 )
@@ -227,7 +216,7 @@ extension UTF8Checker {
             }
         }
 
-        return HighwayUInt8.allFalse(HighwayUInt8.notEqualTo(errors, HighwayUInt8.zero()))
+        return SIMDUInt8.allFalse(SIMDUInt8.notEqualTo(errors, SIMDUInt8.zero()))
     }
 
     /// The errors of the `laneCount` bytes after the first 3 bytes of `bytes`.
@@ -235,19 +224,19 @@ extension UTF8Checker {
     static func lookupErrors(
         window bytes: Span<UInt8>,
         tables: LookupTables
-    ) -> HighwayUInt8.Vector {
+    ) -> SIMDUInt8.Vector {
         let count = bytes.count
         return unsafe Self.lookupErrors(
-            input: HighwayUInt8.load(
+            input: SIMDUInt8.load(
                 fromUnchecked: bytes.extracting(unchecked: Range(uncheckedBounds: (3, count)))
             ),
-            prev1: HighwayUInt8.load(
+            prev1: SIMDUInt8.load(
                 fromUnchecked: bytes.extracting(unchecked: Range(uncheckedBounds: (2, count)))
             ),
-            prev2: HighwayUInt8.load(
+            prev2: SIMDUInt8.load(
                 fromUnchecked: bytes.extracting(unchecked: Range(uncheckedBounds: (1, count)))
             ),
-            prev3: HighwayUInt8.load(fromUnchecked: bytes),
+            prev3: SIMDUInt8.load(fromUnchecked: bytes),
             tables: tables
         )
     }
@@ -258,19 +247,19 @@ extension UTF8Checker {
     static func lookupErrors(
         lastWindow bytes: Span<UInt8>,
         tables: LookupTables
-    ) -> HighwayUInt8.Vector {
+    ) -> SIMDUInt8.Vector {
         let count = bytes.count
         return unsafe Self.lookupErrors(
-            input: HighwayUInt8.loadFirst(
+            input: SIMDUInt8.loadFirst(
                 from: bytes.extracting(unchecked: Range(uncheckedBounds: (3, count)))
             ),
-            prev1: HighwayUInt8.loadFirst(
+            prev1: SIMDUInt8.loadFirst(
                 from: bytes.extracting(unchecked: Range(uncheckedBounds: (2, count)))
             ),
-            prev2: HighwayUInt8.loadFirst(
+            prev2: SIMDUInt8.loadFirst(
                 from: bytes.extracting(unchecked: Range(uncheckedBounds: (1, count)))
             ),
-            prev3: HighwayUInt8.loadFirst(from: bytes),
+            prev3: SIMDUInt8.loadFirst(from: bytes),
             tables: tables
         )
     }
@@ -279,36 +268,36 @@ extension UTF8Checker {
     /// simdutf's `check_special_cases` and `check_multibyte_lengths`.
     @inline(always)
     static func lookupErrors(
-        input: HighwayUInt8.Vector,
-        prev1: HighwayUInt8.Vector,
-        prev2: HighwayUInt8.Vector,
-        prev3: HighwayUInt8.Vector,
+        input: SIMDUInt8.Vector,
+        prev1: SIMDUInt8.Vector,
+        prev2: SIMDUInt8.Vector,
+        prev3: SIMDUInt8.Vector,
         tables: LookupTables
-    ) -> HighwayUInt8.Vector {
-        let specialCases = HighwayUInt8.bitwiseAnd(
-            HighwayUInt8.bitwiseAnd(
-                HighwayUInt8.tableLookupBytes(
+    ) -> SIMDUInt8.Vector {
+        let specialCases = SIMDUInt8.bitwiseAnd(
+            SIMDUInt8.bitwiseAnd(
+                SIMDUInt8.tableLookupBytes(
                     tables.byte1High,
-                    HighwayUInt8.shiftedRight(prev1, by: 4)
+                    at: SIMDUInt8.shiftedRight(prev1, by: 4)
                 ),
-                HighwayUInt8.tableLookupBytes(
+                SIMDUInt8.tableLookupBytes(
                     tables.byte1Low,
-                    HighwayUInt8.bitwiseAnd(prev1, HighwayUInt8.repeating(0x0F))
+                    at: SIMDUInt8.bitwiseAnd(prev1, SIMDUInt8.repeating(0x0F))
                 )
             ),
-            HighwayUInt8.tableLookupBytes(
+            SIMDUInt8.tableLookupBytes(
                 tables.byte2High,
-                HighwayUInt8.shiftedRight(input, by: 4)
+                at: SIMDUInt8.shiftedRight(input, by: 4)
             )
         )
-        let mustBe23Continuation = HighwayUInt8.bitwiseAnd(
-            HighwayUInt8.bitwiseOr(
-                HighwayUInt8.saturatingSubtracting(prev2, HighwayUInt8.repeating(0xE0 &- 0x80)),
-                HighwayUInt8.saturatingSubtracting(prev3, HighwayUInt8.repeating(0xF0 &- 0x80))
+        let mustBe23Continuation = SIMDUInt8.bitwiseAnd(
+            SIMDUInt8.bitwiseOr(
+                SIMDUInt8.saturatingSubtracting(prev2, SIMDUInt8.repeating(0xE0 &- 0x80)),
+                SIMDUInt8.saturatingSubtracting(prev3, SIMDUInt8.repeating(0xF0 &- 0x80))
             ),
-            HighwayUInt8.repeating(0x80)
+            SIMDUInt8.repeating(0x80)
         )
-        return HighwayUInt8.bitwiseXor(mustBe23Continuation, specialCases)
+        return SIMDUInt8.bitwiseXor(mustBe23Continuation, specialCases)
     }
 
     /// The lookup tables of [simdutf's `check_special_cases`](https://github.com/simdutf/simdutf/blob/v9.2.1/src/generic/utf8_validation/utf8_lookup4_algorithm.h).
@@ -320,15 +309,15 @@ extension UTF8Checker {
         }
 
         /// Indexed by the high nibble of the previous byte.
-        let byte1High: HighwayUInt8.Vector
+        let byte1High: SIMDUInt8.Vector
         /// Indexed by the low nibble of the previous byte.
-        let byte1Low: HighwayUInt8.Vector
+        let byte1Low: SIMDUInt8.Vector
         /// Indexed by the high nibble of the current byte.
-        let byte2High: HighwayUInt8.Vector
+        let byte2High: SIMDUInt8.Vector
 
         @inline(always)
         init() {
-            self.byte1High = HighwayUInt8.repeatingBlock(
+            self.byte1High = SIMDUInt8.repeatingBlock(
                 2,
                 2,
                 2,
@@ -346,7 +335,7 @@ extension UTF8Checker {
                 21,
                 73
             )
-            self.byte1Low = HighwayUInt8.repeatingBlock(
+            self.byte1Low = SIMDUInt8.repeatingBlock(
                 231,
                 163,
                 131,
@@ -364,7 +353,7 @@ extension UTF8Checker {
                 203,
                 203
             )
-            self.byte2High = HighwayUInt8.repeatingBlock(
+            self.byte2High = SIMDUInt8.repeatingBlock(
                 1,
                 1,
                 1,
@@ -385,4 +374,3 @@ extension UTF8Checker {
         }
     }
 }
-#endif

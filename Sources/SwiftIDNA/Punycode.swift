@@ -1,6 +1,4 @@
-#if !($Embedded || os(WASI))
-internal import Highway
-#endif
+internal import Vectorization
 
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
 @available(SwiftStdlib 5.1, *)
@@ -338,37 +336,17 @@ package enum Punycode {
     /// Intentionally `@inline(__always)`, so Swift compiler doesn't inconsistently complain about usage of both it and `@usableFromInline`.
     @inline(__always)
     static func ensureAllDigits(_ inputBytesSpan: Span<UInt8>) -> Bool {
-        #if $Embedded || os(WASI)
-        return ensureAllDigits_SlowPath(inputBytesSpan)
-        #else
-        return ensureAllDigits_FastPath(inputBytesSpan)
-        #endif
-    }
-
-    #if $Embedded || os(WASI)
-    static func ensureAllDigits_SlowPath(_ inputBytesSpan: Span<UInt8>) -> Bool {
-        for idx in inputBytesSpan.indices {
-            let byte = unsafe inputBytesSpan[unchecked: idx]
-            guard Punycode.mapCodePointToDigit(byte) != nil else {
-                return false
-            }
-        }
-        return true
-    }
-    #else
-    @inline(always)
-    static func ensureAllDigits_FastPath(_ inputBytesSpan: Span<UInt8>) -> Bool {
         let count = inputBytesSpan.count
         guard count > 0 else {
             return true
         }
 
-        let laneCount = HighwayUInt8.laneCount
+        let laneCount = SIMDUInt8.laneCount
         var remainingBytesSpan = inputBytesSpan
-        var largestDigit = HighwayUInt8.zero()
+        var largestDigit = SIMDUInt8.zero()
         while remainingBytesSpan.count >= laneCount {
-            let loaded = HighwayUInt8.load(from: remainingBytesSpan)
-            largestDigit = HighwayUInt8.maximum(
+            let loaded = SIMDUInt8.load(from: remainingBytesSpan)
+            largestDigit = SIMDUInt8.maximum(
                 largestDigit,
                 Punycode.mapCodePointsToDigits(bytes: loaded)
             )
@@ -381,39 +359,38 @@ package enum Punycode {
         }
         if !remainingBytesSpan.isEmpty {
             let remaining = remainingBytesSpan.count
-            let loaded = HighwayUInt8.loadFirst(from: remainingBytesSpan)
-            largestDigit = HighwayUInt8.maximum(
+            let loaded = SIMDUInt8.loadFirst(from: remainingBytesSpan)
+            largestDigit = SIMDUInt8.maximum(
                 largestDigit,
-                HighwayUInt8.selectingOrZero(
-                    HighwayUInt8.firstLanes(count: remaining),
+                SIMDUInt8.selectingOrZero(
+                    SIMDUInt8.firstLanes(count: remaining),
                     Punycode.mapCodePointsToDigits(bytes: loaded)
                 )
             )
         }
-        return HighwayUInt8.allFalse(
-            HighwayUInt8.greaterThan(largestDigit, HighwayUInt8.repeating(35))
+        return SIMDUInt8.allFalse(
+            SIMDUInt8.greaterThan(largestDigit, SIMDUInt8.repeating(35))
         )
     }
 
-    /// Vectorized `mapCodePointToDigit`.
-    /// Maps every byte that is not a digit to a value above 35 instead of to nothing.
+    /// Vectorized `uncheckedMapUTF8ByteToDigit`.
+    /// Maps every byte that is not a digit to a value above 35 instead of asserting.
     @inline(always)
-    static func mapCodePointsToDigits(bytes: HighwayUInt8.Vector) -> HighwayUInt8.Vector {
-        let letterDigits = HighwayUInt8.subtracting(bytes, HighwayUInt8.repeating(0x61))
-        let numberDigits = HighwayUInt8.adding(
-            HighwayUInt8.minimum(
-                HighwayUInt8.subtracting(bytes, HighwayUInt8.repeating(0x30)),
-                HighwayUInt8.repeating(36)
+    static func mapCodePointsToDigits(bytes: SIMDUInt8.Vector) -> SIMDUInt8.Vector {
+        let letterDigits = SIMDUInt8.subtracting(bytes, SIMDUInt8.repeating(0x61))
+        let numberDigits = SIMDUInt8.adding(
+            SIMDUInt8.minimum(
+                SIMDUInt8.subtracting(bytes, SIMDUInt8.repeating(0x30)),
+                SIMDUInt8.repeating(36)
             ),
-            HighwayUInt8.repeating(26)
+            SIMDUInt8.repeating(26)
         )
-        return HighwayUInt8.selecting(
-            HighwayUInt8.lessThan(letterDigits, HighwayUInt8.repeating(26)),
+        return SIMDUInt8.selecting(
+            SIMDUInt8.lessThan(letterDigits, SIMDUInt8.repeating(26)),
             letterDigits,
             numberDigits
         )
     }
-    #endif
 
     /// The smallest non-ASCII scalar that is not below `n`, or `UInt32.max` if there is none.
     @usableFromInline
@@ -423,50 +400,18 @@ package enum Punycode {
         atLeast n: UInt32,
         in values: Span<UInt32>
     ) -> UInt32 {
-        #if $Embedded || os(WASI)
-        return smallestScalar_SlowPath(atLeast: n, in: values)
-        #else
-        return smallestScalar_FastPath(atLeast: n, in: values)
-        #endif
-    }
-
-    #if $Embedded || os(WASI)
-    /// Intentionally `@inline(never)`, so LLVM auto-vectorizes it.
-    /// Otherwise it refuses to, with the following analysis which I couldn't easily bypass:
-    /// ```
-    /// [Analysis] NonReductionValueUsedOutsideLoop
-    ///   loop not vectorized: value that could not be identified as reduction is used outside the loop
-    /// ```
-    @inline(never)
-    static func smallestScalar_SlowPath(
-        atLeast n: UInt32,
-        in values: Span<UInt32>
-    ) -> UInt32 {
-        var smallest = UInt32.max
-        for idx in values.indices {
-            let value = unsafe values[unchecked: idx]
-            smallest = min(smallest, value < n ? .max : value)
-        }
-        return smallest
-    }
-    #else
-    @inline(always)
-    static func smallestScalar_FastPath(
-        atLeast n: UInt32,
-        in values: Span<UInt32>
-    ) -> UInt32 {
-        let laneCount = HighwayUInt32.laneCount
-        let identity = HighwayUInt32.repeating(.max)
-        let threshold = HighwayUInt32.repeating(n)
+        let laneCount = SIMDUInt32.laneCount
+        let identity = SIMDUInt32.repeating(.max)
+        let threshold = SIMDUInt32.repeating(n)
         var accumulator = identity
 
         var remainingValuesSpan = values
         while remainingValuesSpan.count >= laneCount {
-            let loaded = HighwayUInt32.load(from: remainingValuesSpan)
-            let isBelow = HighwayUInt32.lessThan(loaded, threshold)
-            accumulator = HighwayUInt32.minimum(
+            let loaded = SIMDUInt32.load(from: remainingValuesSpan)
+            let isBelow = SIMDUInt32.lessThan(loaded, threshold)
+            accumulator = SIMDUInt32.minimum(
                 accumulator,
-                HighwayUInt32.selecting(isBelow, identity, loaded)
+                SIMDUInt32.selecting(isBelow, identity, loaded)
             )
             let remainingValuesRange = unsafe Range<Int>(
                 uncheckedBounds: (laneCount, remainingValuesSpan.count)
@@ -476,16 +421,15 @@ package enum Punycode {
             )
         }
         if !remainingValuesSpan.isEmpty {
-            let loaded = HighwayUInt32.loadFirst(from: remainingValuesSpan)
-            let isBelow = HighwayUInt32.lessThan(loaded, threshold)
-            accumulator = HighwayUInt32.minimum(
+            let loaded = SIMDUInt32.loadFirst(from: remainingValuesSpan)
+            let isBelow = SIMDUInt32.lessThan(loaded, threshold)
+            accumulator = SIMDUInt32.minimum(
                 accumulator,
-                HighwayUInt32.selecting(isBelow, identity, loaded)
+                SIMDUInt32.selecting(isBelow, identity, loaded)
             )
         }
-        return HighwayUInt32.smallest(accumulator)
+        return SIMDUInt32.smallest(accumulator)
     }
-    #endif
 
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Bias adaptation function](https://datatracker.ietf.org/doc/html/rfc3492#section-6.1)
     @inlinable
@@ -533,25 +477,5 @@ package enum Punycode {
         }
 
         return byte &- 0x30 &+ 26
-    }
-
-    /// [Punycode: A Bootstring encoding of Unicode for IDNA: Parameter values for Punycode](https://datatracker.ietf.org/doc/html/rfc3492#section-5)
-    /// A-Z -> 0-25; a-z -> 0-25; 0-9 -> 26-35
-    @inlinable
-    static func mapCodePointToDigit(_ byte: UInt8) -> UInt8? {
-        let value = byte
-
-        /// An uppercase ASCII letter should not make it through to Punycode conversion.
-        assert(!(value >= 0x41 && value <= 0x5a))
-
-        if value >= 0x61, value <= 0x7a {
-            return value &- 0x61
-        }
-
-        if value <= 0x39, value >= 0x30 {
-            return value &- 0x30 &+ 26
-        }
-
-        return nil
     }
 }

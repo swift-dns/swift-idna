@@ -1,22 +1,22 @@
 {
-  "originHash" : "f6ddc7481a59bbf4ff0c03715a6620a6ab2d41aa6c4b1fc851f5c948ab8d3c22",
+  "originHash" : "96f4e71d6387b91ca378f4bb0698faa263f27fde6bc510cf73a90dc0afb2257b",
   "pins" : [
     {
       "identity" : "swift-collections",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "98ef3c98609a1e31b7e157b5b619579001a789d6",
-        "version" : "1.7.1"
+        "revision" : "844289ac455816e193f1dbbe014f3c4dbe429410",
+        "version" : "1.7.4"
       }
     },
     {
-      "identity" : "swift-highway",
+      "identity" : "swift-vectorization",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-dns/swift-highway.git",
+      "location" : "https://github.com/swift-dns/swift-vectorization.git",
       "state" : {
-        "revision" : "2f1fb97f363e2e1b629b734e6155d1cd83316a79",
-        "version" : "1.0.0-alpha.7"
+        "revision" : "9c0561a02e076cf8d77bbd8bd20b6c2a6d981623",
+        "version" : "1.0.0-alpha.12"
       }
     }
   ],
