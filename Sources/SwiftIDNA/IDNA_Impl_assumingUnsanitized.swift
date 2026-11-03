@@ -1,4 +1,4 @@
-internal import Highway
+internal import Vectorization
 
 /// The implementations below in this file, do not pass the un-sanitized user-input `span` to
 /// any functions outside this file.
@@ -203,36 +203,36 @@ extension IDNA {
 
         assert(newBytes.isEmpty)
 
-        let laneCount = HighwayUInt8.laneCount
+        let laneCount = SIMDUInt8.laneCount
         SIMDUnicodeScalarDecoder.withTemporaryDecoder { decoder in
             var remainingBytesSpan = span
             while !remainingBytesSpan.isEmpty {
                 let windowLength = min(laneCount, remainingBytesSpan.count)
                 let window =
                     if windowLength == laneCount {
-                        HighwayUInt8.load(from: remainingBytesSpan)
+                        SIMDUInt8.load(from: remainingBytesSpan)
                     } else {
-                        HighwayUInt8.loadFirst(from: remainingBytesSpan)
+                        SIMDUInt8.loadFirst(from: remainingBytesSpan)
                     }
-                if HighwayUInt8.allFalse(
-                    HighwayUInt8.greaterThan(window, HighwayUInt8.repeating(0x7F))
+                if SIMDUInt8.allFalse(
+                    SIMDUInt8.greaterThan(window, SIMDUInt8.repeating(0x7F))
                 ) {
-                    let isUppercasedLetter = HighwayUInt8.lessThan(
-                        HighwayUInt8.subtracting(window, HighwayUInt8.repeating(0x41)),
-                        HighwayUInt8.repeating(26)
+                    let isUppercasedLetter = SIMDUInt8.lessThan(
+                        SIMDUInt8.subtracting(window, SIMDUInt8.repeating(0x41)),
+                        SIMDUInt8.repeating(26)
                     )
-                    let lowercased = HighwayUInt8.bitwiseOr(
+                    let lowercased = SIMDUInt8.bitwiseOr(
                         window,
-                        HighwayUInt8.selectingOrZero(
+                        SIMDUInt8.selectingOrZero(
                             isUppercasedLetter,
-                            HighwayUInt8.repeating(0b0010_0000)
+                            SIMDUInt8.repeating(0b0010_0000)
                         )
                     )
                     newBytes.append(extraRequiredCapacity: windowLength) { output in
                         if windowLength == laneCount {
-                            unsafe HighwayUInt8.append(lowercased, toUnchecked: &output)
+                            unsafe SIMDUInt8.append(lowercased, toUnchecked: &output)
                         } else {
-                            unsafe HighwayUInt8.append(
+                            unsafe SIMDUInt8.append(
                                 lowercased,
                                 addingCount: windowLength,
                                 toUnchecked: &output

@@ -53,56 +53,6 @@
       "version" : "1.7.4"
     },
     {
-      "bom-ref" : "swift-highway",
-      "externalReferences" : [
-
-      ],
-      "name" : "swift-highway",
-      "pedigree" : {
-        "commits" : [
-          {
-            "uid" : "4144bf67e20f584e67b374545b58e35752826f67",
-            "url" : "https://github.com/swift-dns/swift-highway.git"
-          }
-        ]
-      },
-      "properties" : [
-        {
-          "name" : "swift-entity",
-          "value" : "swift-package"
-        }
-      ],
-      "purl" : "pkg:swift/github.com/swift-dns/swift-highway@1.0.0-alpha.9",
-      "scope" : "required",
-      "type" : "library",
-      "version" : "1.0.0-alpha.9"
-    },
-    {
-      "bom-ref" : "swift-highway:Highway",
-      "externalReferences" : [
-
-      ],
-      "name" : "Highway",
-      "pedigree" : {
-        "commits" : [
-          {
-            "uid" : "4144bf67e20f584e67b374545b58e35752826f67",
-            "url" : "https://github.com/swift-dns/swift-highway.git"
-          }
-        ]
-      },
-      "properties" : [
-        {
-          "name" : "swift-entity",
-          "value" : "swift-product"
-        }
-      ],
-      "purl" : "pkg:swift/github.com/swift-dns/swift-highway:Highway@1.0.0-alpha.9",
-      "scope" : "required",
-      "type" : "library",
-      "version" : "1.0.0-alpha.9"
-    },
-    {
       "bom-ref" : "swift-idna",
       "externalReferences" : [
 
@@ -161,6 +111,56 @@
       "scope" : "required",
       "type" : "library",
       "version" : "unknown"
+    },
+    {
+      "bom-ref" : "swift-vectorization",
+      "externalReferences" : [
+
+      ],
+      "name" : "swift-vectorization",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "9c0561a02e076cf8d77bbd8bd20b6c2a6d981623",
+            "url" : "https://github.com/swift-dns/swift-vectorization.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-package"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/swift-dns/swift-vectorization@1.0.0-alpha.12",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "1.0.0-alpha.12"
+    },
+    {
+      "bom-ref" : "swift-vectorization:Vectorization",
+      "externalReferences" : [
+
+      ],
+      "name" : "Vectorization",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "9c0561a02e076cf8d77bbd8bd20b6c2a6d981623",
+            "url" : "https://github.com/swift-dns/swift-vectorization.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/swift-dns/swift-vectorization:Vectorization@1.0.0-alpha.12",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "1.0.0-alpha.12"
     }
   ],
   "dependencies" : [
@@ -172,25 +172,25 @@
     },
     {
       "dependsOn" : [
-        "swift-highway:Highway"
-      ],
-      "ref" : "swift-highway"
-    },
-    {
-      "dependsOn" : [
         "swift-collections",
-        "swift-highway",
         "swift-idna:IDNATests",
-        "swift-idna:SwiftIDNA"
+        "swift-idna:SwiftIDNA",
+        "swift-vectorization"
       ],
       "ref" : "swift-idna"
     },
     {
       "dependsOn" : [
         "swift-collections:BasicContainers",
-        "swift-highway:Highway"
+        "swift-vectorization:Vectorization"
       ],
       "ref" : "swift-idna:SwiftIDNA"
+    },
+    {
+      "dependsOn" : [
+        "swift-vectorization:Vectorization"
+      ],
+      "ref" : "swift-vectorization"
     }
   ],
   "metadata" : {
@@ -214,11 +214,11 @@
       "type" : "library",
       "version" : "unknown"
     },
-    "timestamp" : "2026-10-28T18:56:23Z",
+    "timestamp" : "2026-11-03T18:58:30Z",
     "tools" : {
       "components" : [
         {
-          "bom-ref" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c",
+          "bom-ref" : "urn:uuid:875d4ced-9965-47ff-9607-4eea2559bd48",
           "licenses" : [
             {
               "license" : {
@@ -228,15 +228,15 @@
             }
           ],
           "name" : "swift-package-manager",
-          "purl" : "pkg:swift/github.com/swiftlang/swift-package-manager@6.4.1",
+          "purl" : "pkg:swift/github.com/swiftlang/swift-package-manager@6.4.2",
           "scope" : "excluded",
           "type" : "application",
-          "version" : "6.4.1"
+          "version" : "6.4.2"
         }
       ]
     }
   },
-  "serialNumber" : "urn:uuid:7960682b-26e8-4c58-a5e2-476b7d394018",
+  "serialNumber" : "urn:uuid:d4549528-cbdf-494d-988d-afae798493d7",
   "specVersion" : "1.7",
   "version" : 1
 }

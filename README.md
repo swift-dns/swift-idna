@@ -50,7 +50,7 @@ A high performance, highly optimized multi-platform implementation of Punycode a
 
 - Unit tests run extensively against 6400+ Unicode 18 test cases.
 - Does not depend on `Foundation`.
-  - Only depends on `swift-highway` for writing portable SIMD code.
+  - Only depends on `swift-vectorization` for writing portable SIMD code.
   - And depends on `swift-collections` for some data structures.
 - The C code is all auto-generated from some Unicode files.
 

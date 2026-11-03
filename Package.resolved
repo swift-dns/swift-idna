@@ -1,5 +1,5 @@
 {
-  "originHash" : "3c293b785f025c6fc1ae024d7e1cbaa3c11ad37d61e51cf6329e6bc0e9200bf3",
+  "originHash" : "96f4e71d6387b91ca378f4bb0698faa263f27fde6bc510cf73a90dc0afb2257b",
   "pins" : [
     {
       "identity" : "swift-collections",
@@ -11,12 +11,12 @@
       }
     },
     {
-      "identity" : "swift-highway",
+      "identity" : "swift-vectorization",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-dns/swift-highway.git",
+      "location" : "https://github.com/swift-dns/swift-vectorization.git",
       "state" : {
-        "revision" : "4144bf67e20f584e67b374545b58e35752826f67",
-        "version" : "1.0.0-alpha.9"
+        "revision" : "9c0561a02e076cf8d77bbd8bd20b6c2a6d981623",
+        "version" : "1.0.0-alpha.12"
       }
     }
   ],

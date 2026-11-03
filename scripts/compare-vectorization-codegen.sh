@@ -12,8 +12,8 @@ repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly repository_root
 readonly compare_script="${repository_root}/scripts/compare-disassembly.sh"
 readonly normalize_script="${repository_root}/scripts/normalize-disassembly.sh"
-readonly highway_url="https://github.com/swift-dns/swift-highway.git"
-readonly highway_identity="swift-highway"
+readonly vectorization_url="https://github.com/swift-dns/swift-vectorization.git"
+readonly vectorization_identity="swift-vectorization"
 readonly resolved_file_name="Package.resolved"
 readonly target_name="SwiftIDNA"
 readonly path_reference_prefix="path:"
@@ -42,10 +42,10 @@ cleanup() {
 }
 
 usage() {
-  printf -- 'Usage: %s [--verbose] <old swift-highway> <new swift-highway>\n' \
+  printf -- 'Usage: %s [--verbose] <old swift-vectorization> <new swift-vectorization>\n' \
     "$(basename -- "${BASH_SOURCE[0]}")"
-  printf -- '  A swift-highway is a tag, a branch or a full commit SHA of\n'
-  printf -- '  %s\n' "${highway_url}"
+  printf -- '  A swift-vectorization is a tag, a branch or a full commit SHA of\n'
+  printf -- '  %s\n' "${vectorization_url}"
   printf -- '  or "%s<directory>" for a local checkout.\n' "${path_reference_prefix}"
   printf -- 'Exits 0 when nothing differs, 1 when anything differs and 2 on errors.\n'
   return 0
@@ -88,12 +88,12 @@ parse_arguments() {
   done
 
   if [[ "${#references[@]}" -ne 2 ]]; then
-    fatal "Expected 2 swift-highway references but found ${#references[@]}" "$(usage)"
+    fatal "Expected 2 swift-vectorization references but found ${#references[@]}" "$(usage)"
   fi
   old_reference="${references[0]}"
   new_reference="${references[1]}"
   if [[ -z "${old_reference}" || -z "${new_reference}" ]]; then
-    fatal "A swift-highway reference is empty" "$(usage)"
+    fatal "A swift-vectorization reference is empty" "$(usage)"
   fi
   return 0
 }
@@ -165,10 +165,10 @@ resolve_git_revision() {
 
   local listing
   if ! listing="$(
-    git ls-remote "${highway_url}" \
+    git ls-remote "${vectorization_url}" \
       "refs/tags/${reference}" "refs/tags/${reference}^{}" "refs/heads/${reference}"
   )"; then
-    fatal "Failed to list the refs of '${highway_url}'"
+    fatal "Failed to list the refs of '${vectorization_url}'"
   fi
 
   local tag_object="" tag_commit="" branch_commit=""
@@ -191,14 +191,14 @@ resolve_git_revision() {
     tag_commit="${tag_object}"
   fi
   if [[ -z "${tag_commit}" && -z "${branch_commit}" ]]; then
-    fatal "'${highway_url}' has no tag or branch named '${reference}'" \
+    fatal "'${vectorization_url}' has no tag or branch named '${reference}'" \
       "Pass a tag, a branch, a full 40-character commit SHA" \
       "or '${path_reference_prefix}<directory>'"
   fi
   if [[ -n "${tag_commit}" && -n "${branch_commit}" ]]; then
     if [[ "${tag_commit}" != "${branch_commit}" ]]; then
       fatal "'${reference}' is both a tag (${tag_commit}) and a branch (${branch_commit}) of" \
-        "'${highway_url}'; pass the full commit SHA instead"
+        "'${vectorization_url}'; pass the full commit SHA instead"
     fi
   fi
 
@@ -232,9 +232,9 @@ list_manifest_files() {
   return 0
 }
 
-rewrite_highway_dependency() {
-  local manifest_file="${1:?rewrite_highway_dependency requires the manifest file}"
-  local declaration="${2:?rewrite_highway_dependency requires the new dependency declaration}"
+rewrite_vectorization_dependency() {
+  local manifest_file="${1:?rewrite_vectorization_dependency requires the manifest file}"
+  local declaration="${2:?rewrite_vectorization_dependency requires the new dependency declaration}"
 
   local -r rewritten_file="${manifest_file}.rewritten"
   if ! awk \
@@ -298,7 +298,7 @@ rewrite_highway_dependency() {
           fatal("Cannot find the end of the .package( call at offset " start " of " manifest_file)
         }
         call_text = substr(source, start, close_position - start + 1)
-        if (call_text ~ /swift-dns\/swift-highway/) {
+        if (call_text ~ /swift-dns\/swift-vectorization/) {
           result = result substr(source, cursor, start - cursor) declaration
           replaced++
         } else {
@@ -308,12 +308,12 @@ rewrite_highway_dependency() {
       }
       result = result substr(source, cursor)
       if (replaced != 1) {
-        fatal("Expected 1 swift-highway dependency in " manifest_file " but found " replaced)
+        fatal("Expected 1 swift-vectorization dependency in " manifest_file " but found " replaced)
       }
       printf "%s", result
     }
   ' "${manifest_file}" > "${rewritten_file}"; then
-    fatal "Failed to rewrite the swift-highway dependency of '${manifest_file}'"
+    fatal "Failed to rewrite the swift-vectorization dependency of '${manifest_file}'"
   fi
   if ! mv -f -- "${rewritten_file}" "${manifest_file}"; then
     fatal "Failed to replace '${manifest_file}' with its rewritten copy"
@@ -325,14 +325,14 @@ write_pinned_resolved_file() {
   local source_resolved_file="${1:?write_pinned_resolved_file requires the Package.resolved}"
   local destination_resolved_file="${2:?write_pinned_resolved_file requires the file to write}"
 
-  if ! jq --arg identity "${highway_identity}" '
+  if ! jq --arg identity "${vectorization_identity}" '
     if .version == 2 or .version == 3 then
       .pins |= map(select(.identity != $identity)) | del(.originHash)
     else
       error("version \(.version) of Package.resolved is not supported")
     end
   ' "${source_resolved_file}" > "${destination_resolved_file}"; then
-    fatal "Failed to copy the pins other than ${highway_identity} out of '${source_resolved_file}'"
+    fatal "Failed to copy the pins other than ${vectorization_identity} out of '${source_resolved_file}'"
   fi
   return 0
 }
@@ -340,7 +340,7 @@ write_pinned_resolved_file() {
 list_held_pins() {
   local resolved_file="${1:?list_held_pins requires the Package.resolved}"
 
-  if ! jq --raw-output --arg identity "${highway_identity}" '
+  if ! jq --raw-output --arg identity "${vectorization_identity}" '
     .pins[] | select(.identity != $identity)
     | [.identity, (.state.revision // ""), (.state.version // ""), (.state.branch // "")]
     | @tsv
@@ -362,63 +362,63 @@ verify_held_pins() {
   if ! moved_pins="$(
     LC_ALL=C comm -23 <(printf -- '%s\n' "${expected_pins}") <(printf -- '%s\n' "${resolved_pins}")
   )"; then
-    fatal "Failed to compare the pins of the ${side} swift-highway with the expected ones"
+    fatal "Failed to compare the pins of the ${side} swift-vectorization with the expected ones"
   fi
   if ! added_pins="$(
     LC_ALL=C comm -13 <(printf -- '%s\n' "${expected_pins}") <(printf -- '%s\n' "${resolved_pins}")
   )"; then
-    fatal "Failed to compare the pins of the ${side} swift-highway with the expected ones"
+    fatal "Failed to compare the pins of the ${side} swift-vectorization with the expected ones"
   fi
   if [[ -n "${moved_pins}" ]]; then
-    fatal "Resolving the ${side} swift-highway moved dependencies other than ${highway_identity}," \
+    fatal "Resolving the ${side} swift-vectorization moved dependencies other than ${vectorization_identity}," \
       "which would confound the comparison. Expected pins missing after the resolution" \
       "(identity, revision, version, branch):" "${moved_pins}"
   fi
   if [[ -n "${added_pins}" ]]; then
-    log "The ${side} swift-highway added dependencies, which are not held identical:"
+    log "The ${side} swift-vectorization added dependencies, which are not held identical:"
     log "${added_pins}"
   fi
 
   local held_total
   held_total="$(printf -- '%s\n' "${expected_pins}" | grep -c . || true)"
-  log "Held ${held_total} other pinned dependencies identical for the ${side} swift-highway."
+  log "Held ${held_total} other pinned dependencies identical for the ${side} swift-vectorization."
   return 0
 }
 
-verify_git_highway() {
-  local side="${1:?verify_git_highway requires the name of the side}"
-  local resolved_file="${2:?verify_git_highway requires the resolved Package.resolved}"
-  local expected_revision="${3:?verify_git_highway requires the expected revision}"
+verify_git_vectorization() {
+  local side="${1:?verify_git_vectorization requires the name of the side}"
+  local resolved_file="${2:?verify_git_vectorization requires the resolved Package.resolved}"
+  local expected_revision="${3:?verify_git_vectorization requires the expected revision}"
 
   local resolved_revision
   if ! resolved_revision="$(
-    jq --raw-output --arg identity "${highway_identity}" \
+    jq --raw-output --arg identity "${vectorization_identity}" \
       '[.pins[] | select(.identity == $identity) | .state.revision] | first // ""' \
       "${resolved_file}"
   )"; then
-    fatal "Failed to read the ${highway_identity} pin of '${resolved_file}'"
+    fatal "Failed to read the ${vectorization_identity} pin of '${resolved_file}'"
   fi
   if [[ "${resolved_revision}" != "${expected_revision}" ]]; then
-    fatal "The ${side} swift-highway resolved to '${resolved_revision}'" \
+    fatal "The ${side} swift-vectorization resolved to '${resolved_revision}'" \
       "instead of '${expected_revision}'"
   fi
   return 0
 }
 
-verify_path_highway() {
-  local side="${1:?verify_path_highway requires the name of the side}"
-  local package_directory="${2:?verify_path_highway requires the package directory}"
-  local scratch_directory="${3:?verify_path_highway requires the scratch directory}"
-  local expected_directory="${4:?verify_path_highway requires the expected dependency directory}"
+verify_path_vectorization() {
+  local side="${1:?verify_path_vectorization requires the name of the side}"
+  local package_directory="${2:?verify_path_vectorization requires the package directory}"
+  local scratch_directory="${3:?verify_path_vectorization requires the scratch directory}"
+  local expected_directory="${4:?verify_path_vectorization requires the expected dependency directory}"
 
   local dependency_path
   if ! dependency_path="$(
     swift package --package-path "${package_directory}" --scratch-path "${scratch_directory}" \
       show-dependencies --format json \
-      | jq --raw-output --arg identity "${highway_identity}" \
+      | jq --raw-output --arg identity "${vectorization_identity}" \
         '[.dependencies[] | select(.identity == $identity) | .path] | first // ""'
   )"; then
-    fatal "Failed to read where the ${side} swift-highway resolved to"
+    fatal "Failed to read where the ${side} swift-vectorization resolved to"
   fi
   local canonical_dependency_path=""
   if [[ -n "${dependency_path}" ]]; then
@@ -427,7 +427,7 @@ verify_path_highway() {
   local canonical_expected_path
   canonical_expected_path="$(canonical_directory "${expected_directory}")"
   if [[ "${canonical_dependency_path}" != "${canonical_expected_path}" ]]; then
-    fatal "The ${side} swift-highway resolved to '${dependency_path}'" \
+    fatal "The ${side} swift-vectorization resolved to '${dependency_path}'" \
       "instead of '${expected_directory}'"
   fi
   return 0
@@ -435,39 +435,39 @@ verify_path_highway() {
 
 prepare_side() {
   local side="${1:?prepare_side requires the name of the side}"
-  local reference="${2:?prepare_side requires the swift-highway reference}"
+  local reference="${2:?prepare_side requires the swift-vectorization reference}"
 
   local side_directory="${workspace}/${side}"
   local package_directory="${side_directory}/${repository_root##*/}"
   local scratch_directory="${side_directory}/scratch"
-  local dependency_directory="${side_directory}/dependencies/${highway_identity}"
+  local dependency_directory="${side_directory}/dependencies/${vectorization_identity}"
 
-  log "Copying the swift-idna working tree for the ${side} swift-highway..."
+  log "Copying the swift-idna working tree for the ${side} swift-vectorization..."
   copy_directory "${repository_root}" "${package_directory}"
 
   local declaration revision="" source_directory=""
   if [[ "${reference}" == "${path_reference_prefix}"* ]]; then
     source_directory="${reference#"${path_reference_prefix}"}"
     if [[ ! -f "${source_directory}/Package.swift" ]]; then
-      fatal "There is no Package.swift in the swift-highway directory '${source_directory}'"
+      fatal "There is no Package.swift in the swift-vectorization directory '${source_directory}'"
     fi
     source_directory="$(canonical_directory "${source_directory}")"
-    assert_embeddable_path "${dependency_directory}" "directory of the ${side} swift-highway copy"
+    assert_embeddable_path "${dependency_directory}" "directory of the ${side} swift-vectorization copy"
 
-    log "Copying the swift-highway directory '${source_directory}' as ${highway_identity}..."
+    log "Copying the swift-vectorization directory '${source_directory}' as ${vectorization_identity}..."
     copy_directory "${source_directory}" "${dependency_directory}"
     declaration=".package(path: \"${dependency_directory}\")"
     description_of_side["${side}"]="${reference}"
   else
     revision="$(resolve_git_revision "${reference}")"
-    declaration=".package(url: \"${highway_url}\", revision: \"${revision}\")"
+    declaration=".package(url: \"${vectorization_url}\", revision: \"${revision}\")"
     description_of_side["${side}"]="${reference} (${revision:0:7})"
   fi
 
   local manifest_file
   local manifest_total=0
   while IFS= read -r -d '' manifest_file; do
-    rewrite_highway_dependency "${manifest_file}" "${declaration}"
+    rewrite_vectorization_dependency "${manifest_file}" "${declaration}"
     manifest_total=$(( manifest_total + 1 ))
   done < <(list_manifest_files "${package_directory}")
   if [[ "${manifest_total}" -eq 0 ]]; then
@@ -481,17 +481,17 @@ prepare_side() {
   fi
   write_pinned_resolved_file "${resolved_source}" "${package_directory}/${resolved_file_name}"
 
-  log "Resolving the dependencies of the ${side} swift-highway..."
+  log "Resolving the dependencies of the ${side} swift-vectorization..."
   if ! swift package resolve --package-path "${package_directory}" \
     --scratch-path "${scratch_directory}" >&2; then
-    fatal "Failed to resolve the dependencies with the ${side} swift-highway '${reference}'"
+    fatal "Failed to resolve the dependencies with the ${side} swift-vectorization '${reference}'"
   fi
 
   verify_held_pins "${side}" "${package_directory}/${resolved_file_name}"
   if [[ -n "${revision}" ]]; then
-    verify_git_highway "${side}" "${package_directory}/${resolved_file_name}" "${revision}"
+    verify_git_vectorization "${side}" "${package_directory}/${resolved_file_name}" "${revision}"
   else
-    verify_path_highway "${side}" "${package_directory}" "${scratch_directory}" \
+    verify_path_vectorization "${side}" "${package_directory}" "${scratch_directory}" \
       "${dependency_directory}"
   fi
 
@@ -517,9 +517,9 @@ build_target() {
     "${target_arguments[@]}"
   )
 
-  log "Building ${target_name} of the ${side} swift-highway for ${target_label}..."
+  log "Building ${target_name} of the ${side} swift-vectorization for ${target_label}..."
   if ! swift build "${build_arguments[@]}" >&2; then
-    fatal "Failed to build '${target_name}' with the ${side} swift-highway for ${target_label}"
+    fatal "Failed to build '${target_name}' with the ${side} swift-vectorization for ${target_label}"
   fi
 
   local binary_directory

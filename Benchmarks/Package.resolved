@@ -1,5 +1,5 @@
 {
-  "originHash" : "77b9550b2239c4997537b117f59a22c1d49c80effe3d12f34acefb111cac1242",
+  "originHash" : "94d2938caf73ec92d613e61dde0c2f499823c858a19c0a268c834e78c3206b86",
   "pins" : [
     {
       "identity" : "hdrhistogram-swift",
@@ -65,15 +65,6 @@
       }
     },
     {
-      "identity" : "swift-highway",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-dns/swift-highway.git",
-      "state" : {
-        "revision" : "4144bf67e20f584e67b374545b58e35752826f67",
-        "version" : "1.0.0-alpha.9"
-      }
-    },
-    {
       "identity" : "swift-numerics",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-numerics",
@@ -89,6 +80,15 @@
       "state" : {
         "revision" : "869129b7bf4ecc57b97d0193ad29690ca2134750",
         "version" : "1.8.1"
+      }
+    },
+    {
+      "identity" : "swift-vectorization",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-dns/swift-vectorization.git",
+      "state" : {
+        "revision" : "9c0561a02e076cf8d77bbd8bd20b6c2a6d981623",
+        "version" : "1.0.0-alpha.12"
       }
     },
     {

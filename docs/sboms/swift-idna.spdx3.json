@@ -2,41 +2,41 @@
   "@context" : "https://spdx.org/rdf/3.0.1/spdx-context.jsonld",
   "@graph" : [
     {
-      "creationInfo" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c:creationInfo",
-      "from" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c",
+      "creationInfo" : "urn:uuid:875d4ced-9965-47ff-9607-4eea2559bd48:creationInfo",
+      "from" : "urn:uuid:875d4ced-9965-47ff-9607-4eea2559bd48",
       "relationshipType" : "hasDeclaredLicense",
-      "spdxId" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c-hasDeclaredLicense-urn:spdx:Apache-2.0",
+      "spdxId" : "urn:uuid:875d4ced-9965-47ff-9607-4eea2559bd48-hasDeclaredLicense-urn:spdx:Apache-2.0",
       "to" : [
         "urn:spdx:Apache-2.0"
       ],
       "type" : "Relationship"
     },
     {
-      "creationInfo" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c:creationInfo",
+      "creationInfo" : "urn:uuid:875d4ced-9965-47ff-9607-4eea2559bd48:creationInfo",
       "simplelicensing_licenseExpression" : "Apache-2.0",
       "spdxId" : "urn:spdx:Apache-2.0",
       "type" : "simplelicensing_LicenseExpression"
     },
     {
-      "@id" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c:creationInfo",
-      "created" : "2026-10-28T18:56:23Z",
+      "@id" : "urn:uuid:875d4ced-9965-47ff-9607-4eea2559bd48:creationInfo",
+      "created" : "2026-11-03T18:58:30Z",
       "createdBy" : [
-        "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c"
+        "urn:uuid:875d4ced-9965-47ff-9607-4eea2559bd48"
       ],
-      "specVersion" : "6.4.1",
+      "specVersion" : "6.4.2",
       "type" : "CreationInfo"
     },
     {
-      "creationInfo" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c:creationInfo",
+      "creationInfo" : "urn:uuid:875d4ced-9965-47ff-9607-4eea2559bd48:creationInfo",
       "name" : "swift-package-manager",
-      "spdxId" : "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c",
+      "spdxId" : "urn:uuid:875d4ced-9965-47ff-9607-4eea2559bd48",
       "type" : "Agent"
     },
     {
       "@id" : "_:creationInfo",
-      "created" : "2026-10-28T18:56:23Z",
+      "created" : "2026-11-03T18:58:30Z",
       "createdBy" : [
-        "urn:uuid:caac23a9-7ba8-4b69-9e8e-7845b99c904c"
+        "urn:uuid:875d4ced-9965-47ff-9607-4eea2559bd48"
       ],
       "specVersion" : "3.0.1",
       "type" : "CreationInfo"
@@ -50,14 +50,14 @@
       "rootElement" : [
         "urn:spdx:swift-idna"
       ],
-      "spdxId" : "urn:uuid:a76f864f-960d-408c-a1ea-0c23a79db61f",
+      "spdxId" : "urn:uuid:84c024aa-ba67-4fa2-9229-a38ac2d5bab1",
       "type" : "software_Sbom"
     },
     {
       "creationInfo" : "_:creationInfo",
-      "from" : "urn:uuid:a76f864f-960d-408c-a1ea-0c23a79db61f",
+      "from" : "urn:uuid:84c024aa-ba67-4fa2-9229-a38ac2d5bab1",
       "relationshipType" : "describes",
-      "spdxId" : "urn:uuid:a76f864f-960d-408c-a1ea-0c23a79db61f-describes-urn:spdx:swift-idna",
+      "spdxId" : "urn:uuid:84c024aa-ba67-4fa2-9229-a38ac2d5bab1-describes-urn:spdx:swift-idna",
       "to" : [
         "urn:spdx:swift-idna"
       ],
@@ -70,9 +70,9 @@
         "software"
       ],
       "rootElement" : [
-        "urn:uuid:a76f864f-960d-408c-a1ea-0c23a79db61f"
+        "urn:uuid:84c024aa-ba67-4fa2-9229-a38ac2d5bab1"
       ],
-      "spdxId" : "urn:uuid:7960682b-26e8-4c58-a5e2-476b7d394018",
+      "spdxId" : "urn:uuid:d4549528-cbdf-494d-988d-afae798493d7",
       "type" : "SpdxDocument"
     },
     {
@@ -93,27 +93,6 @@
       "software_internalVersion" : "1.7.4",
       "software_primaryPurpose" : "library",
       "spdxId" : "urn:spdx:swift-collections:BasicContainers",
-      "summary" : "swift-product",
-      "type" : "software_Package"
-    },
-    {
-      "creationInfo" : "_:creationInfo",
-      "description" : "<ResolvedPackage: swift-highway>",
-      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-highway@1.0.0-alpha.9",
-      "name" : "swift-highway",
-      "software_internalVersion" : "1.0.0-alpha.9",
-      "software_primaryPurpose" : "library",
-      "spdxId" : "urn:spdx:swift-highway",
-      "summary" : "swift-package",
-      "type" : "software_Package"
-    },
-    {
-      "creationInfo" : "_:creationInfo",
-      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-highway:Highway@1.0.0-alpha.9",
-      "name" : "Highway",
-      "software_internalVersion" : "1.0.0-alpha.9",
-      "software_primaryPurpose" : "library",
-      "spdxId" : "urn:spdx:swift-highway:Highway",
       "summary" : "swift-product",
       "type" : "software_Package"
     },
@@ -150,6 +129,27 @@
     },
     {
       "creationInfo" : "_:creationInfo",
+      "description" : "<ResolvedPackage: swift-vectorization>",
+      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-vectorization@1.0.0-alpha.12",
+      "name" : "swift-vectorization",
+      "software_internalVersion" : "1.0.0-alpha.12",
+      "software_primaryPurpose" : "library",
+      "spdxId" : "urn:spdx:swift-vectorization",
+      "summary" : "swift-package",
+      "type" : "software_Package"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "externalUrl" : "pkg:swift/github.com/swift-dns/swift-vectorization:Vectorization@1.0.0-alpha.12",
+      "name" : "Vectorization",
+      "software_internalVersion" : "1.0.0-alpha.12",
+      "software_primaryPurpose" : "library",
+      "spdxId" : "urn:spdx:swift-vectorization:Vectorization",
+      "summary" : "swift-product",
+      "type" : "software_Package"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
       "from" : "urn:spdx:swift-collections",
       "relationshipType" : "dependsOn",
       "spdxId" : "urn:spdx:swift-collections-dependsOn",
@@ -160,24 +160,14 @@
     },
     {
       "creationInfo" : "_:creationInfo",
-      "from" : "urn:spdx:swift-highway",
-      "relationshipType" : "dependsOn",
-      "spdxId" : "urn:spdx:swift-highway-dependsOn",
-      "to" : [
-        "urn:spdx:swift-highway:Highway"
-      ],
-      "type" : "Relationship"
-    },
-    {
-      "creationInfo" : "_:creationInfo",
       "from" : "urn:spdx:swift-idna",
       "relationshipType" : "dependsOn",
       "spdxId" : "urn:spdx:swift-idna-dependsOn",
       "to" : [
         "urn:spdx:swift-collections",
-        "urn:spdx:swift-highway",
         "urn:spdx:swift-idna:IDNATests",
-        "urn:spdx:swift-idna:SwiftIDNA"
+        "urn:spdx:swift-idna:SwiftIDNA",
+        "urn:spdx:swift-vectorization"
       ],
       "type" : "Relationship"
     },
@@ -198,17 +188,19 @@
       "spdxId" : "urn:spdx:swift-idna:SwiftIDNA-dependsOn",
       "to" : [
         "urn:spdx:swift-collections:BasicContainers",
-        "urn:spdx:swift-highway:Highway"
+        "urn:spdx:swift-vectorization:Vectorization"
       ],
       "type" : "Relationship"
     },
     {
-      "externalIdentifierType" : "gitoid",
-      "identifier" : "urn:spdx:4144bf67e20f584e67b374545b58e35752826f67",
-      "identifierLocator" : [
-        "https://github.com/swift-dns/swift-highway.git"
+      "creationInfo" : "_:creationInfo",
+      "from" : "urn:spdx:swift-vectorization",
+      "relationshipType" : "dependsOn",
+      "spdxId" : "urn:spdx:swift-vectorization-dependsOn",
+      "to" : [
+        "urn:spdx:swift-vectorization:Vectorization"
       ],
-      "type" : "ExternalIdentifier"
+      "type" : "Relationship"
     },
     {
       "externalIdentifierType" : "gitoid",
@@ -219,15 +211,12 @@
       "type" : "ExternalIdentifier"
     },
     {
-      "creationInfo" : "_:creationInfo",
-      "from" : "urn:spdx:4144bf67e20f584e67b374545b58e35752826f67",
-      "relationshipType" : "generates",
-      "spdxId" : "urn:spdx:4144bf67e20f584e67b374545b58e35752826f67-generates",
-      "to" : [
-        "urn:spdx:swift-highway",
-        "urn:spdx:swift-highway:Highway"
+      "externalIdentifierType" : "gitoid",
+      "identifier" : "urn:spdx:9c0561a02e076cf8d77bbd8bd20b6c2a6d981623",
+      "identifierLocator" : [
+        "https://github.com/swift-dns/swift-vectorization.git"
       ],
-      "type" : "Relationship"
+      "type" : "ExternalIdentifier"
     },
     {
       "creationInfo" : "_:creationInfo",
@@ -237,6 +226,17 @@
       "to" : [
         "urn:spdx:swift-collections",
         "urn:spdx:swift-collections:BasicContainers"
+      ],
+      "type" : "Relationship"
+    },
+    {
+      "creationInfo" : "_:creationInfo",
+      "from" : "urn:spdx:9c0561a02e076cf8d77bbd8bd20b6c2a6d981623",
+      "relationshipType" : "generates",
+      "spdxId" : "urn:spdx:9c0561a02e076cf8d77bbd8bd20b6c2a6d981623-generates",
+      "to" : [
+        "urn:spdx:swift-vectorization",
+        "urn:spdx:swift-vectorization:Vectorization"
       ],
       "type" : "Relationship"
     }

@@ -11,7 +11,10 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-collections.git", from: "1.3.0"),
-        .package(url: "https://github.com/swift-dns/swift-highway.git", exact: "1.0.0-alpha.9"),
+        .package(
+            url: "https://github.com/swift-dns/swift-vectorization.git",
+            exact: "1.0.0-alpha.12"
+        ),
     ],
     targets: [
         .target(
@@ -19,7 +22,7 @@ let package = Package(
             dependencies: [
                 "CSwiftIDNA",
                 .product(name: "BasicContainers", package: "swift-collections"),
-                .product(name: "Highway", package: "swift-highway"),
+                .product(name: "Vectorization", package: "swift-vectorization"),
             ],
             swiftSettings: settings
         ),

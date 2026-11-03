@@ -1,4 +1,4 @@
-internal import Highway
+internal import Vectorization
 
 /// [Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)](https://datatracker.ietf.org/doc/html/rfc3492)
 @available(SwiftStdlib 5.1, *)
@@ -341,12 +341,12 @@ package enum Punycode {
             return true
         }
 
-        let laneCount = HighwayUInt8.laneCount
+        let laneCount = SIMDUInt8.laneCount
         var remainingBytesSpan = inputBytesSpan
-        var largestDigit = HighwayUInt8.zero()
+        var largestDigit = SIMDUInt8.zero()
         while remainingBytesSpan.count >= laneCount {
-            let loaded = HighwayUInt8.load(from: remainingBytesSpan)
-            largestDigit = HighwayUInt8.maximum(
+            let loaded = SIMDUInt8.load(from: remainingBytesSpan)
+            largestDigit = SIMDUInt8.maximum(
                 largestDigit,
                 Punycode.mapCodePointsToDigits(bytes: loaded)
             )
@@ -359,34 +359,34 @@ package enum Punycode {
         }
         if !remainingBytesSpan.isEmpty {
             let remaining = remainingBytesSpan.count
-            let loaded = HighwayUInt8.loadFirst(from: remainingBytesSpan)
-            largestDigit = HighwayUInt8.maximum(
+            let loaded = SIMDUInt8.loadFirst(from: remainingBytesSpan)
+            largestDigit = SIMDUInt8.maximum(
                 largestDigit,
-                HighwayUInt8.selectingOrZero(
-                    HighwayUInt8.firstLanes(count: remaining),
+                SIMDUInt8.selectingOrZero(
+                    SIMDUInt8.firstLanes(count: remaining),
                     Punycode.mapCodePointsToDigits(bytes: loaded)
                 )
             )
         }
-        return HighwayUInt8.allFalse(
-            HighwayUInt8.greaterThan(largestDigit, HighwayUInt8.repeating(35))
+        return SIMDUInt8.allFalse(
+            SIMDUInt8.greaterThan(largestDigit, SIMDUInt8.repeating(35))
         )
     }
 
     /// Vectorized `uncheckedMapUTF8ByteToDigit`.
     /// Maps every byte that is not a digit to a value above 35 instead of asserting.
     @inline(always)
-    static func mapCodePointsToDigits(bytes: HighwayUInt8.Vector) -> HighwayUInt8.Vector {
-        let letterDigits = HighwayUInt8.subtracting(bytes, HighwayUInt8.repeating(0x61))
-        let numberDigits = HighwayUInt8.adding(
-            HighwayUInt8.minimum(
-                HighwayUInt8.subtracting(bytes, HighwayUInt8.repeating(0x30)),
-                HighwayUInt8.repeating(36)
+    static func mapCodePointsToDigits(bytes: SIMDUInt8.Vector) -> SIMDUInt8.Vector {
+        let letterDigits = SIMDUInt8.subtracting(bytes, SIMDUInt8.repeating(0x61))
+        let numberDigits = SIMDUInt8.adding(
+            SIMDUInt8.minimum(
+                SIMDUInt8.subtracting(bytes, SIMDUInt8.repeating(0x30)),
+                SIMDUInt8.repeating(36)
             ),
-            HighwayUInt8.repeating(26)
+            SIMDUInt8.repeating(26)
         )
-        return HighwayUInt8.selecting(
-            HighwayUInt8.lessThan(letterDigits, HighwayUInt8.repeating(26)),
+        return SIMDUInt8.selecting(
+            SIMDUInt8.lessThan(letterDigits, SIMDUInt8.repeating(26)),
             letterDigits,
             numberDigits
         )
@@ -400,18 +400,18 @@ package enum Punycode {
         atLeast n: UInt32,
         in values: Span<UInt32>
     ) -> UInt32 {
-        let laneCount = HighwayUInt32.laneCount
-        let identity = HighwayUInt32.repeating(.max)
-        let threshold = HighwayUInt32.repeating(n)
+        let laneCount = SIMDUInt32.laneCount
+        let identity = SIMDUInt32.repeating(.max)
+        let threshold = SIMDUInt32.repeating(n)
         var accumulator = identity
 
         var remainingValuesSpan = values
         while remainingValuesSpan.count >= laneCount {
-            let loaded = HighwayUInt32.load(from: remainingValuesSpan)
-            let isBelow = HighwayUInt32.lessThan(loaded, threshold)
-            accumulator = HighwayUInt32.minimum(
+            let loaded = SIMDUInt32.load(from: remainingValuesSpan)
+            let isBelow = SIMDUInt32.lessThan(loaded, threshold)
+            accumulator = SIMDUInt32.minimum(
                 accumulator,
-                HighwayUInt32.selecting(isBelow, identity, loaded)
+                SIMDUInt32.selecting(isBelow, identity, loaded)
             )
             let remainingValuesRange = unsafe Range<Int>(
                 uncheckedBounds: (laneCount, remainingValuesSpan.count)
@@ -421,14 +421,14 @@ package enum Punycode {
             )
         }
         if !remainingValuesSpan.isEmpty {
-            let loaded = HighwayUInt32.loadFirst(from: remainingValuesSpan)
-            let isBelow = HighwayUInt32.lessThan(loaded, threshold)
-            accumulator = HighwayUInt32.minimum(
+            let loaded = SIMDUInt32.loadFirst(from: remainingValuesSpan)
+            let isBelow = SIMDUInt32.lessThan(loaded, threshold)
+            accumulator = SIMDUInt32.minimum(
                 accumulator,
-                HighwayUInt32.selecting(isBelow, identity, loaded)
+                SIMDUInt32.selecting(isBelow, identity, loaded)
             )
         }
-        return HighwayUInt32.smallest(accumulator)
+        return SIMDUInt32.smallest(accumulator)
     }
 
     /// [Punycode: A Bootstring encoding of Unicode for IDNA: Bias adaptation function](https://datatracker.ietf.org/doc/html/rfc3492#section-6.1)
